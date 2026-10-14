@@ -1,0 +1,32 @@
+# Option 3: your own server. Gives you https://<MAIL_DOMAIN> with a free certificate.
+#   1. Point a domain (e.g. mail.example.com) at your server's IP address.
+#   2. cp .env.example .env   and fill it in (MAIL_DOMAIN, mail settings, LOGIN_PASSPHRASE).
+#   3. docker compose up -d
+# Full guide: docs/setup-own-server.md
+services:
+  mail:
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      PUBLIC_URL: https://${MAIL_DOMAIN:?set MAIL_DOMAIN in .env}
+    volumes:
+      - mail-data:/data
+
+  caddy:
+    image: caddy:2.10
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      MAIL_DOMAIN: ${MAIL_DOMAIN}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+    depends_on:
+      - mail
+
+volumes:
+  mail-data:
+  caddy-data:

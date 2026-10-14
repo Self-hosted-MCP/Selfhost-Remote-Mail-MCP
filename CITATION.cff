@@ -1,0 +1,11 @@
+cff-version: 1.2.0
+message: "If you use or build on this project, please credit it like this."
+title: "Selfhost-Remote-Mail-MCP"
+type: software
+authors:
+  - alias: "s17sh70x2jfl031ag"
+repository-code: "https://github.com/s17sh70x2jfl031ag/Selfhost-Remote-Mail-MCP"
+license: MIT
+version: 0.2.0
+date-released: "2026-10-14"
+keywords: [mcp, email, imap, smtp, self-hosted]

@@ -1,0 +1,45 @@
+name: My email provider doesn't work
+description: Ask for help with, or support for, an email provider.
+title: "[Provider] "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Check [Email providers](https://github.com/s17sh70x2jfl031ag/Selfhost-Remote-Mail-MCP/blob/main/docs/email-providers.md) first: it lists settings and app password steps for over 40 providers, and which ones can't work yet (Outlook.com, Microsoft 365, Proton, Tuta, HEY).
+  - type: checkboxes
+    id: privacy
+    attributes:
+      label: Privacy check
+      options:
+        - label: I removed passwords and my email address from everything below.
+          required: true
+  - type: input
+    id: provider
+    attributes:
+      label: Provider
+      placeholder: Example Mail (examplemail.com)
+    validations:
+      required: true
+  - type: input
+    id: help-page
+    attributes:
+      label: The provider's own IMAP/SMTP help page
+      description: A link to where the provider lists its server names and ports.
+      placeholder: https://help.examplemail.com/imap-settings
+  - type: dropdown
+    id: password
+    attributes:
+      label: Which password did you use?
+      options:
+        - My normal password
+        - An app password
+        - I'm not sure
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: The settings you tried (server names and ports) and the message from `selfhost-remote-mail-mcp check`.
+      render: text
+    validations:
+      required: true

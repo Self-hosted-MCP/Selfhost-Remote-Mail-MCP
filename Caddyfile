@@ -1,0 +1,4 @@
+# Caddy gets and renews the HTTPS certificate for MAIL_DOMAIN by itself.
+{$MAIL_DOMAIN} {
+	reverse_proxy mail:8765
+}

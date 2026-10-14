@@ -1,0 +1,34 @@
+# Option 2 on Render: "New > Blueprint", pick your copy of this repo, fill in the blanks.
+# Guide: docs/setup-hosting.md
+services:
+  - type: web
+    name: selfhost-remote-mail-mcp
+    runtime: docker
+    # no plan line: Render then uses its smallest paid instance (0.5 CPU, 512 MB), which can keep a disk.
+    # The free plan can't keep a disk and falls asleep, which would break scheduled send.
+    healthCheckPath: /health
+    disk:
+      name: data
+      mountPath: /data
+      sizeGB: 1
+    envVars:
+      - key: MAIL_ADDRESS
+        sync: false
+      - key: MAIL_PASSWORD
+        sync: false
+      - key: IMAP_HOST
+        sync: false
+      - key: SMTP_HOST
+        sync: false
+      - key: LOGIN_PASSPHRASE
+        sync: false
+      - key: MAIL_NAME
+        sync: false
+      - key: IMAP_PORT
+        value: "993"
+      - key: SMTP_PORT
+        value: "465"
+      - key: MAIL_SECRET_KEY   # encrypts mailboxes added on the settings page; Render makes a random one
+        generateValue: true
+      - key: PORT              # the port Render sends web traffic to
+        value: "8765"

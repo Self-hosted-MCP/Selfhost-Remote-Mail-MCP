@@ -1,0 +1,20 @@
+name: Question
+description: Ask how to do something, or suggest an idea.
+title: "[Question] "
+labels: ["question"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        The [FAQ](https://github.com/s17sh70x2jfl031ag/Selfhost-Remote-Mail-MCP/blob/main/docs/faq.md) and the [setup guides](https://github.com/s17sh70x2jfl031ag/Selfhost-Remote-Mail-MCP#all-the-guides) may already answer it.
+  - type: textarea
+    id: question
+    attributes:
+      label: Your question or idea
+      description: Please don't include passwords, addresses or email content.
+    validations:
+      required: true
+  - type: textarea
+    id: tried
+    attributes:
+      label: What have you tried or read so far?

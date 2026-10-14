@@ -1,0 +1,31 @@
+# Changelog
+
+All notable changes to this project. Versions follow [semantic versioning](https://semver.org).
+
+## 0.2.0 (2026-10-14)
+
+- **Several mailboxes:** up to 5 (`MAX_MAILBOXES`), at any providers, from the settings file (`MAIL_2_*` ...), `setup`, or the new settings page. The older `READ_ONLY_*` settings still work.
+- **A mode per mailbox:** full, draft only (never sends) or read only, enforced by the server.
+- **Names for mailboxes**, like "Work". Tools accept them instead of addresses. Rename any mailbox on the settings page.
+- **Per-app choices:** the login page asks which mailboxes an AI app may use; change it later or disconnect apps on the settings page.
+- **Settings page** at `/settings`: add, test, rename, edit and remove mailboxes; choose mailboxes per app. Passphrase sign-in, locked-down cookie, CSRF and same-origin checks. Passwords stored encrypted (`MAIL_SECRET_KEY`).
+- **Server icon:** an envelope mark for AI apps that show server icons, plus a favicon.
+- Unreachable mail servers give a clear message instead of a crash.
+- **Updates, opt-in:** `UPDATE_CHECK=on` shows "Update available" on the settings page and in the `accounts` tool; `selfhost-remote-mail-mcp update`; a GitHub Action for forks on hosting companies; `scripts/update.sh` for own servers. Official releases only. The settings page shows the version and recent changes.
+- **Send permission per app:** "Allow sending" on the login page, off by default; change it on the settings page.
+- **Checked against the MCP security guidance:** access keys now last 1 hour and are refused if issued for another server; the settings cookie uses the `__Host-` prefix on HTTPS; the login page warns when an app returns to `localhost`; line breaks in addresses or subjects are refused (header injection); PDFs are read up to 50 pages.
+- **More encryption by default:** `setup` keeps mail passwords in the system keychain; mail connections use a strict TLS setting (certificate always checked, TLS 1.2 or newer); the send log is private (owner-only); HTTPS pages send HSTS.
+- **Daily send limit is now per mailbox, 40 by default** (was 20 in total). The per-minute limit (3) still counts all mailboxes together.
+
+## 0.1.0 (2026-10-14)
+
+First public version.
+
+- 15 tools: read, search, threads, attachments, drafts (new, reply, reply-all, forward, edit, delete), organising, contacts, templates, send now, scheduled send.
+- Two ways to run: `stdio` for apps on the same computer, `serve` for web and phone apps with a passphrase login (OAuth 2.1).
+- Three ways to host: your computer, Railway or Render, your own server with Docker and Caddy.
+- Safety: separate sending tools, daily and per-minute limits, allowed recipients, read-only mode, a read-only second mailbox, no double sends, scheduled emails held when something is wrong, email text labelled as untrusted.
+- Privacy: send log without names or subjects by default, login keys stored only as fingerprints, no telemetry.
+- `setup` wizard with known providers, and `check` to test the login without sending.
+- Starter files in `examples/`: five signature designs that work in light and dark mail apps, two plain signatures, and five templates (thank you, follow-up, reschedule, invoice reminder, out of office).
+- Signatures get a clean plain-text copy: one line per row, links keep their address.

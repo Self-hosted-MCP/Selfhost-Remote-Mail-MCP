@@ -1,0 +1,40 @@
+# Keeps YOUR FORK on the newest official release, so your hosting company (Railway, Render, Fly.io...) rebuilds.
+# Off unless you opt in: in your fork, enable Actions, then add the repository variable AUTO_UPDATE = on
+# (Settings -> Secrets and variables -> Actions -> Variables). It never runs in the original repository.
+# Only published releases are used, never unfinished work. Guide: docs/updates.md
+name: Update from official releases
+
+on:
+  schedule:
+    - cron: "17 4 * * 1"   # Mondays, 04:17 UTC
+  workflow_dispatch:       # or run it by hand from the Actions tab
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    if: github.repository != 's17sh70x2jfl031ag/Selfhost-Remote-Mail-MCP' && vars.AUTO_UPDATE == 'on'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1   # v7.0.1, pinned
+        with:
+          fetch-depth: 0
+      - name: Merge the newest official release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          UPSTREAM: s17sh70x2jfl031ag/Selfhost-Remote-Mail-MCP
+        run: |
+          latest=$(gh api "repos/$UPSTREAM/releases/latest" --jq .tag_name || true)
+          if ! [[ "$latest" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then echo "No official release found."; exit 0; fi
+          git fetch --force "https://github.com/$UPSTREAM.git" "refs/tags/$latest:refs/tags/$latest"
+          if git merge-base --is-ancestor "$latest" HEAD; then echo "Already on $latest or newer."; exit 0; fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if ! git merge --no-edit "$latest"; then
+            git merge --abort
+            echo "::error::$latest conflicts with your own changes. Update by hand: Sync fork on GitHub."
+            exit 1
+          fi
+          git push
+          echo "Updated to $latest. Your hosting company rebuilds by itself."

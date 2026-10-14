@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Report a security problem (private)
+    url: https://github.com/s17sh70x2jfl031ag/Selfhost-Remote-Mail-MCP/security/advisories/new
+    about: Only the maintainer sees it. Please don't post security problems as public issues.
+  - name: Troubleshooting guide
+    url: https://github.com/s17sh70x2jfl031ag/Selfhost-Remote-Mail-MCP/blob/main/docs/troubleshooting.md
+    about: Quick fixes for login, connection and sending problems.

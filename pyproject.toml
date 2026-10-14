@@ -1,0 +1,26 @@
+[project]
+name = "selfhost-remote-mail-mcp"
+version = "0.2.0"
+description = "Your own email in Claude, ChatGPT, Codex and other AI apps, on computer and phone. Self-hosted IMAP/SMTP MCP server."
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+requires-python = ">=3.11"
+dependencies = ["mcp>=2.3,<3", "imapclient>=3.0", "markdown>=3.5", "pypdf>=5.0", "cryptography>=44", "keyring>=25"]
+keywords = ["mcp", "email", "imap", "smtp", "claude", "self-hosted"]
+
+[project.scripts]
+selfhost-remote-mail-mcp = "selfhost_remote_mail_mcp.server:main"
+
+[project.urls]
+Homepage = "https://github.com/s17sh70x2jfl031ag/Selfhost-Remote-Mail-MCP"
+
+[tool.hatch.build.targets.wheel.force-include]
+"CHANGELOG.md" = "selfhost_remote_mail_mcp/CHANGELOG.md"   # shown on the settings page
+
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = ["pytest>=8"]
