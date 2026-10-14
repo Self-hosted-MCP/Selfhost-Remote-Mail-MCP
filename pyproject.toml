@@ -1,12 +1,20 @@
 [project]
 name = "selfhost-remote-mail-mcp"
-version = "0.3.0"
+version = "0.4.0"
 description = "Your own email in Claude, ChatGPT, Codex and other AI apps, on computer and phone. Self-hosted IMAP/SMTP MCP server."
 readme = "README.md"
 license = "MIT"
 license-files = ["LICENSE"]
 requires-python = ">=3.11"
-dependencies = ["mcp>=2.3,<3", "imapclient>=3.0", "markdown>=3.5", "pypdf>=5.0", "cryptography>=44", "keyring>=25"]
+dependencies = [
+    "mcp>=2.3,<3",
+    "imapclient>=3.0",
+    "markdown>=3.5",
+    "pypdf>=5.0",
+    "cryptography>=44",
+    "keyring>=25",
+    "dnspython>=2.6",
+]
 keywords = ["mcp", "email", "imap", "smtp", "claude", "self-hosted"]
 
 [project.scripts]

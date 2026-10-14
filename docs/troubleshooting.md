@@ -135,6 +135,13 @@ The server couldn't unlock its password, usually because `MAIL_SECRET_KEY` chang
 ## Sending
 
 <details>
+<summary>My emails land in the receiver's spam</summary>
+
+If you use your own domain, press **Check domain** on the settings page (or run `selfhost-remote-mail-mcp check`) and fix what shows red or yellow. See [mailboxes.md](mailboxes.md#check-your-domain). New domains and emails with many links also land in spam more often.
+
+</details>
+
+<details>
 <summary>"Daily send limit reached for ..." or "Send limit reached (3 per minute)"</summary>
 
 The limits are working. Wait, or raise `SEND_DAILY_LIMIT` or `SEND_MINUTE_LIMIT`.

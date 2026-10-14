@@ -48,6 +48,7 @@ Mailboxes 2 to 5 use the same settings with their number: `MAIL_2_...`, `MAIL_3_
 | Setting | Default | What it is |
 |---|---|---|
 | `SETTINGS_PAGE` | `on` | `off` removes the settings page (`/settings`) from the web version |
+| `DEVICE_LOG` | `on` | `off` stops the device log: no list of signed-in browsers' devices and addresses, no 7-day sign-in history. It can also be turned off on the settings page |
 | `MAIL_SECRET_KEY` | | A long random value that encrypts the passwords of mailboxes added on the settings page. Keep it apart from the data folder, for example in your hosting company's secret variables. If it isn't set, the server makes `secret.key` in the data folder instead |
 
 ## Sending
@@ -84,6 +85,8 @@ Mailboxes 2 to 5 use the same settings with their number: `MAIL_2_...`, `MAIL_3_
 | Setting | Default | What it does |
 |---|---|---|
 | `ATTACH_MAX_MB` | `25` | Most MB of new files per email, and per upload |
+| `REMOVE_PHOTO_LOCATION` | `on` | `off` keeps the location and camera details in attached photos. Can also be turned off on the settings page |
+| `REMOVE_DOCUMENT_DETAILS` | `on` | `off` keeps the author and company in attached documents. Can also be turned off on the settings page |
 | `ATTACH_FOLDERS` | `~` | Folders the computer version may attach files from, separated by commas. Hidden files are never allowed |
 | `UPLOAD_PAGE` | `on` | `off` removes the upload page (`/upload`) from the web version. See [attachments.md](attachments.md) |
 

@@ -77,6 +77,8 @@ The server is a small program. Your AI app talks to it through **MCP** (Model Co
 
 **Attach files.** From other emails, from your computer, files the AI writes (like a CSV), or photos and documents you upload from your phone on the upload page. Programs are refused, and suspect files (like spreadsheets with macros) need your OK. See [docs/attachments.md](docs/attachments.md).
 
+**Create files on the go.** Ask your AI to make a calendar invite, a CSV spreadsheet, a contact card or notes, and it attaches them to your email.
+
 **Organise.** Archive, move, delete (to Trash), mark read or unread, pin, mark as spam. It can show you an email's unsubscribe link, but it never clicks it.
 
 **Send, carefully.** Only two tools can send, so your AI app can ask you before each one:
@@ -88,6 +90,12 @@ The server is a small program. Your AI app talks to it through **MCP** (Model Co
 **Several mailboxes.** Up to 5, at any providers, each with its own mode (full, draft only or read only) and a short name like *Work*. Each AI app gets only the mailboxes you tick for it. See [docs/mailboxes.md](docs/mailboxes.md).
 
 **A settings page.** In the web version, open `/settings` to add mailboxes, test logins, rename them, and choose or disconnect AI apps. It also shows your version and what's new. No terminal needed.
+
+**Privacy for your files.** Photos you attach lose their location, and documents lose the author's name, before they're sent. Both are on by default and can be turned off on the settings page. The server never loads pictures or links inside emails, so senders can't track when you read them.
+
+**See who signed in.** The settings page lists the devices signed in and every sign-in of the last 7 days, wrong passphrases included. Sign out any device you don't recognise.
+
+**Check your domain.** If you use your own domain (like `you@yourname.com`), one button checks the records that keep your emails out of spam (SPF, DKIM, DMARC) and says in plain words what to fix.
 
 **Updates, if you want them.** Get told when there's a new release, or let it update itself, official releases only. See [docs/updates.md](docs/updates.md).
 

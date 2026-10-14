@@ -107,7 +107,8 @@ SETTINGS = ("MAIL_ADDRESS", "MAIL_NAME", "MAIL_USERNAME", "SMTP_USERNAME", "MAIL
             "SEND_MINUTE_LIMIT", "SCHEDULED_SEND", "LOGIN_HASH", "LOGIN_PASSPHRASE", "MAIL_SIGNATURE",
             "MAIL_READ_ONLY", "SEND_ALLOWED_RECIPIENTS", "SEND_LOG_DETAILS", "MAIL_MODE", "MAX_MAILBOXES",
             "MAIL_SECRET_KEY", "SETTINGS_PAGE", "MAIL_LABEL", "UPDATE_CHECK",
-            "ATTACH_MAX_MB", "ATTACH_FOLDERS", "UPLOAD_PAGE",
+            "ATTACH_MAX_MB", "ATTACH_FOLDERS", "UPLOAD_PAGE", "DEVICE_LOG",
+            "REMOVE_PHOTO_LOCATION", "REMOVE_DOCUMENT_DETAILS",
             "READ_ONLY_ADDRESS", "READ_ONLY_USERNAME", "READ_ONLY_PASSWORD",
             "RENDER_EXTERNAL_URL", "RAILWAY_PUBLIC_DOMAIN")
 
@@ -1076,6 +1077,7 @@ class NewFile:
     level: str = "safe"
     why: str = ""           # for the user
     receiver_note: str = ""  # a line the user may choose to add for the receiver
+    privacy: str = ""        # what clean_new_file() removed
 
     @property
     def note(self) -> str:
@@ -1233,6 +1235,183 @@ def check_new_file(name: str, data: bytes) -> NewFile:
     return f
 
 
+# Privacy for new files: photos lose their location and camera details, documents lose author names, before they're
+# attached. On by default; each can be turned off on the settings page or with REMOVE_PHOTO_LOCATION /
+# REMOVE_DOCUMENT_DETAILS=off. Files from other emails (forward, attach_from) are left as they are.
+
+def _exif_orientation(tiff: bytes) -> int | None:
+    """The photo's rotation (EXIF tag 0x0112), which is kept so the photo isn't shown sideways."""
+    try:
+        order = "big" if tiff[:2] == b"MM" else "little"
+        ifd = int.from_bytes(tiff[4:8], order)
+        for n in range(int.from_bytes(tiff[ifd:ifd + 2], order)):
+            entry = tiff[ifd + 2 + 12 * n: ifd + 14 + 12 * n]
+            if int.from_bytes(entry[:2], order) == 0x0112:
+                return int.from_bytes(entry[8:10], order)
+    except (IndexError, ValueError):
+        pass
+    return None
+
+
+def clean_jpeg(data: bytes) -> bytes | None:
+    """Drops EXIF (location, camera, dates), XMP, IPTC and comments; keeps only the rotation. None: nothing to do."""
+    if not data.startswith(b"\xff\xd8"):
+        return None
+    segments, i, removed, orientation = [], 2, False, None
+    while i + 4 <= len(data):
+        if data[i] != 0xFF:
+            return None   # not a layout we understand: leave the file alone
+        marker = data[i + 1]
+        if marker == 0xFF:
+            i += 1
+            continue
+        if marker == 0xDA:   # start of the image data: everything after it is kept as is
+            break
+        length = int.from_bytes(data[i + 2:i + 4], "big")
+        payload = data[i + 4:i + 2 + length]
+        if marker == 0xE1 and payload.startswith(b"Exif\x00\x00"):
+            orientation = _exif_orientation(payload[6:])
+            removed = True
+        elif (marker == 0xE1 and payload.startswith(b"http://ns.adobe.com/xap/")) or marker in (0xED, 0xFE):
+            removed = True
+        else:
+            segments.append(data[i:i + 2 + length])
+        i += 2 + length
+    else:
+        return None
+    if not removed:
+        return None
+    if orientation and orientation != 1:
+        tiff = b"MM\x00\x2a\x00\x00\x00\x08\x00\x01\x01\x12\x00\x03\x00\x00\x00\x01" + \
+               orientation.to_bytes(2, "big") + b"\x00\x00\x00\x00\x00\x00"
+        app1 = b"\xff\xe1" + (len(tiff) + 8).to_bytes(2, "big") + b"Exif\x00\x00" + tiff
+        at = 1 if segments and segments[0][:2] == b"\xff\xe0" else 0   # after the JFIF header, which must be first
+        segments.insert(at, app1)
+    return b"\xff\xd8" + b"".join(segments) + data[i:]
+
+
+def clean_png(data: bytes) -> bytes | None:
+    """Drops text, EXIF and time chunks."""
+    out, i, removed = [data[:8]], 8, False
+    while i + 12 <= len(data):
+        length = int.from_bytes(data[i:i + 4], "big")
+        kind = data[i + 4:i + 8]
+        chunk = data[i:i + 12 + length]
+        if kind in (b"tEXt", b"zTXt", b"iTXt", b"eXIf", b"tIME"):
+            removed = True
+        else:
+            out.append(chunk)
+        i += 12 + length
+        if kind == b"IEND":
+            break
+    return b"".join(out) if removed else None
+
+
+def clean_webp(data: bytes) -> bytes | None:
+    """Drops EXIF and XMP chunks and their flags."""
+    out, i, removed = [], 12, False
+    while i + 8 <= len(data):
+        kind, size = data[i:i + 4], int.from_bytes(data[i + 4:i + 8], "little")
+        chunk = data[i:i + 8 + size + (size & 1)]
+        if kind in (b"EXIF", b"XMP "):
+            removed = True
+        else:
+            if kind == b"VP8X":
+                chunk = chunk[:8] + bytes([chunk[8] & ~0x0C]) + chunk[9:]
+            out.append(chunk)
+        i += 8 + size + (size & 1)
+    if not removed:
+        return None
+    body = b"WEBP" + b"".join(out)
+    return b"RIFF" + len(body).to_bytes(4, "little") + body
+
+
+PDF_PRIVATE = ("/Author", "/Creator", "/Producer", "/Keywords", "/Subject")
+
+
+def clean_pdf(data: bytes) -> bytes | None:
+    """Drops the author, the apps that made it and the XMP block. Signed or locked PDFs are left alone."""
+    from pypdf import PdfWriter
+    if b"/ByteRange" in data:   # a digital signature would break
+        return None
+    reader = PdfReader(io.BytesIO(data))
+    if reader.is_encrypted:
+        return None
+    info = reader.metadata or {}
+    has_xmp = "/Metadata" in reader.trailer["/Root"]
+    if not has_xmp and not any(k in info for k in PDF_PRIVATE):
+        return None
+    writer = PdfWriter(clone_from=reader)
+    writer.metadata = None
+    keep = {k: v for k, v in info.items() if k not in PDF_PRIVATE and k.startswith("/") and isinstance(v, str)}
+    if keep:
+        writer.add_metadata(keep)
+    writer.root_object.pop("/Metadata", None)
+    if writer._info is not None:   # pypdf adds itself as the Producer
+        writer._info.get_object().pop("/Producer", None)
+    out = io.BytesIO()
+    writer.write(out)
+    return out.getvalue()
+
+
+OFFICE_PRIVATE = re.compile(
+    rb"(<(dc:creator|cp:lastModifiedBy|Company|Manager|meta:initial-creator|meta:printed-by)(?:\s[^>]*)?>)"
+    rb"[^<]+(</\2>)")
+
+
+def clean_office(data: bytes) -> bytes | None:
+    """Empties author, last editor, company and manager in Word, Excel, PowerPoint and OpenDocument files."""
+    import zipfile
+    try:
+        with zipfile.ZipFile(io.BytesIO(data)) as src:
+            infos = src.infolist()
+            parts = {info.filename: src.read(info) for info in infos}
+    except (zipfile.BadZipFile, RuntimeError, NotImplementedError, OSError):
+        return None
+    changed = False
+    for name in ("docProps/core.xml", "docProps/app.xml", "meta.xml"):
+        if name in parts:
+            new = OFFICE_PRIVATE.sub(rb"\1\3", parts[name])
+            changed |= new != parts[name]
+            parts[name] = new
+    if not changed:
+        return None
+    out = io.BytesIO()
+    with zipfile.ZipFile(out, "w") as dst:   # same order and compression: OpenDocument needs "mimetype" first
+        for info in infos:
+            dst.writestr(info, parts[info.filename])
+    return out.getvalue()
+
+
+PHOTO_CLEANERS = {"jpg": clean_jpeg, "jpeg": clean_jpeg, "png": clean_png, "webp": clean_webp}
+DOCUMENT_CLEANERS = {"pdf": clean_pdf, **{k: clean_office for k in
+                     ("docx", "xlsx", "pptx", "docm", "xlsm", "pptm", "odt", "ods", "odp")}}
+
+
+def clean_new_file(f: NewFile) -> str:
+    """Removes private details if the user wants that (on by default). Returns a note for the draft summary."""
+    if f.kind in PHOTO_CLEANERS:
+        if not pref_on("remove_photo_location", "REMOVE_PHOTO_LOCATION"):
+            return ""
+        cleaner, what = PHOTO_CLEANERS[f.kind], "location and camera details"
+    elif f.kind in DOCUMENT_CLEANERS:
+        if not pref_on("remove_document_details", "REMOVE_DOCUMENT_DETAILS"):
+            return ""
+        cleaner, what = DOCUMENT_CLEANERS[f.kind], "author details"
+    elif f.kind in ("heic", "heif", "avif", "tif", "tiff") and pref_on("remove_photo_location", "REMOVE_PHOTO_LOCATION"):
+        return f"{f.name}: .{f.kind} photos can't be cleaned here, so it may still hold its location"
+    else:
+        return ""
+    try:
+        cleaned = cleaner(f.data)
+    except Exception:   # a file we can't rewrite safely is sent unchanged
+        cleaned = None
+    if cleaned is None:
+        return ""
+    f.data = cleaned
+    return f"{f.name}: removed {what}"
+
+
 def attach_limit(cfg: dict | None = None) -> int:
     try:
         return max(1, int((cfg or read_env()).get("ATTACH_MAX_MB") or ATTACH_MAX_MB)) * 1024 * 1024
@@ -1321,6 +1500,8 @@ def gather_new_files(attach_path, attach_content, attach_upload, allow_suspect: 
     if total > attach_limit(cfg):
         raise ToolError(f"These files add up to {human_size(total)}, more than the {human_size(attach_limit(cfg))} "
                         "an email may carry (ATTACH_MAX_MB). Send them in separate emails, or share a link.")
+    for f in files:
+        f.privacy = clean_new_file(f)
     return files, codes
 
 
@@ -2049,19 +2230,163 @@ def login_page(provider: "PassphraseOAuth", req: str, error: str = "", status: i
 # ---------------------------------------------------------------- settings page (web, behind the passphrase)
 
 SESSION_COOKIE = "mailmcp_settings"
-SESSION_TTL = 12 * 3600
-_sessions: dict[str, dict] = {}   # in memory: a restart signs everyone out of the settings page
+SESSION_TTL = 12 * 3600            # without "Remember this device"
+REMEMBER_TTL = 90 * 24 * 3600      # with it, like an AI app's connection
+SESSIONS_FILE = STATE_DIR / "sessions.json"   # remembered devices: fingerprints only, like oauth.json
+# Keyed by token_key(cookie value). Remembered sessions are also saved to SESSIONS_FILE so a restart keeps them.
+_sessions: dict[str, dict] = {}
 _sessions_lock = threading.Lock()
+_sessions_loaded = False
 
 
-def new_session() -> tuple[str, dict]:
+def passphrase_mark() -> str:
+    """Changes whenever the passphrase changes, which signs out every remembered device."""
+    env = read_env()
+    return hashlib.sha256((env.get("LOGIN_HASH") or env.get("LOGIN_PASSPHRASE") or "").encode()).hexdigest()[:16]
+
+
+# Device log: which browsers are signed in, and every sign-in of the last 7 days (pages and AI app logins), so you
+# can spot a stranger. On by default; off (settings page, or DEVICE_LOG=off) keeps no device details at all.
+PREFS_FILE = STATE_DIR / "prefs.json"
+SIGNINS_FILE = STATE_DIR / "signins.json"
+SIGNIN_KEEP = 7 * 24 * 3600
+SESSION_FIELDS = ("expires", "csrf", "pp", "device", "ip", "since", "seen")
+
+
+def forced_off(env_key: str) -> bool:
+    """The settings file or hosting variables can turn a switch off for good (the page can't turn it back on)."""
+    return (read_env().get(env_key) or "").strip().lower() in ("off", "false", "0", "no")
+
+
+def pref_on(name: str, env_key: str) -> bool:
+    """Switches on the settings page (prefs.json), all on by default."""
+    if forced_off(env_key):
+        return False
+    try:
+        return bool(json.loads(PREFS_FILE.read_text()).get(name, True))
+    except (OSError, ValueError):
+        return True
+
+
+def set_pref(name: str, on: bool) -> None:
+    try:
+        prefs = json.loads(PREFS_FILE.read_text())
+    except (OSError, ValueError):
+        prefs = {}
+    private_write(PREFS_FILE, json.dumps({**prefs, name: on}))
+
+
+def device_log_on() -> bool:
+    return pref_on("device_log", "DEVICE_LOG")
+
+
+def set_device_log(on: bool) -> None:
+    """Turning it off also deletes the sign-in history and the device details of signed-in browsers."""
+    set_pref("device_log", on)
+    if not on:
+        SIGNINS_FILE.unlink(missing_ok=True)
+        with _sessions_lock:
+            for v in _sessions.values():
+                for k in ("device", "ip", "since", "seen"):
+                    v.pop(k, None)
+            _save_sessions()
+
+
+def device_name(user_agent: str) -> str:
+    """'iPhone · Safari' from a browser's User-Agent. Only a rough guess: any app can claim to be anything."""
+    ua = user_agent or ""
+    system = next((name for key, name in (("iPhone", "iPhone"), ("iPad", "iPad"), ("Android", "Android"),
+                                          ("CrOS", "Chromebook"), ("Macintosh", "Mac"), ("Windows", "Windows"),
+                                          ("Linux", "Linux")) if key in ua), "")
+    browser = next((name for key, name in (("Edg", "Edge"), ("OPR", "Opera"), ("Firefox", "Firefox"),
+                                           ("FxiOS", "Firefox"), ("CriOS", "Chrome"), ("Chrome", "Chrome"),
+                                           ("Safari", "Safari")) if key in ua), "")
+    return " · ".join(x for x in (system, browser) if x) or "Unknown device"
+
+
+def client_ip(request: Request) -> str:
+    forwarded = request.headers.get("x-forwarded-for", "").split(",")[0].strip()   # set by Caddy and hosting companies
+    return (forwarded or (request.client.host if request.client else "") or "?")[:64]
+
+
+def log_signin(request: Request, ok: bool, where: str) -> None:
+    if not device_log_on():
+        return
+    now = time.time()
     with _sessions_lock:
+        events = [e for e in recent_signins() if e["time"] > now - SIGNIN_KEEP]
+        events.insert(0, {"time": now, "ok": ok, "where": where, "ip": client_ip(request),
+                          "device": device_name(request.headers.get("user-agent", ""))})
+        private_write(SIGNINS_FILE, json.dumps(events[:500]))
+
+
+def recent_signins() -> list[dict]:
+    """Sign-ins of the last 7 days, newest first."""
+    try:
+        events = json.loads(SIGNINS_FILE.read_text())
+    except (OSError, ValueError):
+        return []
+    return [e for e in events if e.get("time", 0) > time.time() - SIGNIN_KEEP]
+
+
+def signed_in_devices(current: dict | None = None) -> list[dict]:
+    now = time.time()
+    with _sessions_lock:
+        _load_sessions()
+        live = [(k, v) for k, v in _sessions.items() if v["expires"] > now and v["pp"] == passphrase_mark()]
+    return sorted(({"id": k[:16], "device": v.get("device", ""), "ip": v.get("ip", ""), "since": v.get("since"),
+                    "seen": v.get("seen"), "remember": v.get("remember", False), "current": v is current}
+                   for k, v in live), key=lambda d: d["seen"] or 0, reverse=True)
+
+
+def end_session_by_id(short_id: str) -> bool:
+    with _sessions_lock:
+        found = [k for k in _sessions if short_id and k.startswith(short_id)]
+        for k in found:
+            del _sessions[k]
+        _save_sessions()
+    return bool(found)
+
+
+def _save_sessions() -> None:
+    keep = {k: {f: v[f] for f in SESSION_FIELDS if f in v} for k, v in _sessions.items() if v.get("remember")}
+    private_write(SESSIONS_FILE, json.dumps(keep))
+
+
+def _load_sessions() -> None:
+    global _sessions_loaded
+    if _sessions_loaded:
+        return
+    _sessions_loaded = True
+    try:
+        saved = json.loads(SESSIONS_FILE.read_text())
+    except (OSError, ValueError):
+        return
+    for k, v in saved.items():
+        _sessions.setdefault(k, {**v, "remember": True, "flash": None})
+
+
+def new_session(remember: bool = False, request: Request | None = None) -> tuple[str, dict]:
+    with _sessions_lock:
+        _load_sessions()
         now = time.time()
         for k in [k for k, v in _sessions.items() if v["expires"] < now]:
             del _sessions[k]
         token = secrets.token_urlsafe(32)
-        _sessions[token] = {"expires": now + SESSION_TTL, "csrf": secrets.token_urlsafe(24), "flash": None}
-        return token, _sessions[token]
+        session = _sessions[token_key(token)] = {
+            "expires": now + (REMEMBER_TTL if remember else SESSION_TTL), "csrf": secrets.token_urlsafe(24),
+            "flash": None, "pp": passphrase_mark(), "remember": remember}
+        if request is not None and device_log_on():
+            session.update(device=device_name(request.headers.get("user-agent", "")), ip=client_ip(request),
+                           since=now, seen=now)
+        _save_sessions()
+        return token, session
+
+
+def end_session(token: str) -> None:
+    with _sessions_lock:
+        if _sessions.pop(token_key(token), None) is not None:
+            _save_sessions()
 
 
 def cookie_name() -> str:
@@ -2070,8 +2395,18 @@ def cookie_name() -> str:
 
 def get_session(request: Request) -> dict | None:
     token = request.cookies.get(cookie_name(), "")
-    session = _sessions.get(token)
-    if session and session["expires"] > time.time():
+    if not token:
+        return None
+    with _sessions_lock:
+        _load_sessions()
+        session = _sessions.get(token_key(token))
+    now = time.time()
+    if session and session["expires"] > now and hmac.compare_digest(session["pp"], passphrase_mark()):
+        if "seen" in session and now - session["seen"] > 300:   # "last seen", written at most every 5 minutes
+            with _sessions_lock:
+                session.update(seen=now, ip=client_ip(request))
+                if session.get("remember"):
+                    _save_sessions()
         return session
     return None
 
@@ -2135,9 +2470,26 @@ def settings_page(provider: "PassphraseOAuth", session: dict, uploads_on: bool =
              "may_send": cid not in provider.grants or cid in provider.senders} for cid, c in provider.clients.items()]
     flash, session["flash"] = session["flash"], None
     about = {"version": current_version(), "update": update_status(), "changelog": changelog_html()}
+    log_on = device_log_on()
+
+    def when(t):
+        if not t:
+            return ""
+        d = dt.datetime.fromtimestamp(t).astimezone()
+        return f"{d.day} {d:%b}, {d:%H:%M}"
+
+    privacy = [{"name": name, "label": label, "on": pref_on(name, env_key), "forced_off": forced_off(env_key)}
+               for name, (env_key, label) in PRIVACY_SWITCHES.items()]
+    devices = {"on": log_on, "forced_off": forced_off("DEVICE_LOG"),
+               "list": [{**d, "since": when(d["since"]), "seen": when(d["seen"])} for d in signed_in_devices(session)],
+               "signins": [{**e, "time": when(e["time"])} for e in (recent_signins() if log_on else [])]}
     body = pages.settings(session["csrf"], boxes, apps, flash, max_mailboxes(cfg), server_read_only(cfg), about,
-                          uploads_on)
+                          uploads_on, devices, privacy)
     return HTMLResponse(body, headers=pages.HEADERS)
+
+
+PRIVACY_SWITCHES = {"remove_photo_location": ("REMOVE_PHOTO_LOCATION", "Remove location from photos"),
+                    "remove_document_details": ("REMOVE_DOCUMENT_DETAILS", "Remove author details from documents")}
 
 
 def settings_action(provider: "PassphraseOAuth", kind: str, form) -> tuple[str, str]:
@@ -2153,6 +2505,10 @@ def settings_action(provider: "PassphraseOAuth", kind: str, form) -> tuple[str, 
             label = clean_label(str(form.get("label", "")))
             save_label(address, label)
             return "ok", f"{address} is now called {label}." if label else f"{address} has no name now."
+        if action == "domain":
+            if current is None:
+                return "error", f"{address} isn't set up."
+            return "domain", {"address": address, "rows": check_domain(current)}
         if action == "test":
             if current is None:
                 return "error", f"{address} isn't set up."
@@ -2211,6 +2567,26 @@ def settings_action(provider: "PassphraseOAuth", kind: str, form) -> tuple[str, 
         if action == "disconnect":
             provider.disconnect(client_id)
             return "ok", f"{name} is disconnected. It has to log in again to use your mail."
+    if kind == "device":
+        if action == "signout":
+            if end_session_by_id(str(form.get("id", ""))):
+                return "ok", "That device is signed out. It needs the passphrase to come back."
+            return "error", "That device isn't signed in any more."
+        if action in ("log_on", "log_off"):
+            if action == "log_on" and forced_off("DEVICE_LOG"):
+                return "error", "The device log is turned off in the server settings (DEVICE_LOG=off)."
+            set_device_log(action == "log_on")
+            return ("ok", "The device log is on. New sign-ins will show here." if action == "log_on" else
+                    "The device log is off, and its history is deleted.")
+    if kind == "privacy":
+        switch = PRIVACY_SWITCHES.get(str(form.get("name", "")))
+        if switch is None or action not in ("on", "off"):
+            return "error", "Unknown action."
+        env_key, label = switch
+        if action == "on" and forced_off(env_key):
+            return "error", f"This is turned off in the server settings ({env_key}=off)."
+        set_pref(str(form.get("name")), action == "on")
+        return "ok", f"{label}: {action}."
     return "error", "Unknown action."
 
 
@@ -2269,14 +2645,19 @@ def build_server(remote: bool) -> MCPServer:
             return login_page(provider, request.query_params.get("req", ""))
         form = await request.form()
         req, passphrase = str(form.get("req", "")), str(form.get("passphrase", ""))
+        pending = provider.pending.get(req)
+        client = provider.clients.get(pending[1]) if pending else None
+        where = f"AI app login: {(client.client_name if client else '') or 'an app'}"
         try:
             target = provider.complete_login(req, passphrase, [str(m) for m in form.getlist("mailbox")],
                                              allow_send=form.get("allow_send") == "yes")
         except (PermissionError, LookupError, ValueError) as exc:
             return login_page(provider, req, str(exc), 403 if not isinstance(exc, ValueError) else 400)
         if target is None:
+            log_signin(request, False, where)
             await asyncio.sleep(1)   # slows down guessing
             return login_page(provider, req, "Wrong passphrase.", 401)
+        log_signin(request, True, where)
         return RedirectResponse(target, status_code=302, headers={"Cache-Control": "no-store", "Referrer-Policy": "no-referrer"})
 
     @server.custom_route("/health", methods=["GET"])
@@ -2297,7 +2678,7 @@ def build_server(remote: bool) -> MCPServer:
     if is_on(cfg.get("SETTINGS_PAGE") or "on"):
         secure = public.startswith("https://")
 
-        def with_cookie(response: Response, token: str, max_age: int) -> Response:
+        def with_cookie(response: Response, token: str, max_age: int | None) -> Response:
             # On HTTPS the __Host- prefix makes browsers refuse the cookie unless it's Secure, for this exact
             # host, and path "/": nothing else on the domain can set or overwrite it.
             response.set_cookie(cookie_name(), token, max_age=max_age, httponly=True, secure=secure,
@@ -2326,23 +2707,26 @@ def build_server(remote: bool) -> MCPServer:
             if locked:
                 return HTMLResponse(pages.settings_login("Too many wrong tries. Wait 15 minutes.", target),
                                     status_code=403, headers=pages.HEADERS)
+            where = "Upload page" if target == "/settings/upload" else "Settings page"
             if not passphrase_ok(str(form.get("passphrase", ""))):
                 with provider.lock:
                     provider.failures.append(time.time())
+                log_signin(request, False, where)
                 await asyncio.sleep(1)   # slows down guessing
                 return HTMLResponse(pages.settings_login("Wrong passphrase.", target), status_code=401,
                                     headers=pages.HEADERS)
-            token, _ = new_session()
+            remember = form.get("remember") == "yes"
+            log_signin(request, True, where)
+            token, _ = new_session(remember, request)
             return with_cookie(RedirectResponse(target, status_code=303, headers={"Cache-Control": "no-store"}),
-                               token, SESSION_TTL)
+                               token, REMEMBER_TTL if remember else None)
 
         @server.custom_route("/settings/logout", methods=["POST"])
         async def settings_logout(request: Request) -> Response:
             form = await request.form()
             session = get_session(request)
             if session and same_origin(request) and hmac.compare_digest(str(form.get("csrf", "")), session["csrf"]):
-                with _sessions_lock:
-                    _sessions.pop(request.cookies.get(cookie_name(), ""), None)
+                end_session(request.cookies.get(cookie_name(), ""))
             return with_cookie(RedirectResponse("/settings", status_code=303), "", 0)
 
         async def settings_post(request: Request, kind: str) -> Response:
@@ -2365,6 +2749,14 @@ def build_server(remote: bool) -> MCPServer:
         @server.custom_route("/settings/app", methods=["POST"])
         async def settings_app(request: Request) -> Response:
             return await settings_post(request, "app")
+
+        @server.custom_route("/settings/device", methods=["POST"])
+        async def settings_device(request: Request) -> Response:
+            return await settings_post(request, "device")
+
+        @server.custom_route("/settings/privacy", methods=["POST"])
+        async def settings_privacy(request: Request) -> Response:
+            return await settings_post(request, "privacy")
 
         if uploads_on:
             @server.custom_route("/upload", methods=["GET"])
@@ -2768,6 +3160,7 @@ def draft(to: list[str] | None = None, cc: list[str] | None = None, bcc: list[st
         lines.append(f"Still scheduled: {msg[SCHEDULE_HEADER]} (see scheduled)")
     if files:
         lines.append("Attachments: " + ", ".join(n for n, _, _ in files))
+    lines += [f"Privacy: {f.privacy}" for f in new_files if f.privacy]
     if codes:
         lines.append("Uploaded files are deleted from the server in 1 hour; the draft keeps its own copy.")
     return "\n".join(lines + ["", top])
@@ -3037,6 +3430,102 @@ def test_account(account: Account) -> list[str]:
     return problems
 
 
+# ---------------------------------------------------------------- domain check (settings page and `check`)
+
+# Big providers set these records up for their own addresses, so there's nothing for the user to do.
+HOSTED_DOMAINS = {*PROVIDERS, "outlook.com", "hotmail.com", "live.com", "msn.com", "proton.me", "protonmail.com",
+                  "pm.me", "yahoo.co.uk", "yahoo.fr", "yahoo.de", "ymail.com", "gmx.at", "gmx.ch", "hey.com"}
+DKIM_SELECTORS = ("google", "default", "selector1", "selector2", "k1", "k2", "s1", "s2", "fm1", "fm2", "fm3",
+                  "sig1", "mail", "dkim", "zoho", "protonmail", "mxvault", "smtp", "key1", "everlytickey1")
+
+
+def dns_txt(name: str) -> list[str]:
+    """TXT records, asked through this computer's normal DNS (no outside service). [] if there are none."""
+    import dns.exception
+    import dns.resolver
+    try:
+        answer = dns.resolver.resolve(name, "TXT", lifetime=5)
+    except (dns.resolver.NXDOMAIN, dns.resolver.NoAnswer, dns.resolver.NoNameservers):
+        return []
+    except dns.exception.Timeout:
+        raise ToolError("The DNS lookup took too long. Try again later.")
+    return [b"".join(r.strings).decode(errors="replace") for r in answer]
+
+
+def dns_has_mx(domain: str) -> bool:
+    import dns.resolver
+    try:
+        return bool(dns.resolver.resolve(domain, "MX", lifetime=5))
+    except Exception:
+        return False
+
+
+def dkim_selectors_from_sent(account: Account, domain: str) -> list[str]:
+    """Selectors named in DKIM signatures on the newest sent emails (those the provider saved itself)."""
+    found = []
+    try:
+        with imap([account]) as c:
+            sent = roles(c).get("sent")
+            if not sent:
+                return []
+            c.select_folder(sent, readonly=True)
+            uids = c.search(["ALL"])[-20:]
+            if not uids:
+                return []
+            key = "BODY.PEEK[HEADER.FIELDS (DKIM-Signature)]"
+            for data in c.fetch(uids, [key]).values():
+                head = next((v for k, v in data.items() if k.startswith(b"BODY[HEADER")), b"").decode(errors="replace")
+                for sig in re.findall(r"(?is)DKIM-Signature:(.*?)(?=\r?\n\S|\Z)", head):
+                    d, s = re.search(r"\bd=([^;\s]+)", sig), re.search(r"\bs=([^;\s]+)", sig)
+                    if d and s and (d[1].lower() == domain or domain.endswith("." + d[1].lower())) and s[1] not in found:
+                        found.append(s[1])
+    except Exception:   # the check still works without it, from the common names
+        pass
+    return found
+
+
+def check_domain(account: Account) -> list[tuple[str, str, str]]:
+    """(name, level, plain-language result) for the mailbox's domain. level: good, warn or bad."""
+    domain = account.address.split("@")[1].lower()
+    if domain in HOSTED_DOMAINS:
+        return [("Domain", "good", f"{domain} belongs to your email provider, which sets all of this up for you.")]
+    rows = []
+    rows.append(("Receiving (MX)", "good", "Your domain says where its email goes.") if dns_has_mx(domain) else
+                ("Receiving (MX)", "bad", "No mail servers are listed for your domain, so email to it may bounce. "
+                                          "Add the MX records your email provider gives you."))
+    spf = [r for r in dns_txt(domain) if r.lower().startswith("v=spf1")]
+    if not spf:
+        rows.append(("SPF", "bad", "Missing. Receivers can't tell which servers may send as you, so your email is "
+                                   "more likely to land in spam. Add the SPF record your email provider gives you."))
+    elif len(spf) > 1:
+        rows.append(("SPF", "bad", "There are two SPF records; there must be only one. Merge them into one."))
+    elif re.search(r"(?:^|\s)\+?all\s*$", spf[0]):
+        rows.append(("SPF", "bad", "Your SPF record ends in +all, which lets anyone send as you. Change it to ~all or -all."))
+    elif spf[0].rstrip().endswith("?all"):
+        rows.append(("SPF", "warn", "Set, but it ends in ?all, which doesn't protect much. ~all or -all is better."))
+    else:
+        rows.append(("SPF", "good", "Set. Receivers can check which servers may send as you."))
+    selectors = dkim_selectors_from_sent(account, domain)
+    dkim = next((s for s in [*selectors, *DKIM_SELECTORS]
+                 if any("p=" in r for r in dns_txt(f"{s}._domainkey.{domain}"))), None)
+    if dkim:
+        rows.append(("DKIM", "good", f"Set (key \"{dkim}\"). Your emails carry a signature that proves they're yours."))
+    else:
+        rows.append(("DKIM", "warn", "Not found. It may be missing, or use a name this check doesn't know. Look for "
+                                     "\"DKIM\" in your email provider's settings and turn it on."))
+    dmarc = next((r for r in dns_txt(f"_dmarc.{domain}") if r.lower().startswith("v=dmarc1")), "")
+    policy = (re.search(r"\bp=(\w+)", dmarc) or [None, ""])[1].lower()
+    if not dmarc:
+        rows.append(("DMARC", "bad", f"Missing. Add a TXT record named _dmarc.{domain} with "
+                                     "\"v=DMARC1; p=quarantine\" so fake emails using your name go to spam."))
+    elif policy == "none":
+        rows.append(("DMARC", "warn", "Set to p=none: fake emails using your name are only watched, not stopped. "
+                                      "Once SPF and DKIM are good, change it to p=quarantine."))
+    else:
+        rows.append(("DMARC", "good", f"Set to p={policy}: fake emails using your name are stopped."))
+    return rows
+
+
 def check() -> None:
     mailboxes = all_accounts()
     if not mailboxes:
@@ -3047,6 +3536,11 @@ def check() -> None:
         problems = test_account(account)
         failed |= bool(problems)
         print("  " + ("\n  ".join(problems) if problems else "logins work."))
+        try:
+            for name, level, text in check_domain(account):
+                print(f"  {'OK ' if level == 'good' else 'FIX' if level == 'bad' else 'TIP'} {name}: {text}")
+        except ToolError as exc:
+            print(f"  Domain check skipped: {exc}")
     if failed:
         sys.exit("Some logins failed. See docs/troubleshooting.md.")
 

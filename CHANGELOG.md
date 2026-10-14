@@ -2,6 +2,15 @@
 
 All notable changes to this project. Versions follow [semantic versioning](https://semver.org).
 
+## 0.4.0 (2026-10-14)
+
+- **Remember this device:** the settings and upload pages keep a browser signed in for 90 days (on by default), even across restarts. Changing the passphrase signs every browser out.
+- **Device log** on the settings page: the browsers signed in now (sign out any of them), and every sign-in of the last 7 days, including wrong passphrases and AI app logins, with device and network address. Turn it off on the page or with `DEVICE_LOG=off`.
+- **Privacy for attachments:** photos lose their location, camera and dates (jpg, png, webp); Word, Excel, PowerPoint, OpenDocument and PDF files lose the author and company. On by default, with switches on the settings page (`REMOVE_PHOTO_LOCATION`, `REMOVE_DOCUMENT_DETAILS`).
+- **Domain check:** a button per mailbox on the settings page (and in `check`) looks up MX, SPF, DKIM and DMARC for your own domain and says in plain words what to fix. Uses the new `dnspython` dependency.
+- **New look:** a lighter purple, lime highlights and small pink details. The settings page has a section bar that stays at the top while you scroll. New icon colour.
+- FAQ: opening the settings page, uploading from a phone, typing the passphrase less, a forgotten passphrase, seeing who signed in, photo location, emails in spam.
+
 ## 0.3.0 (2026-10-14)
 
 - **Attach new files**, not only ones from other emails: from your computer (`attach_path`, computer version), small files the AI writes (`attach_content`, up to 2 MB), or the new **upload page** (`attach_upload`).

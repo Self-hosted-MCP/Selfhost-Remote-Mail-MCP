@@ -6,7 +6,7 @@ You need:
 
 - a server with [Docker](https://docs.docker.com/engine/install/): any VPS (Hetzner, DigitalOcean Droplet, Vultr, Akamai Linode, IONOS, OVHcloud, an Oracle Cloud free server), a home server, or a Raspberry Pi 4 or newer. The smallest plan of any of them is plenty,
 - a domain or subdomain you control, for example `mail.yourdomain.com`,
-- your mail settings ([email-providers.md](email-providers.md)) and a login passphrase (12+ characters).
+- your mail settings ([email-providers.md](email-providers.md)) and a login passphrase (12+ characters). Save it in your password manager (Apple Passwords, Google Password Manager, 1Password ...) with your server's address, so your phone fills it in for you.
 
 ## With Docker Compose (includes free HTTPS)
 

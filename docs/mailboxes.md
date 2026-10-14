@@ -76,6 +76,21 @@ When an AI app connects, the login page lists your mailboxes with tick boxes. Un
 - **Emails can't move between mailboxes.** Forward them instead.
 - **Limits:** each mailbox may send 40 emails a day (`SEND_DAILY_LIMIT`), and all mailboxes together 3 a minute (`SEND_MINUTE_LIMIT`). See [safety.md](safety.md#sending-limits).
 
+## Check your domain
+
+If a mailbox uses your own domain (like `you@yourname.com`), press **Check domain** next to it on the settings page. On a computer, `selfhost-remote-mail-mcp check` shows the same. The server looks up your domain's public records and says what each one means:
+
+| Record | What it does | If it's missing |
+|---|---|---|
+| **MX** | Says where email for your domain goes | Email to you may bounce |
+| **SPF** | Lists which servers may send as you | Your emails land in spam more often |
+| **DKIM** | Signs your emails, so receivers know they're really from you | Your emails land in spam more often, and fakes are harder to spot |
+| **DMARC** | Tells receivers what to do with fake emails that use your name | Anyone can pretend to be you |
+
+Green is good, yellow works but could be better, red needs fixing. Each result says what to add at your domain company in plain words. The check only reads public records and changes nothing. It asks your normal internet provider, not an outside service.
+
+Addresses at Gmail, iCloud, Outlook and other big providers are skipped, because the provider sets this up for you.
+
 ## Passwords of mailboxes added on the settings page
 
 They're stored **encrypted** in `mailboxes.json` in the data folder. The key comes from the `MAIL_SECRET_KEY` setting. If that isn't set, the server makes a key file next to the data instead.

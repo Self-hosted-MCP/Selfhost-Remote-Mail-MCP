@@ -85,10 +85,27 @@ This only works when the server runs on your own computer (`stdio`), since a ser
 
 On a Mac, Pages, Numbers and Keynote files are sometimes folders in disguise. If one is refused as a folder, use **File → Export To** or compress it.
 
+## Private details are removed
+
+Before a new file is attached, the server removes details you may not want to share. The file itself looks the same.
+
+| File | What's removed | What stays |
+|---|---|---|
+| jpg, png, webp photos | The place it was taken (GPS), the camera, dates and comments | The picture and its rotation |
+| Word, Excel, PowerPoint, OpenDocument | The author, who last edited it, company and manager | All the content, including the title |
+| PDF | The author and the apps that made it | The pages and the title. Signed or locked PDFs are left alone, because changing them would break the signature |
+
+- The draft summary says what was removed, like *"beach.jpg: removed location and camera details"*.
+- **heic, heif, avif and tiff photos can't be cleaned here.** The AI tells you when one may still hold its location. iPhones usually send jpg when you upload from Safari.
+- Files forwarded from other emails stay as they are, because they belong to someone else.
+- Both are on by default. Turn them off under **Privacy** on the settings page, or with `REMOVE_PHOTO_LOCATION=off` and `REMOVE_DOCUMENT_DETAILS=off`.
+
 ## Settings
 
 | Setting | Default | What it does |
 |---|---|---|
+| `REMOVE_PHOTO_LOCATION` | `on` | `off`: photos keep their location and camera details |
+| `REMOVE_DOCUMENT_DETAILS` | `on` | `off`: documents keep their author and company |
 | `ATTACH_MAX_MB` | `25` | Most MB of new files per email, and per upload |
 | `ATTACH_FOLDERS` | `~` | Folders the computer version may attach files from, separated by commas |
 | `UPLOAD_PAGE` | `on` | `off` removes the upload page from the web version |

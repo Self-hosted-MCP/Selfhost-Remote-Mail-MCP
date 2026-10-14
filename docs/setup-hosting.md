@@ -6,7 +6,7 @@ You need:
 
 - a free [GitHub](https://github.com) account (to make your own copy of this project),
 - your mail settings: address, app password, IMAP and SMTP server ([email-providers.md](email-providers.md)),
-- a login passphrase you make up, 12 or more characters. You type it once when your AI app connects.
+- a login passphrase you make up, 12 or more characters. You type it once when your AI app connects. Save it in your password manager (Apple Passwords, Google Password Manager, 1Password ...) with your server's address, so your phone fills it in for you.
 
 ```mermaid
 flowchart LR

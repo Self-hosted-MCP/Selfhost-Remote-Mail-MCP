@@ -15,6 +15,7 @@ flowchart LR
 |---|---|---|
 | Your mail provider (Gmail, iCloud, ...) | Your login, and the commands to read, move and send | That's how any mail app works |
 | The AI app you connect (Claude, ChatGPT, ...) | The emails, attachments and contacts the AI asks for | So it can answer you. That company's own privacy rules apply to what it receives |
+| Your internet provider's DNS, only when you press **Check domain** | Your email domain's name, to read its public records | To check SPF, DKIM and DMARC. Nothing else is sent |
 | GitHub, only if you turn on `UPDATE_CHECK` | A plain "which release is newest?" request, once a day | To tell you about updates. No login, address or usage is sent |
 | The authors of this project | Nothing | No account, no tracking, no usage statistics |
 
@@ -53,6 +54,11 @@ Everything that travels is encrypted. Everything secret that's stored is encrypt
 - **`secret.key`**, made when `MAIL_SECRET_KEY` isn't set, sits next to the data it unlocks. Set `MAIL_SECRET_KEY` in your host's secret variables so the two are kept apart.
 - **Your computer's disk:** turn on FileVault (Mac), BitLocker (Windows) or LUKS (Linux) so the settings folder is encrypted when the computer is off.
 
+## Your files and tracking
+
+- **Photos you attach lose their location** (GPS), camera and dates. **Documents lose the author's name**, last editor and company. On by default. See [attachments.md](attachments.md#private-details-are-removed).
+- **No tracking.** Many emails hide a tiny picture that tells the sender when and where you opened it. The server never loads pictures or links inside emails, so the sender never learns you opened it. The AI only gets the text.
+
 ## What the server keeps
 
 Everything lives in one folder: `~/.config/selfhost-remote-mail-mcp/` on a computer, or `/data` in Docker and on hosting companies.
@@ -65,6 +71,9 @@ Everything lives in one folder: `~/.config/selfhost-remote-mail-mcp/` on a compu
 | `state/send.lock` | Empty. Makes sure two sends never happen at once | |
 | `mailboxes.json` (in Docker: `/data/mailboxes.json`) | Mailboxes added on the settings page. Their passwords are **encrypted** | Only your user account. The key is `MAIL_SECRET_KEY`, or `secret.key` next to it if that isn't set |
 | `labels.json` | The names you gave mailboxes, like "Work" | Only your user account |
+| `prefs.json` | The switches on the settings page: photo location, document details, device log | Only your user account |
+| `sessions.json` | Browsers remembered on the settings page: a **fingerprint** of each sign-in, its device (like "iPhone · Safari"), network address and times | Only your user account |
+| `signins.json` | The device log: each sign-in of the **last 7 days** (time, page, device, network address, right or wrong passphrase). Turn it off on the settings page or with `DEVICE_LOG=off`, which deletes it | Only your user account |
 | `uploads/` | Files from the upload page, **encrypted**, until they're deleted (1 hour after first use, or 24 hours) | Only your user account |
 | `signature.html`, `signature.md`, `templates/` | What you put there | You |
 

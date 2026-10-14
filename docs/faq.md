@@ -78,6 +78,60 @@ Yes. Each app connects separately: Claude on your phone and Codex on your comput
 </details>
 
 <details>
+<summary><b>How do I open the settings page?</b></summary>
+
+In the web version, go to your server's address with `/settings` on the end, like `https://mail.example.com/settings`, and type your passphrase. On your own computer with `serve`, it's `http://localhost:8765/settings`. The computer-only version (`stdio`) has no page. Use `selfhost-remote-mail-mcp setup` or the settings file.
+
+</details>
+
+<details>
+<summary><b>How do I send a photo or PDF from my phone?</b></summary>
+
+Open `https://your-address/upload`, choose the file and press **Upload**. Then tell your AI app: *"Attach the file I just uploaded to the email to Sam."* More in [attachments.md](attachments.md).
+
+</details>
+
+<details>
+<summary><b>Do I have to type my passphrase every time?</b></summary>
+
+No. AI apps stay connected for up to 90 days. On the settings and upload pages, keep **Remember this device** ticked and that browser stays signed in for 90 days. Let your phone or password manager save the passphrase too, so it fills in with Face ID or a fingerprint when you need it again.
+
+</details>
+
+<details>
+<summary><b>Do photos I send show where I took them?</b></summary>
+
+Not when you attach them through this server. It removes the location from jpg, png and webp photos, and the author's name from documents, before they're attached. You can turn this off on the settings page. See [attachments.md](attachments.md#private-details-are-removed).
+
+</details>
+
+<details>
+<summary><b>My emails land in spam. Can it help?</b></summary>
+
+If you use your own domain, yes: press **Check domain** on the settings page. It checks SPF, DKIM and DMARC and says what to fix. See [mailboxes.md](mailboxes.md#check-your-domain).
+
+</details>
+
+<details>
+<summary><b>I forgot my passphrase. What now?</b></summary>
+
+Set a new one. Nothing is lost, because the passphrase only guards the pages. It doesn't unlock any stored data.
+
+- Hosting company: change `LOGIN_PASSPHRASE` in its variables. The server restarts with the new one.
+- Own server or computer: run `selfhost-remote-mail-mcp set-passphrase`, or change `LOGIN_PASSPHRASE` in the settings file, then restart.
+
+Mailboxes and connected AI apps keep working. Browsers signed in to the settings page are signed out and need the new passphrase.
+
+</details>
+
+<details>
+<summary><b>Can I see who signed in?</b></summary>
+
+Yes. The settings page lists the browsers signed in to it, and every sign-in of the last 7 days, including wrong passphrases and AI app logins, with the device and network address. Sign out any device you don't recognise, then change your passphrase. You can turn this log off on the same page.
+
+</details>
+
+<details>
 <summary><b>How do I update it?</b></summary>
 
 - Computer: `selfhost-remote-mail-mcp update`

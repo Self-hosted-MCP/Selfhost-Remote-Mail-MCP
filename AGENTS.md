@@ -28,6 +28,8 @@ tests/test_multi.py                      several mailboxes: settings, routing, m
                                          encrypted storage, names, scheduler
 tests/test_web.py                        the web pages over HTTP: settings sign-in, cookies, forged forms
 tests/test_attachments.py                file checks, attach_path / attach_content / attach_upload, upload page
+tests/test_privacy.py                    photo location and document author removal, the switches
+tests/test_domain.py                     the domain check (DNS answers faked)
 tests/test_examples.py                   every file in examples/ loads and fills in
 docs/                                    user docs, plain language
 Dockerfile, docker-compose.yml, Caddyfile, render.yaml   the three ways to host it (Railway needs no file: it finds the Dockerfile)
@@ -60,7 +62,7 @@ These are the product. A change that weakens one needs a very good reason and a 
 7. **Private by default.** Never print passwords, `LOGIN_HASH`, tokens or the passphrase. `sent.log` and the scheduler's log lines hold times, recipient counts and `log_key()` fingerprints only, unless `SEND_LOG_DETAILS=on`. OAuth tokens are stored only as `token_key()` fingerprints; never write a raw token to disk. Every mail connection uses `tls_context()` (certificate checked, TLS 1.2+); never add an unencrypted or unverified connection. Files with anything personal are created owner-only (0600). Nothing is ever sent to the project's authors or any third party (no telemetry, no update checks).
 8. **`serve` never starts without a passphrase** of 12+ characters (or a `LOGIN_HASH`). The login page keeps its security headers (`LOGIN_HEADERS`) and always names the app and the return address before asking for the passphrase.
 9. **Keep the credit.** The `PROJECT`, `PROJECT_URL` and `AUTHOR` lines in `pages.py`, the page footers, `NOTICE`, `CITATION.cff` and the copyright line in `LICENSE` credit the original author. Forks may add their own names next to them but should not remove them.
-10. **The settings page stays locked down:** passphrase sign-in with the shared lockout, an HttpOnly + SameSite=Strict cookie scoped to `/settings`, a CSRF token *and* a same-origin check on every POST, `pages.HEADERS` on every page, no scripts. Mail passwords are stored only through `save_web_accounts()` (Fernet, key from `MAIL_SECRET_KEY` or `secret.key`), are never written into a page, and a mailbox is only saved after `test_account()` passes.
+10. **The settings page stays locked down:** passphrase sign-in with the shared lockout, an HttpOnly + SameSite=Strict cookie scoped to `/settings` (sessions stored only as `token_key()` fingerprints in `sessions.json`, all signed out when the passphrase changes), a CSRF token *and* a same-origin check on every POST, `pages.HEADERS` on every page, no scripts. Mail passwords are stored only through `save_web_accounts()` (Fernet, key from `MAIL_SECRET_KEY` or `secret.key`), are never written into a page, and a mailbox is only saved after `test_account()` passes.
 11. **New files are checked before anything is saved.** Every file from `attach_path`, `attach_content`, `attach_upload` and the upload page goes through `check_new_file()`: blocked files are refused, suspect ones need `allow_suspect=true` (which the AI may only set after the user agreed). `attach_path` works only in `stdio`, only inside `ATTACH_FOLDERS`, never for hidden paths or the server's own folders. Uploads live under `/settings/upload` (same session, CSRF and same-origin checks), are Fernet-encrypted, and `clean_uploads()` deletes them 1 hour after first use or after 24 hours. The server never adds text to an email about an attachment.
 
 ## How things work
@@ -99,6 +101,7 @@ When a person asks you to set this server up for them (on their computer, a host
 - Mail passwords, `LOGIN_PASSPHRASE` and `MAIL_SECRET_KEY` go into the host's secret store (or `.env` with `chmod 600` on their own server, or the system keychain via `setup` on a computer). Never into the repository, a commit, a chat message, a log or a file you create elsewhere.
 - Prefer that the person types secrets into the host's dashboard themselves. If you set them through a CLI, don't echo them back.
 - Generate `MAIL_SECRET_KEY` as a long random value (for example `openssl rand -base64 32`). Let the person choose the passphrase, 12+ characters.
+- **Help them save the passphrase** before you finish, because they'll type it on every new device. Suggest their password manager (iCloud Keychain / Apple Passwords, Google Password Manager, 1Password, Bitwarden ...) with the server's address as the website, so their phone fills it in with Face ID or a fingerprint. Walk them through it if they ask, but never store the passphrase yourself, in a file, or in your notes.
 
 **The host must have** (check each one; say clearly if a host can't do one)
 
@@ -116,6 +119,7 @@ When a person asks you to set this server up for them (on their computer, a host
 4. Help them connect their AI app ([docs/connect-your-ai.md](docs/connect-your-ai.md)) and suggest "Always ask" for `send_email` and `schedule_send`.
 5. Never send a test email unless they ask for one, and then only to their own address.
 6. Tell them what you verified and what you couldn't (for example the phone app, if you have no way to open it).
+7. Remind them where things are: the settings page (`/settings`), the upload page (`/upload`), and that the passphrase is in their password manager. If they forget it, they set a new one (see [docs/faq.md](docs/faq.md)).
 
 ## Wanted
 

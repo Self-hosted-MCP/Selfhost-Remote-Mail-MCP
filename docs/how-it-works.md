@@ -107,7 +107,7 @@ Every request gets a small "mailboxes" object holding only the mailboxes that ap
 
 ## The settings page
 
-`/settings` is a small set of plain pages, with no scripts and nothing loaded from other websites. You sign in with your passphrase, and a cookie keeps you signed in for 12 hours. Every form carries a secret token and must come from the page itself. Mailboxes you add there are tested, then saved in `mailboxes.json` with their passwords encrypted (Fernet, from the `cryptography` library).
+`/settings` is a small set of plain pages, with no scripts and nothing loaded from other websites. You sign in with your passphrase, and a cookie keeps you signed in: 90 days with **Remember this device**, otherwise until the browser closes. Every form carries a secret token and must come from the page itself. Mailboxes you add there are tested, then saved in `mailboxes.json` with their passwords encrypted (Fernet, from the `cryptography` library).
 
 ## Limits that keep answers small
 

@@ -136,7 +136,8 @@ If you or a mail app edit the draft in a way that drops the saved time, the emai
 
 The settings page (`/settings`, web version only) can add and change mailboxes, so it's protected like the login page and more:
 
-- **Your passphrase opens it**, with the same lock after 5 wrong tries. A sign-in lasts 12 hours, and a server restart signs you out.
+- **Your passphrase opens it**, with the same lock after 5 wrong tries. With **Remember this device** (on by default) a browser stays signed in for 90 days; without it, until the browser closes (at most 12 hours). Changing the passphrase signs every browser out. Untick it on a computer other people use.
+- **A device log shows who signed in:** the browsers signed in now, and every sign-in of the last 7 days (wrong passphrases and AI app logins too), with device and network address. Sign out any device from there. You can turn the log off on the page, or with `DEVICE_LOG=off`.
 - **The sign-in cookie is locked down:** it can't be read by scripts, isn't sent to other websites, and only works on `/settings`.
 - **Every form carries a secret token** and must come from the page itself, so another website can't submit forms on your behalf.
 - **Mail passwords are stored encrypted** and never shown again. To change one, type a new one.
@@ -169,7 +170,8 @@ Details in [attachments.md](attachments.md).
 1. **Cut access at the source:** delete the app password at your mail provider. The server can no longer log in.
 2. **Log every app out:** delete `oauth.json` and restart.
 3. **Check what was sent:** look in your Sent folder. The server saves a copy of everything it sends there.
-4. **Change your passphrase:** run `selfhost-remote-mail-mcp set-passphrase`, or change `LOGIN_PASSPHRASE` and restart.
+4. **Change your passphrase:** run `selfhost-remote-mail-mcp set-passphrase`, or change `LOGIN_PASSPHRASE` and restart. This also signs every browser out of the settings page.
+5. **Look at the device log** on the settings page to see which devices signed in, and when.
 
 ## Checked against MCP and email security guidance
 

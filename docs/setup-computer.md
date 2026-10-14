@@ -148,7 +148,7 @@ Your phone can't reach your computer directly. Two pieces make it work:
 selfhost-remote-mail-mcp set-passphrase
 ```
 
-Use 12 or more characters. Only a scrambled version (hash) is saved. You type the passphrase once when your AI app connects.
+Use 12 or more characters. Only a scrambled version (hash) is saved. You type the passphrase once when your AI app connects. Save it in your password manager (Apple Passwords, Google Password Manager, 1Password ...) with your server's address, so your phone fills it in for you.
 
 ### b. Get a fixed public address
 
