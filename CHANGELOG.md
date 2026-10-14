@@ -2,6 +2,13 @@
 
 All notable changes to this project. Versions follow [semantic versioning](https://semver.org).
 
+## 0.3.0 (2026-10-14)
+
+- **Attach new files**, not only ones from other emails: from your computer (`attach_path`, computer version), small files the AI writes (`attach_content`, up to 2 MB), or the new **upload page** (`attach_upload`).
+- **Upload page** at `/upload` (web version, behind your passphrase): upload a file, then tell your AI "attach the file I just uploaded" or use its name. The AI can list the waiting files to check with you first. Files are stored encrypted and deleted 1 hour after first going into a draft, or after 24 hours if never used.
+- **File checks:** photos, PDFs, documents, audio, video and zips are allowed. Programs and scripts, files whose content doesn't match their name, and zips with programs inside are refused. Suspect files (macros, svg and html, archives that can't be checked) are only attached after you say yes. See [docs/attachments.md](docs/attachments.md).
+- New settings: `ATTACH_MAX_MB` (25), `ATTACH_FOLDERS` (your home folder), `UPLOAD_PAGE` (on).
+
 ## 0.2.0 (2026-10-14)
 
 - **Several mailboxes:** up to 5 (`MAX_MAILBOXES`), at any providers, from the settings file (`MAIL_2_*` ...), `setup`, or the new settings page. The older `READ_ONLY_*` settings still work.

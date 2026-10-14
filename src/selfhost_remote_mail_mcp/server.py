@@ -107,6 +107,7 @@ SETTINGS = ("MAIL_ADDRESS", "MAIL_NAME", "MAIL_USERNAME", "SMTP_USERNAME", "MAIL
             "SEND_MINUTE_LIMIT", "SCHEDULED_SEND", "LOGIN_HASH", "LOGIN_PASSPHRASE", "MAIL_SIGNATURE",
             "MAIL_READ_ONLY", "SEND_ALLOWED_RECIPIENTS", "SEND_LOG_DETAILS", "MAIL_MODE", "MAX_MAILBOXES",
             "MAIL_SECRET_KEY", "SETTINGS_PAGE", "MAIL_LABEL", "UPDATE_CHECK",
+            "ATTACH_MAX_MB", "ATTACH_FOLDERS", "UPLOAD_PAGE",
             "READ_ONLY_ADDRESS", "READ_ONLY_USERNAME", "READ_ONLY_PASSWORD",
             "RENDER_EXTERNAL_URL", "RAILWAY_PUBLIC_DOMAIN")
 
@@ -1009,6 +1010,463 @@ def load_attachment(c: IMAPClient, att_id: str) -> EmailMessage:
     return parts[int(m[3])]
 
 
+# ---------------------------------------------------------------- new files (attach from the computer, the AI app, or the upload page)
+
+ATTACH_MAX_MB = 25                 # per email, what most providers accept (ATTACH_MAX_MB)
+CONTENT_MAX = 2_000_000            # attach_content: small files the AI app writes itself
+UPLOADS = STATE_DIR / "uploads"    # the upload page's files, encrypted, deleted by clean_uploads()
+UPLOAD_KEEP_USED = 3600            # deleted 1 hour after first going into a draft
+UPLOAD_KEEP_UNUSED = 24 * 3600     # or after 24 hours if never used
+UPLOAD_MAX_FILES = 20
+CODE_LETTERS = "23456789ABCDEFGHJKMNPQRSTUVWXYZ"   # no 0/O, 1/I/L: easy to read out and type
+
+OOXML = "application/vnd.openxmlformats-officedocument."
+SAFE_TYPES = {
+    "jpg": "image/jpeg", "jpeg": "image/jpeg", "png": "image/png", "gif": "image/gif", "webp": "image/webp",
+    "heic": "image/heic", "heif": "image/heif", "tif": "image/tiff", "tiff": "image/tiff", "bmp": "image/bmp",
+    "avif": "image/avif", "pdf": "application/pdf",
+    "docx": OOXML + "wordprocessingml.document", "xlsx": OOXML + "spreadsheetml.sheet",
+    "pptx": OOXML + "presentationml.presentation", "pages": "application/vnd.apple.pages",
+    "numbers": "application/vnd.apple.numbers", "key": "application/vnd.apple.keynote",
+    "odt": "application/vnd.oasis.opendocument.text", "ods": "application/vnd.oasis.opendocument.spreadsheet",
+    "odp": "application/vnd.oasis.opendocument.presentation", "txt": "text/plain", "csv": "text/csv",
+    "rtf": "application/rtf", "md": "text/markdown", "epub": "application/epub+zip",
+    "mp3": "audio/mpeg", "m4a": "audio/mp4", "wav": "audio/wav", "aac": "audio/aac", "mp4": "video/mp4",
+    "mov": "video/quicktime", "ics": "text/calendar", "vcf": "text/vcard", "eml": "application/octet-stream",
+    "zip": "application/zip", "tar.gz": "application/gzip", "tgz": "application/gzip",
+}
+# Allowed, but only after the user says yes: (why, for the user), (a note the user may add for the receiver)
+SUSPECT_TYPES = {
+    "doc": ("application/msword", "old Word files can hold macros (small programs)", "may contain macros"),
+    "xls": ("application/vnd.ms-excel", "old Excel files can hold macros (small programs)", "may contain macros"),
+    "ppt": ("application/vnd.ms-powerpoint", "old PowerPoint files can hold macros (small programs)", "may contain macros"),
+    "docm": ("application/vnd.ms-word.document.macroEnabled.12", "it's a Word file with macros (small programs)", "contains macros"),
+    "xlsm": ("application/vnd.ms-excel.sheet.macroEnabled.12", "it's an Excel file with macros (small programs)", "contains macros"),
+    "pptm": ("application/vnd.ms-powerpoint.presentation.macroEnabled.12", "it's a PowerPoint file with macros (small programs)", "contains macros"),
+    "svg": ("image/svg+xml", "svg images can hold scripts", "is an svg image"),
+    "html": ("text/html", "web pages can hold scripts", "is a web page file"),
+    "htm": ("text/html", "web pages can hold scripts", "is a web page file"),
+    "rar": ("application/vnd.rar", "the server can't look inside rar files", "is a rar archive"),
+    "7z": ("application/x-7z-compressed", "the server can't look inside 7z files", "is a 7z archive"),
+}
+BLOCKED_TYPES = {
+    "exe", "msi", "app", "dmg", "pkg", "mpkg", "apk", "aab", "ipa", "deb", "rpm", "bat", "cmd", "com", "ps1", "psm1",
+    "sh", "bash", "zsh", "command", "tool", "js", "mjs", "cjs", "jse", "vbs", "vbe", "wsf", "wsh", "hta", "jar",
+    "scr", "pif", "cpl", "msc", "dll", "sys", "lnk", "url", "inf", "reg", "iso", "img", "vhd", "vhdx", "appimage",
+    "py", "pyc", "rb", "pl", "php", "scpt", "applescript", "workflow", "action", "xll", "xlam", "ppam", "msix",
+    "appx", "gadget", "chm", "elf", "bin", "run", "out", "so", "dylib",
+}
+EXECUTABLE_MAGIC = (b"MZ", b"\x7fELF", b"\xfe\xed\xfa\xce", b"\xfe\xed\xfa\xcf", b"\xce\xfa\xed\xfe",
+                    b"\xcf\xfa\xed\xfe", b"\xca\xfe\xba\xbe")
+ZIP_KINDS = ("docx", "xlsx", "pptx", "pages", "numbers", "key", "odt", "ods", "odp", "epub", "zip",
+             "docm", "xlsm", "pptm")
+TEXT_KINDS = ("txt", "csv", "md", "ics", "vcf", "eml", "svg", "html", "htm")
+ISO_BOXES = (b"ftyp", b"moov", b"mdat", b"wide", b"free", b"skip", b"pnot")
+PDF_CODE = re.compile(rb"/(?:JavaScript|JS|Launch|EmbeddedFiles?|RichMedia)\b")
+HIDDEN_CHARS = re.compile("[​-‏‪-‮⁦-⁩]")   # can make "gpj.exe" look like "exe.jpg"
+
+
+@dataclass
+class NewFile:
+    """One file about to be attached, after the checks. level: safe, suspect or blocked."""
+    name: str
+    kind: str
+    mime: str
+    data: bytes
+    level: str = "safe"
+    why: str = ""           # for the user
+    receiver_note: str = ""  # a line the user may choose to add for the receiver
+
+    @property
+    def note(self) -> str:
+        return f"{self.name} {self.receiver_note}, that's expected." if self.receiver_note else ""
+
+
+def file_kind(name: str) -> str:
+    low = name.lower()
+    if low.endswith(".tar.gz"):
+        return "tar.gz"
+    return low.rsplit(".", 1)[1] if "." in low.strip(".") else ""
+
+
+def clean_file_name(name: str) -> str:
+    base = re.split(r"[\\/]", str(name or ""))[-1]
+    base = "".join(ch for ch in base if ch.isprintable()).strip().strip(".")
+    return base[:150] or "file"
+
+
+def looks_like(kind: str, data: bytes) -> bool:
+    """Does the content match what the name says? (A program renamed to photo.jpg doesn't.)"""
+    head = data[:16]
+    if kind in ("jpg", "jpeg"):
+        return head.startswith(b"\xff\xd8\xff")
+    if kind == "png":
+        return head.startswith(b"\x89PNG\r\n\x1a\n")
+    if kind == "gif":
+        return head.startswith((b"GIF87a", b"GIF89a"))
+    if kind == "webp":
+        return head[:4] == b"RIFF" and head[8:12] == b"WEBP"
+    if kind == "wav":
+        return head[:4] == b"RIFF" and head[8:12] == b"WAVE"
+    if kind in ("heic", "heif", "avif", "m4a", "mp4", "mov"):
+        return head[4:8] in ISO_BOXES
+    if kind in ("tif", "tiff"):
+        return head.startswith((b"II*\x00", b"MM\x00*"))
+    if kind == "bmp":
+        return head.startswith(b"BM")
+    if kind == "pdf":
+        return b"%PDF-" in data[:1024]
+    if kind in ZIP_KINDS:
+        return head.startswith((b"PK\x03\x04", b"PK\x05\x06"))
+    if kind in ("doc", "xls", "ppt"):
+        return head.startswith(b"\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1")
+    if kind == "rtf":
+        return head.startswith(b"{\\rtf")
+    if kind in ("tar.gz", "tgz"):
+        return head.startswith(b"\x1f\x8b")
+    if kind == "rar":
+        return head.startswith(b"Rar!\x1a\x07")
+    if kind == "7z":
+        return head.startswith(b"7z\xbc\xaf\x27\x1c")
+    if kind == "mp3":
+        return head.startswith(b"ID3") or (len(head) > 1 and head[0] == 0xFF and head[1] & 0xE0 == 0xE0)
+    if kind == "aac":
+        return head.startswith(b"ADIF") or (len(head) > 1 and head[0] == 0xFF and head[1] & 0xF6 == 0xF0)
+    if kind in TEXT_KINDS:
+        sample = data[:8192]
+        return sample.startswith((b"\xff\xfe", b"\xfe\xff")) or b"\x00" not in sample   # UTF-16 text has zeros
+    return False
+
+
+def inside_names(kind: str, data: bytes) -> tuple[list[str], bool, list[str]]:
+    """(file names inside an archive, whether any is password protected, programs hidden under another name).
+    Raises ValueError for a broken archive."""
+    import tarfile
+    import zipfile
+    import zlib
+    names, locked, hidden = [], False, []
+    if kind in ("tar.gz", "tgz"):
+        unpack = zlib.decompressobj(wbits=31)
+        raw = unpack.decompress(data, 200_000_000)   # a "zip bomb" stops here instead of filling the memory
+        if unpack.unconsumed_tail:
+            raise ValueError("it unpacks to more than 200 MB, too big to check")
+        try:
+            with tarfile.open(fileobj=io.BytesIO(raw)) as tar:
+                for m in tar.getmembers():
+                    if m.isfile():
+                        names.append(m.name)
+                        f = tar.extractfile(m)
+                        if f and f.read(4).startswith(EXECUTABLE_MAGIC):
+                            hidden.append(m.name)
+        except tarfile.TarError:
+            raise ValueError("it isn't a real tar.gz file")
+        return names, locked, hidden
+    try:
+        with zipfile.ZipFile(io.BytesIO(data)) as z:
+            for info in z.infolist()[:10_000]:
+                if info.is_dir() or info.filename.startswith("__MACOSX/") or info.filename.endswith(".DS_Store"):
+                    continue
+                names.append(info.filename)
+                if info.flag_bits & 1:
+                    locked = True
+                    continue
+                with z.open(info) as f:
+                    if f.read(4).startswith(EXECUTABLE_MAGIC):
+                        hidden.append(info.filename)
+    except (zipfile.BadZipFile, NotImplementedError, OSError, EOFError, zlib.error):
+        raise ValueError(f"it isn't a real .{kind} file")
+    return names, locked, hidden
+
+
+def check_new_file(name: str, data: bytes) -> NewFile:
+    """Sorts a file into safe, suspect (attach only after the user says yes) or blocked."""
+    disguised = bool(HIDDEN_CHARS.search(str(name or "")))
+    name = clean_file_name(name)
+    kind = file_kind(name)
+    f = NewFile(name=name, kind=kind, mime="application/octet-stream", data=data)
+
+    def block(why: str) -> NewFile:
+        f.level, f.why = "blocked", why
+        return f
+
+    def suspect(why: str, note: str) -> None:
+        if f.level == "safe":
+            f.level, f.why, f.receiver_note = "suspect", why, note
+
+    if disguised:
+        return block("its name has hidden characters that can disguise the real file type")
+    if kind in BLOCKED_TYPES:
+        return block(f".{kind} files are programs or scripts, which are never attached")
+    if kind not in SAFE_TYPES and kind not in SUSPECT_TYPES:
+        return block(f".{kind or '(no extension)'} isn't on the list of allowed file types (see docs/attachments.md)")
+    if data[:4].startswith(EXECUTABLE_MAGIC) and kind not in TEXT_KINDS:
+        return block(f"it's really a program, only named like a .{kind} file")
+    if not looks_like(kind, data):
+        return block(f"its content doesn't match its name: it isn't a real .{kind} file")
+    if kind in SUSPECT_TYPES:
+        f.mime, why, note = SUSPECT_TYPES[kind]
+        suspect(why, note)
+    else:
+        f.mime = SAFE_TYPES[kind]
+    if kind == "pdf" and PDF_CODE.search(data):
+        suspect("this PDF has code or hidden files inside it", "has interactive content")
+    if kind in ZIP_KINDS or kind in ("tar.gz", "tgz"):
+        try:
+            names, locked, hidden = inside_names(kind, data)
+        except ValueError as exc:
+            if kind in ("zip", "tar.gz", "tgz") and "too big" in str(exc):
+                suspect(f"the server can't check inside: {exc}", "is a large archive")
+                return f
+            return block(str(exc))
+        archive = kind in ("zip", "tar.gz", "tgz")   # documents keep their own parts (.bin, .xml): only archives are listed
+        bad = [n for n in names if archive and file_kind(n.rsplit("/", 1)[-1]) in BLOCKED_TYPES]
+        if hidden or bad:
+            return block("it has programs or scripts inside: " + ", ".join((hidden + bad)[:5]))
+        if any(n.lower().endswith("vbaproject.bin") for n in names):
+            suspect("it has macros (small programs) inside", "contains macros")
+        if locked:
+            suspect("it has a password, so the server can't check what's inside", "is password protected")
+        if archive:
+            odd = [n for n in names if file_kind(n.rsplit("/", 1)[-1]) not in SAFE_TYPES]
+            if odd:
+                suspect("it has unusual files inside: " + ", ".join(odd[:5]), "contains a mix of file types")
+    return f
+
+
+def attach_limit(cfg: dict | None = None) -> int:
+    try:
+        return max(1, int((cfg or read_env()).get("ATTACH_MAX_MB") or ATTACH_MAX_MB)) * 1024 * 1024
+    except ValueError:
+        return ATTACH_MAX_MB * 1024 * 1024
+
+
+def attach_folders(cfg: dict) -> list[Path]:
+    raw = cfg.get("ATTACH_FOLDERS") or "~"
+    return [Path(p.strip()).expanduser().resolve() for p in raw.split(",") if p.strip()]
+
+
+def read_local_file(path: str, cfg: dict) -> NewFile:
+    """attach_path, on the user's own computer only. Hidden files and folders (.ssh, .env ...) and the server's
+    own folders are never read, and only folders in ATTACH_FOLDERS (default: the home folder) are allowed."""
+    p = Path(path.strip()).expanduser()
+    if not p.is_absolute():
+        p = Path.home() / p
+    try:
+        real = p.resolve(strict=True)
+    except (OSError, RuntimeError):
+        raise ToolError(f"File not found: {path}")
+    allowed = attach_folders(cfg)
+    if not any(real.is_relative_to(a) for a in allowed):
+        raise ToolError(f"{path} isn't in a folder files may be attached from ({', '.join(map(str, allowed))}). "
+                        "Change ATTACH_FOLDERS to allow more.")
+    if any(part.startswith(".") for part in real.parts) or any(
+            real.is_relative_to(d.resolve()) for d in (CONFIG_DIR, STATE_DIR)):
+        raise ToolError(f"{path} is a hidden or private file, which is never attached.")
+    if real.is_dir():
+        raise ToolError(f"{path} is a folder. Compress it into a .zip first (in Pages, Numbers or Keynote: "
+                        "File > Export To, or use a .zip).")
+    if real.stat().st_size > attach_limit(cfg):
+        raise ToolError(f"{real.name} is {human_size(real.stat().st_size)}, more than the "
+                        f"{human_size(attach_limit(cfg))} an email may carry.")
+    return check_new_file(real.name, real.read_bytes())
+
+
+def content_file(item: dict) -> NewFile:
+    """attach_content: a file the AI app wrote itself, as text or base64."""
+    if not isinstance(item, dict) or not str(item.get("name", "")).strip():
+        raise ToolError('Each attach_content item needs a name, e.g. {"name": "notes.txt", "text": "..."}.')
+    if item.get("text") is not None:
+        data = str(item["text"]).encode()
+    elif item.get("base64") is not None:
+        try:
+            data = base64.b64decode(str(item["base64"]), validate=True)
+        except ValueError:
+            raise ToolError(f"{item['name']}: base64 isn't valid.")
+    else:
+        raise ToolError(f'{item["name"]}: give its content as "text" or "base64".')
+    if len(data) > CONTENT_MAX:
+        raise ToolError(f"{item['name']} is {human_size(len(data))}. Files the AI app passes in may be up to "
+                        f"{human_size(CONTENT_MAX)}; for bigger ones use the upload page or attach_path.")
+    return check_new_file(str(item["name"]), data)
+
+
+def gather_new_files(attach_path, attach_content, attach_upload, allow_suspect: bool) -> tuple[list[NewFile], list[str]]:
+    """Reads and checks every new file before anything is saved. Returns the files and the upload codes used."""
+    cfg = read_env()
+    files: list[NewFile] = []
+    if attach_path:
+        if REMOTE:
+            raise ToolError("attach_path only works when this server runs on the user's own computer. Here, the user "
+                            f"can upload the file on {public_url(cfg).rstrip('/')}/upload and tell you its name "
+                            "(attach_upload), or you can pass a small file you wrote with attach_content.")
+        files += [read_local_file(p, cfg) for p in attach_path]
+    files += [content_file(item) for item in attach_content or []]
+    codes = []
+    for code in attach_upload or []:
+        meta, data = load_upload(code)
+        codes.append(meta["code"])
+        files.append(check_new_file(meta["name"], data))
+    blocked = [f for f in files if f.level == "blocked"]
+    if blocked:
+        raise ToolError("Not attached, nothing was saved: " + "; ".join(f"{f.name}: {f.why}" for f in blocked) + ".")
+    suspect = [f for f in files if f.level == "suspect"]
+    if suspect and not allow_suspect:
+        notes = " ".join(f.note for f in suspect)
+        raise ToolError(
+            "Nothing was saved yet. Ask the user first, these files need their OK:\n"
+            + "\n".join(f"- {f.name}: {f.why}" for f in suspect)
+            + "\nIf they say yes, call draft again with the same arguments plus allow_suspect=true. "
+            f'You may suggest a line they could add for the receiver (only if they want it): "{notes}"')
+    total = sum(len(f.data) for f in files)
+    if total > attach_limit(cfg):
+        raise ToolError(f"These files add up to {human_size(total)}, more than the {human_size(attach_limit(cfg))} "
+                        "an email may carry (ATTACH_MAX_MB). Send them in separate emails, or share a link.")
+    return files, codes
+
+
+# Uploads: one encrypted file for the content and one for the details, named by the code.
+
+def upload_paths(code: str) -> tuple[Path, Path]:
+    code = code.strip().upper()
+    if not re.fullmatch(rf"F-[{CODE_LETTERS}]{{6}}", code):
+        raise ToolError(f"{code!r} isn't an upload code. They look like F-7Q2KMX.")
+    return UPLOADS / f"{code}.meta", UPLOADS / f"{code}.data"
+
+
+def _read_meta(path: Path) -> dict | None:
+    try:
+        return json.loads(secret_box().decrypt(path.read_bytes()))
+    except Exception:   # unreadable or made with another key: treat as gone
+        return None
+
+
+def _write_meta(meta: dict) -> None:
+    meta_path, _ = upload_paths(meta["code"])
+    tmp = meta_path.with_suffix(".tmp")
+    tmp.write_bytes(secret_box().encrypt(json.dumps(meta).encode()))
+    tmp.chmod(0o600)
+    tmp.replace(meta_path)
+
+
+def delete_upload(code: str) -> None:
+    for path in upload_paths(code):
+        path.unlink(missing_ok=True)
+
+
+def upload_expires(meta: dict) -> float:
+    return (meta["used"] + UPLOAD_KEEP_USED) if meta.get("used") else (meta["uploaded"] + UPLOAD_KEEP_UNUSED)
+
+
+def clean_uploads(now: float | None = None) -> int:
+    """Deletes uploads 1 hour after they first went into a draft, or after 24 hours if never used."""
+    now = now or time.time()
+    gone = 0
+    for meta_path in UPLOADS.glob("F-*.meta") if UPLOADS.exists() else []:
+        meta = _read_meta(meta_path)
+        if meta is None or upload_expires(meta) <= now:
+            delete_upload(meta_path.stem)
+            gone += 1
+    for data_path in UPLOADS.glob("F-*.data") if UPLOADS.exists() else []:
+        if not data_path.with_suffix(".meta").exists():
+            data_path.unlink(missing_ok=True)
+    return gone
+
+
+def list_uploads() -> list[dict]:
+    clean_uploads()
+    metas = [_read_meta(p) for p in UPLOADS.glob("F-*.meta")] if UPLOADS.exists() else []
+    return sorted((m for m in metas if m), key=lambda m: m["uploaded"], reverse=True)
+
+
+def save_upload(name: str, data: bytes) -> dict:
+    """Checks and stores one file from the upload page. Blocked files are refused (ToolError)."""
+    if len(data) > attach_limit():
+        raise ToolError(f"That file is {human_size(len(data))}, more than the {human_size(attach_limit())} "
+                        "an email may carry.")
+    checked = check_new_file(name, data)
+    if checked.level == "blocked":
+        raise ToolError(f"{checked.name} wasn't uploaded: {checked.why}.")
+    if len(list_uploads()) >= UPLOAD_MAX_FILES:
+        raise ToolError(f"There are already {UPLOAD_MAX_FILES} files waiting. Delete some first.")
+    UPLOADS.mkdir(mode=0o700, parents=True, exist_ok=True)
+    while True:
+        code = "F-" + "".join(secrets.choice(CODE_LETTERS) for _ in range(6))
+        if not upload_paths(code)[0].exists():
+            break
+    _, data_path = upload_paths(code)
+    data_path.write_bytes(secret_box().encrypt(data))
+    data_path.chmod(0o600)
+    meta = {"code": code, "name": checked.name, "size": len(data), "level": checked.level, "why": checked.why,
+            "uploaded": time.time(), "used": None}
+    _write_meta(meta)
+    return meta
+
+
+def find_upload(ref: str) -> str:
+    """An upload's code from 'latest', its code, or (part of) its file name."""
+    found = list_uploads()
+    if not found:
+        raise ToolError("There are no uploaded files. The user can add one on the upload page (/upload).")
+    ref = ref.strip()
+    if ref.lower() == "latest":
+        return found[0]["code"]
+    if re.fullmatch(r"(?i)F-\w{6}", ref):
+        return ref.upper()
+    waiting = "; ".join(f"{m['name']} ({m['code']})" for m in found)
+    matches = [m for m in found if m["name"].lower() == ref.lower()] or \
+              [m for m in found if ref.lower() in m["name"].lower()]
+    if not matches:
+        raise ToolError(f"No uploaded file is called {ref!r}. Waiting: {waiting}.")
+    if len(matches) > 1:
+        raise ToolError(f"Several uploaded files match {ref!r}: "
+                        + "; ".join(f"{m['name']} ({m['code']})" for m in matches) + ". Ask the user which one.")
+    return matches[0]["code"]
+
+
+def load_upload(code: str) -> tuple[dict, bytes]:
+    """code: 'latest', an upload code, or the file's name."""
+    code = find_upload(code)
+    clean_uploads()
+    meta_path, data_path = upload_paths(code)
+    meta = _read_meta(meta_path) if meta_path.exists() else None
+    if meta is None or not data_path.exists():
+        raise ToolError(f"Upload {code.strip().upper()} doesn't exist. Uploads are deleted 1 hour after they're "
+                        "first attached, or after 24 hours if never used.")
+    return meta, secret_box().decrypt(data_path.read_bytes())
+
+
+def mark_uploads_used(codes: list[str]) -> None:
+    """Starts each upload's 1-hour clock the first time it goes into a draft."""
+    for code in codes:
+        meta_path, _ = upload_paths(code)
+        meta = _read_meta(meta_path) if meta_path.exists() else None
+        if meta and not meta.get("used"):
+            meta["used"] = time.time()
+            _write_meta(meta)
+
+
+def uploads_text() -> str:
+    found = list_uploads()
+    if not found:
+        return "No files are waiting on the upload page (/upload)."
+    now, lines = time.time(), ["Files waiting on the upload page (newest first):"]
+    for m in found:
+        left = max(1, round((upload_expires(m) - now) / 60))
+        lines.append(f"- {m['name']} ({human_size(m['size'])}, code {m['code']}, "
+                     + ("already in a draft" if m.get("used") else "not used yet")
+                     + f", deleted in {left} min)" + (f" SUSPECT: {m['why']}" if m["level"] == "suspect" else ""))
+    return "\n".join(lines)
+
+
+def upload_cleaner() -> None:
+    while True:
+        time.sleep(300)
+        try:
+            clean_uploads()
+        except Exception as exc:
+            print(f"uploads: {type(exc).__name__}", file=sys.stderr, flush=True)
+
+
 # ---------------------------------------------------------------- sending (now and scheduled)
 
 SCHEDULE_HEADER = "X-Mail-MCP-Send-At"     # draft-only: when the scheduler sends it; never sent
@@ -1658,7 +2116,17 @@ def changelog_html(versions: int = 3) -> str:
     return ""
 
 
-def settings_page(provider: "PassphraseOAuth", session: dict) -> HTMLResponse:
+def upload_page(session: dict) -> HTMLResponse:
+    now = time.time()
+    files = [{**m, "size_text": human_size(m["size"]), "minutes_left": max(1, round((upload_expires(m) - now) / 60))}
+             for m in list_uploads()]
+    flash, session["flash"] = session["flash"], None
+    accept = ",".join(f".{k}" for k in [*SAFE_TYPES, *SUSPECT_TYPES])
+    body = pages.uploads(session["csrf"], files, flash, human_size(attach_limit()), accept)
+    return HTMLResponse(body, headers=pages.HEADERS)
+
+
+def settings_page(provider: "PassphraseOAuth", session: dict, uploads_on: bool = False) -> HTMLResponse:
     cfg = read_env()
     boxes = [{**asdict(a)} for a in all_accounts(cfg)]
     apps = [{"client_id": cid, "name": c.client_name or "An AI app",
@@ -1667,7 +2135,8 @@ def settings_page(provider: "PassphraseOAuth", session: dict) -> HTMLResponse:
              "may_send": cid not in provider.grants or cid in provider.senders} for cid, c in provider.clients.items()]
     flash, session["flash"] = session["flash"], None
     about = {"version": current_version(), "update": update_status(), "changelog": changelog_html()}
-    body = pages.settings(session["csrf"], boxes, apps, flash, max_mailboxes(cfg), server_read_only(cfg), about)
+    body = pages.settings(session["csrf"], boxes, apps, flash, max_mailboxes(cfg), server_read_only(cfg), about,
+                          uploads_on)
     return HTMLResponse(body, headers=pages.HEADERS)
 
 
@@ -1835,30 +2304,36 @@ def build_server(remote: bool) -> MCPServer:
                                 samesite="strict", path="/" if secure else "/settings")
             return response
 
+        uploads_on = is_on(cfg.get("UPLOAD_PAGE") or "on")
+        after_login = {"/settings", "/settings/upload"} if uploads_on else {"/settings"}
+
         @server.custom_route("/settings", methods=["GET"])
         async def settings_home(request: Request) -> Response:
             session = get_session(request)
             if session is None:
                 return HTMLResponse(pages.settings_login(), headers=pages.HEADERS)
-            return settings_page(provider, session)
+            return settings_page(provider, session, uploads_on)
 
         @server.custom_route("/settings/login", methods=["POST"])
         async def settings_login(request: Request) -> Response:
             if not same_origin(request):
                 return Response("Forbidden", status_code=403)
             form = await request.form()
+            target = str(form.get("next", ""))
+            target = target if target in after_login else "/settings"
             with provider.lock:
                 locked = provider.locked_out()
             if locked:
-                return HTMLResponse(pages.settings_login("Too many wrong tries. Wait 15 minutes."), status_code=403,
-                                    headers=pages.HEADERS)
+                return HTMLResponse(pages.settings_login("Too many wrong tries. Wait 15 minutes.", target),
+                                    status_code=403, headers=pages.HEADERS)
             if not passphrase_ok(str(form.get("passphrase", ""))):
                 with provider.lock:
                     provider.failures.append(time.time())
                 await asyncio.sleep(1)   # slows down guessing
-                return HTMLResponse(pages.settings_login("Wrong passphrase."), status_code=401, headers=pages.HEADERS)
+                return HTMLResponse(pages.settings_login("Wrong passphrase.", target), status_code=401,
+                                    headers=pages.HEADERS)
             token, _ = new_session()
-            return with_cookie(RedirectResponse("/settings", status_code=303, headers={"Cache-Control": "no-store"}),
+            return with_cookie(RedirectResponse(target, status_code=303, headers={"Cache-Control": "no-store"}),
                                token, SESSION_TTL)
 
         @server.custom_route("/settings/logout", methods=["POST"])
@@ -1890,6 +2365,51 @@ def build_server(remote: bool) -> MCPServer:
         @server.custom_route("/settings/app", methods=["POST"])
         async def settings_app(request: Request) -> Response:
             return await settings_post(request, "app")
+
+        if uploads_on:
+            @server.custom_route("/upload", methods=["GET"])
+            async def upload_short(request: Request) -> Response:
+                return RedirectResponse("/settings/upload", status_code=303)
+
+            @server.custom_route("/settings/upload", methods=["GET"])
+            async def upload_home(request: Request) -> Response:
+                session = get_session(request)
+                if session is None:
+                    return HTMLResponse(pages.settings_login(after="/settings/upload"), headers=pages.HEADERS)
+                return upload_page(session)
+
+            @server.custom_route("/settings/upload", methods=["POST"])
+            async def upload_post(request: Request) -> Response:
+                session = get_session(request)
+                if session is None:
+                    return RedirectResponse("/settings/upload", status_code=303)
+                if not same_origin(request):
+                    return Response("Forbidden: this form didn't come from the upload page.", status_code=403)
+                limit = attach_limit()
+                try:
+                    size = int(request.headers.get("content-length", ""))
+                except ValueError:
+                    return Response("Length required.", status_code=411)
+                if size > limit + 100_000:   # refused before anything is read or stored
+                    session["flash"] = ("error", f"That file is too big. Each email may carry {human_size(limit)}.")
+                    return RedirectResponse("/settings/upload", status_code=303)
+                form = await request.form(max_files=1, max_fields=4)
+                if not hmac.compare_digest(str(form.get("csrf", "")), session["csrf"]):
+                    return Response("Forbidden: this form didn't come from the upload page.", status_code=403)
+                action, upload = str(form.get("action", "upload")), form.get("file")
+                try:
+                    if action == "delete":
+                        delete_upload(str(form.get("code", "")))
+                        session["flash"] = ("ok", "Deleted from the server.")
+                    elif upload is None or isinstance(upload, str) or not upload.filename:
+                        session["flash"] = ("error", "Choose a file first.")
+                    else:
+                        data = await upload.read(limit + 1)
+                        meta = await asyncio.to_thread(save_upload, upload.filename, data)
+                        session["flash"] = ("ok", f"{meta['name']} is uploaded. Now tell your AI app to attach it.")
+                except ToolError as exc:
+                    session["flash"] = ("error", str(exc))
+                return RedirectResponse("/settings/upload", status_code=303, headers={"Cache-Control": "no-store"})
 
     return server
 
@@ -2107,25 +2627,38 @@ def draft(to: list[str] | None = None, cc: list[str] | None = None, bcc: list[st
           reply_all: str | None = None, forward: str | None = None, edit: str | None = None,
           attach_from: list[str] | None = None, template: str | None = None,
           placeholder: list[str] | None = None, no_signature: bool = False, delete: str | None = None,
-          mode: str | None = None, account: str | None = None) -> str:
+          mode: str | None = None, account: str | None = None, attach_path: list[str] | None = None,
+          attach_content: list[dict] | None = None, attach_upload: list[str] | None = None,
+          allow_suspect: bool = False) -> str:
     """Create or edit a draft in a Drafts folder. NOTHING IS SENT (use send_email for that).
 
     - New: to, subject, body (markdown). reply_to=<ID> answers the sender; reply_all=<ID> keeps everyone;
       forward=<ID> forwards it with its attachments. edit=<draft ID> changes an existing draft (fields you
       leave out stay as they are).
     - attach_from: attachment IDs from other emails (e.g. 'INBOX#1234#0') to attach.
+    - New files (photos, PDFs, documents, audio, video, zip; programs are always refused):
+      attach_path: file paths on the user's computer, e.g. ["~/Desktop/invoice.pdf"] (only when this server runs on
+      that computer). attach_content: small files you wrote yourself, [{"name": "notes.txt", "text": "..."}] or
+      [{"name": "chart.png", "base64": "..."}], up to 2 MB each. attach_upload: files the user put on the upload
+      page, by file name (["Beach-day.jpg"]), ["latest"] for the newest ("the file I just uploaded"), or a code.
+    - Some files are suspect (macros, scripts, archives that can't be checked): the draft is then NOT saved and you
+      get the reasons. Tell the user, and only if they agree, call again with allow_suspect=true.
     - template: name or number from templates; placeholder: ["name=value", ...] for its manual fields.
     - If a signature is set up (accounts says so), it is added automatically under the body: end the body with a
       short closing line (e.g. "Best,") and don't write the sender's name yourself. no_signature=true skips it.
     - delete=<draft ID> moves a draft to Trash (must be the only argument).
     - account: the mailbox address or name to write from (see accounts). Default: replies and forwards use the mailbox the
       email is in (or the first mailbox that may draft); new emails use the first mailbox.
-    - mode="signatures" shows the signature instead of drafting.
+    - mode="signatures" shows the signature instead of drafting. mode="files" lists the files waiting on the upload
+      page, so you can confirm with the user which one to attach.
     """
     if mode == "signatures":
         return f"Signature:\n{signature()[0] or '(none; put one in signature.html or signature.md)'}"
+    if mode == "files":
+        return uploads_text()
     if sum(bool(x) for x in (reply_to, reply_all, forward, edit, delete)) > 1:
         raise ToolError("Use only one of reply_to, reply_all, forward, edit or delete.")
+    new_files, codes = ([], []) if delete else gather_new_files(attach_path, attach_content, attach_upload, allow_suspect)
     with imap() as c:
         source = edit or delete or reply_to or reply_all or forward
         if edit or delete:
@@ -2196,6 +2729,7 @@ def draft(to: list[str] | None = None, cc: list[str] | None = None, bcc: list[st
         for att in attach_from or []:
             part = load_attachment(c, att)
             files.append((part.get_filename(), part.get_content_type(), part.get_payload(decode=True) or b""))
+        files += [(f.name, f.mime, f.data) for f in new_files]
 
         if template:
             t = find_template(template)
@@ -2216,6 +2750,7 @@ def draft(to: list[str] | None = None, cc: list[str] | None = None, bcc: list[st
         msg, top = compose(box, to=to or [], cc=cc or [], bcc=bcc or [], subject=subject, body_md=body,
                            quote=quote, headers=headers, files=files, no_signature=no_signature)
         uid = save_draft(c, drafts, msg)
+        mark_uploads_used(codes)
         if edit:
             f, u = split_id(edit)
             c.select_folder(f)
@@ -2233,6 +2768,8 @@ def draft(to: list[str] | None = None, cc: list[str] | None = None, bcc: list[st
         lines.append(f"Still scheduled: {msg[SCHEDULE_HEADER]} (see scheduled)")
     if files:
         lines.append("Attachments: " + ", ".join(n for n, _, _ in files))
+    if codes:
+        lines.append("Uploaded files are deleted from the server in 1 hour; the draft keeps its own copy.")
     return "\n".join(lines + ["", top])
 
 
@@ -2702,6 +3239,7 @@ def main() -> None:
             print(f"Note: PUBLIC_URL isn't set, so only this computer can log in ({public}).", file=sys.stderr)
         if (env.get("SCHEDULED_SEND") or "on").lower() not in ("off", "false", "0", "no"):
             threading.Thread(target=scheduler_loop, name="scheduler", daemon=True).start()
+        threading.Thread(target=upload_cleaner, name="uploads", daemon=True).start()
         public_host = urlparse(public).hostname or "localhost"
         mcp.run(
             "streamable-http",

@@ -50,11 +50,11 @@ ICON_SVG = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect 
 CSS = """
 :root{--brand:#2b3fd9;--brand-deep:#1f2fb0;--on-brand:#fff;--on-brand-soft:#dfe3ff;--page:#eef0f6;--card:#fff;
 --ink:#141724;--ink-soft:#4a5068;--line:#c9cede;--line-soft:#e3e6ef;--field:#fff;--error:#b42318;--error-bg:#fdecea;
---ok:#12703f;--ok-bg:#e5f5ec;--chip:#eef0fb;--chip-ink:#2b3fd9;
+--ok:#12703f;--ok-bg:#e5f5ec;--chip:#eef0fb;--chip-ink:#2b3fd9;--warn:#8a4b00;--warn-bg:#fff3d6;
 --shadow:0 18px 40px -18px rgba(20,23,60,.35),0 2px 6px rgba(20,23,60,.08)}
 @media (prefers-color-scheme:dark){:root{--brand:#3d51f0;--brand-deep:#3042d6;--page:#0e1016;--card:#171a22;
 --ink:#eef0f6;--ink-soft:#a7adc2;--line:#343a4a;--line-soft:#262b37;--field:#0e1016;--error:#ff8f80;--error-bg:#3a1c1a;
---ok:#6fd49b;--ok-bg:#143022;--chip:#232845;--chip-ink:#aeb8ff;
+--ok:#6fd49b;--ok-bg:#143022;--chip:#232845;--chip-ink:#aeb8ff;--warn:#ffc46b;--warn-bg:#3a2a10;
 --shadow:0 18px 40px -18px rgba(0,0,0,.7),0 2px 6px rgba(0,0,0,.4)}}
 *{box-sizing:border-box}
 body{margin:0;min-height:100vh;background:var(--page);color:var(--ink);
@@ -134,6 +134,24 @@ details[open] summary::after{content:" \\2013"}
 .changelog li{margin:4px 0}
 code{font-size:.9em;background:var(--line-soft);padding:1px 5px;border-radius:5px}
 .lead a{color:inherit}
+.drop{display:block;border:2px dashed var(--line);border-radius:16px;padding:22px 18px;text-align:center;cursor:pointer;
+transition:border-color .15s,background .15s}
+.drop:hover,.drop:focus-within{border-color:var(--brand);background:color-mix(in srgb,var(--brand) 5%,transparent)}
+.drop svg{width:34px;height:34px;color:var(--brand);display:block;margin:0 auto 8px}
+@media (prefers-color-scheme:dark){.drop svg{color:var(--chip-ink)}}
+.drop b{display:block;font-size:1.05rem}
+.drop input{margin-top:14px;border:0;padding:0;background:none;font-size:.95rem;color:var(--ink-soft)}
+.drop input::file-selector-button{font:inherit;font-weight:650;margin-right:12px;padding:9px 14px;border-radius:10px;
+border:1.5px solid var(--line);background:var(--card);color:var(--ink);cursor:pointer}
+.file-row{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.file-row .grow{flex:1;min-width:180px}
+.file-row b{display:block;overflow-wrap:anywhere}
+.warn{display:flex;gap:10px;align-items:flex-start;margin:12px 0 0;padding:10px 12px;border-radius:12px;
+background:var(--warn-bg);color:var(--warn);font-size:.92rem;font-weight:600}
+.warn svg{width:18px;height:18px;flex:none;margin-top:2px}
+.say{margin:18px 0 0;padding:14px 16px;border-radius:14px;background:var(--chip);color:var(--ink)}
+.say q{font-weight:650}
+.bar a{color:var(--ink-soft);font-weight:650;text-underline-offset:3px}
 footer{margin-top:22px;font-size:.85rem;color:var(--ink-soft);text-align:center;padding:0 16px}
 footer a{color:inherit;text-underline-offset:3px}
 """
@@ -231,13 +249,22 @@ def login(app: str | None, host: str | None, req: str, mailboxes: list[tuple[str
 
 # ---------------------------------------------------------------- settings page
 
-def settings_login(error: str = "") -> str:
+ICON_UPLOAD = ('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" '
+               'stroke-linejoin="round" aria-hidden="true"><path d="M12 15V4"/><path d="m7 9 5-5 5 5"/>'
+               '<path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>')
+
+
+def settings_login(error: str = "", after: str = "/settings") -> str:
+    files = after == "/settings/upload"
     content = (f'{message("error", error) if error else ""}<form method="post" action="/settings/login">'
+               f'<input type="hidden" name="next" value="{esc(after)}">'
                '<label for="passphrase">Passphrase</label>'
                '<input id="passphrase" type="password" name="passphrase" autocomplete="current-password" autofocus required>'
-               '<button class="block" type="submit">Open settings</button></form>'
+               f'<button class="block" type="submit">{"Open files" if files else "Open settings"}</button></form>'
                f'<p class="note">{ICON_SHIELD}<span>Same passphrase as when you connect an AI app. Five wrong tries '
                'lock this page for 15 minutes.</span></p>')
+    if files:
+        return page("Files for your emails", "Upload a photo or document, then ask your AI app to attach it.", content)
     return page("Settings", "Your mailboxes and the AI apps that may use them.", content)
 
 
@@ -263,7 +290,7 @@ def _host_fields(prefix: str, imap_host: str = "", imap_port: str = "993", smtp_
 
 
 def settings(csrf: str, mailboxes: list[dict], apps: list[dict], flash: tuple[str, str] | None, max_boxes: int,
-             server_read_only: bool, about: dict | None = None) -> str:
+             server_read_only: bool, about: dict | None = None, uploads_on: bool = False) -> str:
     """mailboxes: dicts with address, mode, source, name, imap_host, imap_port, smtp_host, smtp_port, username,
     smtp_username. apps: dicts with client_id, name, host, grant (list or None)."""
     parts = [message(*flash) if flash else ""]
@@ -354,6 +381,10 @@ def settings(csrf: str, mailboxes: list[dict], apps: list[dict], flash: tuple[st
     else:
         parts.append('<div class="list"><p class="empty">No app has connected yet.</p></div>')
 
+    if uploads_on:
+        parts.append('<h2>Files for your emails</h2><p class="lead">Upload a photo, PDF or document on '
+                     '<a href="/settings/upload">the upload page</a>, then ask your AI app to attach it.</p>')
+
     if about:
         upd = about.get("update")
         if upd is None:
@@ -370,3 +401,42 @@ def settings(csrf: str, mailboxes: list[dict], apps: list[dict], flash: tuple[st
     parts.append('<div class="bar"><span class="muted">Changes count right away. Apps never see mail passwords.</span>'
                  + _post("/settings/logout", csrf, {}, "Sign out") + "</div>")
     return page("Your mail server", "Mailboxes, modes, and which AI apps may use them.", "".join(parts), wide=True)
+
+
+# ---------------------------------------------------------------- upload page
+
+def uploads(csrf: str, files: list[dict], flash: tuple[str, str] | None, max_size: str, accept: str) -> str:
+    """files: dicts with code, name, size_text, level, why, used, minutes_left (newest first)."""
+    parts = [message(*flash) if flash else ""]
+    parts.append(
+        f'<form method="post" action="/settings/upload" enctype="multipart/form-data">{_csrf(csrf)}'
+        f'<label class="drop">{ICON_UPLOAD}<b>Choose a file</b>'
+        f'<span class="muted">Photos, PDFs, documents, audio, video or zip. Up to {esc(max_size)}.</span>'
+        f'<input type="file" name="file" accept="{esc(accept)}" required></label>'
+        '<button class="block" type="submit">Upload</button></form>')
+    parts.append('<h2 style="margin-top:34px">Waiting to be attached</h2>')
+    if files:
+        rows = []
+        for f in files:
+            mins = f["minutes_left"]
+            left = f"{mins} min" if mins < 60 else f"{round(mins / 60)} h"
+            status = (f"In a draft · deleted in {left}" if f["used"] else f"Not used yet · deleted in {left}")
+            warn = (f'<p class="warn">{ICON_ALERT}<span>Check this: {esc(f["why"])}. Your AI app will ask you '
+                    'before attaching it.</span></p>') if f["level"] == "suspect" else ""
+            rows.append(
+                f'<div class="item"><div class="file-row">'
+                f'<div class="grow"><b>{esc(f["name"])}</b><span class="muted">{esc(f["size_text"])} · {status} · '
+                f'code {esc(f["code"])}</span></div>'
+                + _post("/settings/upload", csrf, {"action": "delete", "code": f["code"]}, "Delete", "danger")
+                + f'</div>{warn}</div>')
+        parts.append(f'<div class="list">{"".join(rows)}</div>')
+        parts.append(f'<p class="say">Then tell your AI app: <q>Attach the file I just uploaded to the email to Sam.</q> '
+                     f'Or use its name: <q>Attach {esc(files[0]["name"])}.</q></p>')
+    else:
+        parts.append('<div class="list"><p class="empty">Nothing here. Uploaded files show up here with their code.</p></div>')
+    parts.append(f'<p class="note">{ICON_SHIELD}<span>Files are stored encrypted. Each one is deleted 1 hour after it '
+                 'first goes into a draft, or after 24 hours if it\'s never used. Your emails keep their own copy. '
+                 'Programs and scripts are always refused.</span></p>')
+    parts.append('<div class="bar"><a href="/settings">Back to settings</a>' + _post("/settings/logout", csrf, {}, "Sign out")
+                 + "</div>")
+    return page("Files for your emails", "Upload a file, then ask your AI app to attach it.", "".join(parts), wide=True)

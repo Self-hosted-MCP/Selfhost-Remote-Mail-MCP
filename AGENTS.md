@@ -27,6 +27,7 @@ tests/test_login.py                      token fingerprints, refresh, client cap
 tests/test_multi.py                      several mailboxes: settings, routing, modes, per-app choices,
                                          encrypted storage, names, scheduler
 tests/test_web.py                        the web pages over HTTP: settings sign-in, cookies, forged forms
+tests/test_attachments.py                file checks, attach_path / attach_content / attach_upload, upload page
 tests/test_examples.py                   every file in examples/ loads and fills in
 docs/                                    user docs, plain language
 Dockerfile, docker-compose.yml, Caddyfile, render.yaml   the three ways to host it (Railway needs no file: it finds the Dockerfile)
@@ -60,6 +61,7 @@ These are the product. A change that weakens one needs a very good reason and a 
 8. **`serve` never starts without a passphrase** of 12+ characters (or a `LOGIN_HASH`). The login page keeps its security headers (`LOGIN_HEADERS`) and always names the app and the return address before asking for the passphrase.
 9. **Keep the credit.** The `PROJECT`, `PROJECT_URL` and `AUTHOR` lines in `pages.py`, the page footers, `NOTICE`, `CITATION.cff` and the copyright line in `LICENSE` credit the original author. Forks may add their own names next to them but should not remove them.
 10. **The settings page stays locked down:** passphrase sign-in with the shared lockout, an HttpOnly + SameSite=Strict cookie scoped to `/settings`, a CSRF token *and* a same-origin check on every POST, `pages.HEADERS` on every page, no scripts. Mail passwords are stored only through `save_web_accounts()` (Fernet, key from `MAIL_SECRET_KEY` or `secret.key`), are never written into a page, and a mailbox is only saved after `test_account()` passes.
+11. **New files are checked before anything is saved.** Every file from `attach_path`, `attach_content`, `attach_upload` and the upload page goes through `check_new_file()`: blocked files are refused, suspect ones need `allow_suspect=true` (which the AI may only set after the user agreed). `attach_path` works only in `stdio`, only inside `ATTACH_FOLDERS`, never for hidden paths or the server's own folders. Uploads live under `/settings/upload` (same session, CSRF and same-origin checks), are Fernet-encrypted, and `clean_uploads()` deletes them 1 hour after first use or after 24 hours. The server never adds text to an email about an attachment.
 
 ## How things work
 

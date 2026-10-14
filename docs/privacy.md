@@ -44,6 +44,7 @@ Everything that travels is encrypted. Everything secret that's stored is encrypt
 | Login keys of AI apps | Only **fingerprints** (SHA-256). A copied data folder can't be used to log in |
 | Send log | Times, counts and **fingerprints** only, unless you turn on `SEND_LOG_DETAILS` |
 | Your emails | **Not stored at all.** They stay in your mailbox |
+| Files on the upload page | **Encrypted** with `MAIL_SECRET_KEY`, file names too. Deleted 1 hour after first going into a draft, or after 24 hours |
 | Mailbox names, app list, settings like limits | Plain text in private files (only your user account can read them). None of it is secret |
 
 **Where encrypting more wouldn't help, and what to do instead**
@@ -64,6 +65,7 @@ Everything lives in one folder: `~/.config/selfhost-remote-mail-mcp/` on a compu
 | `state/send.lock` | Empty. Makes sure two sends never happen at once | |
 | `mailboxes.json` (in Docker: `/data/mailboxes.json`) | Mailboxes added on the settings page. Their passwords are **encrypted** | Only your user account. The key is `MAIL_SECRET_KEY`, or `secret.key` next to it if that isn't set |
 | `labels.json` | The names you gave mailboxes, like "Work" | Only your user account |
+| `uploads/` | Files from the upload page, **encrypted**, until they're deleted (1 hour after first use, or 24 hours) | Only your user account |
 | `signature.html`, `signature.md`, `templates/` | What you put there | You |
 
 The server keeps **no copy of your emails**. Drafts and sent emails live in your mailbox, like with any mail app.

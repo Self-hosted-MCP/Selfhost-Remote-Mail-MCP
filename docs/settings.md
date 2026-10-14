@@ -79,6 +79,14 @@ Mailboxes 2 to 5 use the same settings with their number: `MAIL_2_...`, `MAIL_3_
 
 `serve` refuses to start without a passphrase. If `PUBLIC_URL` isn't set, it uses the address Render (`RENDER_EXTERNAL_URL`) or Railway (`RAILWAY_PUBLIC_DOMAIN`) provides, and otherwise `http://localhost:PORT`, which only works on the same computer.
 
+## Attachments
+
+| Setting | Default | What it does |
+|---|---|---|
+| `ATTACH_MAX_MB` | `25` | Most MB of new files per email, and per upload |
+| `ATTACH_FOLDERS` | `~` | Folders the computer version may attach files from, separated by commas. Hidden files are never allowed |
+| `UPLOAD_PAGE` | `on` | `off` removes the upload page (`/upload`) from the web version. See [attachments.md](attachments.md) |
+
 ## Updates
 
 | Setting | Default | What it does |

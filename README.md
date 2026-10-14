@@ -75,6 +75,8 @@ The server is a small program. Your AI app talks to it through **MCP** (Model Co
 
 **Write.** Make drafts: new emails, replies, reply-to-all and forwards. Your signature and saved templates are added for you. Drafts go to your normal Drafts folder, so you can also finish them in your usual mail app.
 
+**Attach files.** From other emails, from your computer, files the AI writes (like a CSV), or photos and documents you upload from your phone on the upload page. Programs are refused, and suspect files (like spreadsheets with macros) need your OK. See [docs/attachments.md](docs/attachments.md).
+
 **Organise.** Archive, move, delete (to Trash), mark read or unread, pin, mark as spam. It can show you an email's unsubscribe link, but it never clicks it.
 
 **Send, carefully.** Only two tools can send, so your AI app can ask you before each one:
@@ -146,6 +148,7 @@ More in [docs/safety.md](docs/safety.md) (risks and good settings) and [docs/pri
 | [Email providers](docs/email-providers.md) | You need your server names or an app password |
 | [Several mailboxes](docs/mailboxes.md) | You want more than one mailbox, the settings page, or different mailboxes per app |
 | [Every tool](docs/tools.md) | You want to know what to ask for |
+| [Attaching files](docs/attachments.md) | You want to send photos, PDFs or documents |
 | [Every setting](docs/settings.md) | You want to change limits, ports or safety options |
 | [Safety](docs/safety.md) | Before you let an AI send email |
 | [Privacy](docs/privacy.md) | You want to know what is kept and where |

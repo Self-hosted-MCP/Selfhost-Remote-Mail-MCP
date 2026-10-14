@@ -146,6 +146,15 @@ The settings page (`/settings`, web version only) can add and change mailboxes, 
 
 One risk remains: anyone who learns your passphrase could add or change mailboxes, not only read mail. Use a long passphrase, and set `MAIL_SECRET_KEY` so the stored passwords can't be unlocked from a copy of the data folder alone.
 
+## Attachments
+
+- **Programs and scripts are never attached**, and the server checks what's inside each file, so a program renamed to `photo.jpg` is refused. Zips are checked inside too.
+- **Suspect files** (macros, svg and html, archives that can't be checked) are only attached after you say yes.
+- **On a computer**, only files in your home folder (`ATTACH_FOLDERS`) can be attached, never hidden ones like `.ssh` or `.env`. This stops an email from tricking the AI into mailing your private files.
+- **The upload page** sits behind your passphrase, like the settings page, and deletes files 1 hour after first use.
+
+Details in [attachments.md](attachments.md).
+
 ## What this doesn't protect against
 
 - **An AI that is tricked into reading and repeating.** If an email convinces the AI to quote other emails back in its answer, the server can't tell. The AI app only shows that to you, but take care when you share AI answers.
