@@ -99,6 +99,8 @@ The server is a small program. Your AI app talks to it through **MCP** (Model Co
 
 **Check your domain.** If you use your own domain (like `you@yourname.com`), one button checks the records that keep your emails out of spam (SPF, DKIM, DMARC) and says in plain words what to fix.
 
+**Add-ons.** Plug in your own features as small Python files, like a calendar invite or a quote PDF, without changing the server. Two examples are included, and an AI coding agent can build one for you. See [docs/addons.md](docs/addons.md).
+
 **Updates, if you want them.** Get told when there's a new release, or let it update itself, official releases only. See [docs/updates.md](docs/updates.md).
 
 All 17 tools, with examples: [docs/tools.md](docs/tools.md).
@@ -159,6 +161,7 @@ More in [docs/safety.md](docs/safety.md) (risks and good settings) and [docs/pri
 | [Several mailboxes](docs/mailboxes.md) | You want more than one mailbox, the settings page, or different mailboxes per app |
 | [Every tool](docs/tools.md) | You want to know what to ask for |
 | [Attaching files](docs/attachments.md) | You want to send photos, PDFs or documents |
+| [Add-ons](docs/addons.md) | You want to add your own features, or have an AI agent build one |
 | [Every setting](docs/settings.md) | You want to change limits, ports or safety options |
 | [Safety](docs/safety.md) | Before you let an AI send email |
 | [Privacy](docs/privacy.md) | You want to know what is kept and where |

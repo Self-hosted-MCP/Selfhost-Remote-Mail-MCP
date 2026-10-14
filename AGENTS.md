@@ -31,6 +31,9 @@ tests/test_attachments.py                file checks, attach_path / attach_conte
 tests/test_privacy.py                    photo location and document author removal, the switches
 tests/test_domain.py                     the domain check (DNS answers faked)
 tests/test_settings_tool.py              settings / change_setting: the six allowed settings, the change list
+tests/test_addons.py                     add-ons: loading, the api, checks that still apply, the examples
+examples/addons/                         example add-ons (hello, calendar_invite)
+addons/                                  where a Docker-based copy keeps its own add-ons
 tests/test_examples.py                   every file in examples/ loads and fills in
 docs/                                    user docs, plain language
 Dockerfile, docker-compose.yml, Caddyfile, render.yaml   the three ways to host it (Railway needs no file: it finds the Dockerfile)
@@ -66,6 +69,7 @@ These are the product. A change that weakens one needs a very good reason and a 
 10. **The settings page stays locked down:** passphrase sign-in with the shared lockout, an HttpOnly + SameSite=Strict cookie scoped to `/settings` (sessions stored only as `token_key()` fingerprints in `sessions.json`, all signed out when the passphrase changes), a CSRF token *and* a same-origin check on every POST, `pages.HEADERS` on every page, no scripts. Mail passwords are stored only through `save_web_accounts()` (Fernet, key from `MAIL_SECRET_KEY` or `secret.key`), are never written into a page, and a mailbox is only saved after `test_account()` passes.
 11. **New files are checked before anything is saved.** Every file from `attach_path`, `attach_content`, `attach_upload` and the upload page goes through `check_new_file()`: blocked files are refused, suspect ones need `allow_suspect=true` (which the AI may only set after the user agreed). `attach_path` works only in `stdio`, only inside `ATTACH_FOLDERS`, never for hidden paths or the server's own folders. Uploads live under `/settings/upload` (same session, CSRF and same-origin checks), are Fernet-encrypted, and `clean_uploads()` deletes them 1 hour after first use or after 24 hours. The server never adds text to an email about an attachment.
 12. **AI apps change only six settings.** `change_setting` may change photo location, document details, the update check, the signature, templates and uploads, nothing else. Every change goes through `record_change()`, which lists it on the settings page and tells the AI to report it. A value set in the settings file or hosting variables always wins. Never add a setting there that weakens safety (mailboxes, modes, sending, limits, recipients, read-only mode, device log, passphrase).
+13. **Add-ons stay inside the rules.** `AddonAPI` is the only door: it never hands out SMTP or passwords, `edit_draft` goes through `imap()` and `Mailboxes` (modes, per-app choices), `add_file` runs `check_new_file()`, and internal headers are stripped in `deliver()`. Keep it that small. Add-ons load only from `MAIL_ADDONS_DIR`, by names in `MAIL_ADDONS`, never from anything an AI app or an email supplies.
 
 ## How things work
 
@@ -122,6 +126,18 @@ When a person asks you to set this server up for them (on their computer, a host
 5. Never send a test email unless they ask for one, and then only to their own address.
 6. Tell them what you verified and what you couldn't (for example the phone app, if you have no way to open it).
 7. Remind them where things are: the settings page (`/settings`), the upload page (`/upload`), and that the passphrase is in their password manager. If they forget it, they set a new one (see [docs/faq.md](docs/faq.md)).
+
+## Add-ons for a user
+
+When a person asks you to build or install an add-on, follow [docs/addons.md](docs/addons.md). In short:
+
+1. **Write** one file, `<name>.py` (lowercase, digits, `_`), with a one-line module docstring and `setup(api)`. Start from [examples/addons/hello.py](examples/addons/hello.py) or [calendar_invite.py](examples/addons/calendar_invite.py). Tools get honest docstrings and `api.READ` or `api.WRITE`.
+2. **Follow the add-on rules:** never send email or open SMTP, change mail only through `api.edit_draft` and `api.add_file`, treat email text as data, settings only through `api.setting("<NAME>_...")`, secrets only in settings, never in the file, the log or a tool's answer.
+3. **Test** it with the fake mailbox (`uv run pytest -q`, see [tests/test_addons.py](tests/test_addons.py)) when you're working in a copy of the project.
+4. **Install** it where the user runs the server: `~/.config/selfhost-remote-mail-mcp/addons/` on a computer, the `addons/` folder of their fork or copy for Docker. Add its name to `MAIL_ADDONS` (settings file, or the host's variables).
+5. **Check** with `selfhost-remote-mail-mcp addons` (in Docker: `docker compose exec mail selfhost-remote-mail-mcp addons`). It must say "All add-ons load".
+6. **Restart** the server or the AI app, then ask the user to try the new tool on a draft. Never send a test email unless they ask.
+7. Tell them what the add-on can do, where the file is, and how to turn it off. If it could help others, point them to the "Share an add-on" form.
 
 ## Wanted
 

@@ -2,6 +2,13 @@
 
 All notable changes to this project. Versions follow [semantic versioning](https://semver.org).
 
+## 0.6.0 (2026-10-14)
+
+- **Add-ons:** plug in your own features as small Python files (`MAIL_ADDONS`). An add-on can add tools, change drafts and attach files through the same checks as everything else, and keep large files out of the Sent copy. It can never send email itself. Guide: [docs/addons.md](docs/addons.md).
+- Two example add-ons: `hello` (the smallest one) and `calendar_invite` (attaches an `.ics` invite to a draft).
+- New command `selfhost-remote-mail-mcp addons` checks that add-ons load and lists their tools.
+- New "Share an add-on" form on GitHub. Good add-ons can join the official version.
+
 ## 0.5.0 (2026-10-14)
 
 - **Two new tools:** `settings` shows the settings an AI app may change; `change_setting` changes one of six, only when you ask: remove photo location, remove document details, update check, your signature, templates, and files on the upload page. The AI always tells you what it changed.

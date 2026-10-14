@@ -11,6 +11,7 @@ Click **New issue** on GitHub and pick a form:
 | **Something doesn't work** | You hit a bug or an error message |
 | **My email provider doesn't work** | Your provider won't connect, or isn't on the list |
 | **Question** | You want to know how to do something, or have an idea |
+| **Share an add-on** | You built an add-on, or have an idea for one. Good ones can join the official version |
 | **Report a security problem (private)** | Someone could misuse the server. Only the maintainer sees it |
 
 Each form asks for what's needed to help you, such as how you run the server and which AI app you use. There's no email contact: the forms and private reporting cover everything, and they keep the conversation in one place.

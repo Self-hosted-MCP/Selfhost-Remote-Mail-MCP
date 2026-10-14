@@ -15,6 +15,7 @@ Commands (see `selfhost-remote-mail-mcp help`):
     set-passphrase  choose the login passphrase for serve (only its hash is stored)
     update          install the newest official release (computer version, needs uv)
     version         show the installed version
+    addons          load the add-ons in MAIL_ADDONS and list their tools (a check; starts nothing)
 
 Settings come from environment variables and/or a .env file. The file is MAIL_ENV_FILE if set,
 otherwise <config folder>/.env. Environment variables win over the file.
@@ -108,7 +109,8 @@ SETTINGS = ("MAIL_ADDRESS", "MAIL_NAME", "MAIL_USERNAME", "SMTP_USERNAME", "MAIL
             "MAIL_READ_ONLY", "SEND_ALLOWED_RECIPIENTS", "SEND_LOG_DETAILS", "MAIL_MODE", "MAX_MAILBOXES",
             "MAIL_SECRET_KEY", "SETTINGS_PAGE", "MAIL_LABEL", "UPDATE_CHECK",
             "ATTACH_MAX_MB", "ATTACH_FOLDERS", "UPLOAD_PAGE", "DEVICE_LOG",
-            "REMOVE_PHOTO_LOCATION", "REMOVE_DOCUMENT_DETAILS",
+            "REMOVE_PHOTO_LOCATION", "REMOVE_DOCUMENT_DETAILS", "MAIL_ADDONS",
+            "MAIL_ADDONS_DIR",
             "READ_ONLY_ADDRESS", "READ_ONLY_USERNAME", "READ_ONLY_PASSWORD",
             "RENDER_EXTERNAL_URL", "RAILWAY_PUBLIC_DOMAIN")
 
@@ -1788,6 +1790,7 @@ def deliver(cfg: dict, c, found: dict, uid: int) -> tuple[list[str], str]:
             remove_draft(c, drafts, uid)
             return rcpts, f"{subject} (already sent earlier; its leftover draft was removed)"
         check_limits(cfg, rows, account)
+        internal = {h: str(msg[h]) for h in INTERNAL_HEADERS if msg.get(h) is not None}
         for h in INTERNAL_HEADERS:
             del msg[h]
         del msg["Date"]
@@ -1803,7 +1806,10 @@ def deliver(cfg: dict, c, found: dict, uid: int) -> tuple[list[str], str]:
                       f"\t{mailbox_key(account.address)}\n")
         try:   # it is sent: a problem from here on must not look like a failed send
             if found.get("sent"):
-                c.append(found["sent"], msg.as_bytes(policy=CRLF), flags=[b"\\Seen"])
+                copy = email.message_from_bytes(msg.as_bytes(), policy=POLICY) if SENT_COPY_HOOKS else msg
+                for hook in SENT_COPY_HOOKS:   # add-ons may trim the Sent copy; what was sent is already gone
+                    copy = hook(copy, internal) or copy
+                c.append(found["sent"], copy.as_bytes(policy=CRLF), flags=[b"\\Seen"])
             remove_draft(c, drafts, uid)
         except Exception as exc:
             return rcpts, f"{subject} (sent, but tidying up failed: {exc}; the draft may still be in {drafts})"
@@ -2469,7 +2475,8 @@ def settings_page(provider: "PassphraseOAuth", session: dict, uploads_on: bool =
              "grant": provider.grants.get(cid),
              "may_send": cid not in provider.grants or cid in provider.senders} for cid, c in provider.clients.items()]
     flash, session["flash"] = session["flash"], None
-    about = {"version": current_version(), "update": update_status(), "changelog": changelog_html()}
+    about = {"version": current_version(), "update": update_status(), "changelog": changelog_html(),
+             "addons": list(LOADED_ADDONS)}
     log_on = device_log_on()
 
     def when(t):
@@ -2830,6 +2837,8 @@ def accounts() -> str:
     news = update_line()
     if news:
         lines.append(news)
+    if LOADED_ADDONS:
+        lines.append("Add-ons: " + "; ".join(f"{n}" + (f" ({d})" if d else "") for n, d in LOADED_ADDONS.items()))
     lines.append("Signature: " + ("set up, added to every draft automatically" if any(signature()) else
                                   "none (write the sender's name at the end of drafts)"))
     if cfg.get("SEND_ALLOWED_RECIPIENTS"):
@@ -3510,6 +3519,156 @@ def change_setting(setting: str, value: str = "", name: str = "") -> str:
                     "the rest on the settings page.")
 
 
+# ---------------------------------------------------------------- add-ons (extra features from the server owner)
+
+# An add-on is one Python file in the add-ons folder, turned on by name in MAIL_ADDONS. It gets an AddonAPI in its
+# setup(api) function and can add tools and change the copy saved in Sent. See docs/addons.md.
+ADDONS_DIR = Path(os.environ.get("MAIL_ADDONS_DIR") or CONFIG_DIR / "addons").expanduser()
+SENT_COPY_HOOKS: list = []   # add-on functions that may change the copy saved in Sent (never what's sent)
+LOADED_ADDONS: dict[str, str] = {}   # name -> one-line description
+ADDON_TOOLS: dict[str, list[str]] = {}   # name -> the tools it added
+
+
+class AddonAPI:
+    """What an add-on may use. Kept small on purpose: an add-on never gets SMTP or the passwords, and the
+    built-in checks (modes, per-app mailboxes, file checks) still apply to everything it does."""
+
+    READ = READ
+    WRITE = WRITE
+    ToolError = ToolError
+
+    def __init__(self, name: str):
+        self.name = name
+        self.tools: list[str] = []
+
+    def tool(self, annotations: ToolAnnotations):
+        """Decorator for a new tool. Same rules as the built-in ones: a short, honest docstring, and READ or
+        WRITE annotations. A name that's already taken is refused."""
+        def register(func):
+            taken = set(TOOL_NAMES)
+            if func.__name__ in taken:
+                raise RuntimeError(f"add-on {self.name}: a tool called {func.__name__} already exists")
+            TOOL_NAMES.append(func.__name__)
+            self.tools.append(func.__name__)
+            return mcp.tool(annotations=annotations)(func)
+        return register
+
+    def setting(self, key: str, default: str = "") -> str:
+        """One of the add-on's own settings, from the settings file or environment. Keys must start with the
+        add-on's name in capitals, e.g. DECKS_RENDER_KEY for an add-on called decks."""
+        prefix = re.sub(r"\W", "_", self.name).upper() + "_"
+        if not key.startswith(prefix):
+            raise RuntimeError(f"add-on {self.name}: its settings must start with {prefix}")
+        value = os.environ.get(key)
+        if value is None and ENV_FILE.exists():
+            for line in ENV_FILE.read_text().splitlines():
+                k, eq, v = line.strip().partition("=")
+                if eq and k.strip() == key:
+                    value = v.strip()
+        return value or default
+
+    def internal_header(self, name: str) -> None:
+        """A header the add-on puts on drafts for its own bookkeeping. It's removed before sending."""
+        global INTERNAL_HEADERS
+        if not name.lower().startswith("x-"):
+            raise RuntimeError(f"add-on {self.name}: internal headers must start with X-")
+        if name not in INTERNAL_HEADERS:
+            INTERNAL_HEADERS = (*INTERNAL_HEADERS, name)
+
+    def edit_draft(self, draft_id: str, change) -> str:
+        """Opens a draft, lets change(msg) edit it (an email.message.EmailMessage), saves it and returns the new
+        draft ID. Only drafts in a mailbox this app may write to; a scheduled time is kept."""
+        with imap() as c:
+            folder, uid = split_id(draft_id)
+            box = c.split(folder)[0]
+            if not c.writable(box):
+                c.refuse(box, "draft")
+            drafts = need(roles(c, box), "drafts")
+            if folder != drafts:
+                raise ToolError(f"{draft_id} is not in {drafts}, so it isn't a draft.")
+            msg = fetch_msg(c, folder, uid)
+            change(msg)
+            new = replace_draft(c, drafts, uid, msg)
+        return make_id(drafts, new) if new else f"(saved in {drafts})"
+
+    def add_file(self, msg: EmailMessage, name: str, mime: str, data: bytes, clean: bool = True) -> str:
+        """Attaches a file to msg after the same checks as every new file (programs refused, suspect files
+        refused here: an add-on can't ask the user). clean=False skips removing location and author details,
+        for files the add-on made itself. A file with the same name is replaced. Returns the file name."""
+        f = check_new_file(name, data)
+        if f.level != "safe":
+            raise ToolError(f"{f.name}: {f.why}.")
+        if clean:
+            clean_new_file(f)
+        for part in list(msg.iter_attachments()):
+            if part.get_filename() == f.name:
+                msg.get_payload().remove(part)
+        maintype, _, subtype = (mime or f.mime).partition("/")
+        msg.add_attachment(f.data, maintype=maintype, subtype=subtype or "octet-stream", filename=f.name)
+        return f.name
+
+    def on_sent_copy(self, func) -> None:
+        """func(copy, headers) may change the copy saved in the Sent folder after sending, for example to leave
+        out a large file. headers holds the draft's internal headers. It never changes what was sent."""
+        SENT_COPY_HOOKS.append(func)
+
+    def log(self, text: str) -> None:
+        print(f"add-on {self.name}: {text}", file=sys.stderr, flush=True)
+
+
+def load_addons(names: str | None = None, folder: Path | None = None) -> list[str]:
+    """Loads the add-ons named in MAIL_ADDONS (comma-separated) from the add-ons folder. Returns their names."""
+    import importlib.util
+    names = names if names is not None else (os.environ.get("MAIL_ADDONS") or read_env().get("MAIL_ADDONS", ""))
+    folder = folder or Path(read_env().get("MAIL_ADDONS_DIR") or ADDONS_DIR).expanduser()
+    loaded = []
+    for name in [n.strip() for n in names.split(",") if n.strip()]:
+        if not re.fullmatch(r"[a-z][a-z0-9_]{0,40}", name):
+            raise RuntimeError(f"add-on name {name!r}: use lowercase letters, digits and _ only")
+        if name in LOADED_ADDONS:
+            continue
+        path = folder / f"{name}.py"
+        if not path.is_file():
+            raise RuntimeError(f"add-on {name}: {path} doesn't exist")
+        spec = importlib.util.spec_from_file_location(f"mail_addon_{name}", path)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        if not callable(getattr(module, "setup", None)):
+            raise RuntimeError(f"add-on {name}: it needs a setup(api) function")
+        api = AddonAPI(name)
+        module.setup(api)
+        LOADED_ADDONS[name] = (module.__doc__ or "").strip().splitlines()[0] if module.__doc__ else ""
+        ADDON_TOOLS[name] = api.tools
+        loaded.append(name)
+    return loaded
+
+
+TOOL_NAMES: list[str] = [   # the built-in tools; add-ons can't reuse these names
+    "accounts", "folders", "emails", "search", "thread", "attachment", "draft", "action", "send_email",
+    "schedule_send", "scheduled", "contacts", "contact", "templates", "template", "settings", "change_setting"]
+
+def show_addons() -> None:
+    """The `addons` command: proves the add-ons load, and lists what each one adds."""
+    folder = Path(read_env().get("MAIL_ADDONS_DIR") or ADDONS_DIR).expanduser()
+    names = os.environ.get("MAIL_ADDONS") or read_env().get("MAIL_ADDONS", "")
+    if not names.strip():
+        print(f"No add-ons are turned on (MAIL_ADDONS is empty). Add-ons folder: {folder}")
+        return
+    try:
+        load_addons(names, folder)
+    except Exception as exc:
+        sys.exit(f"An add-on didn't load: {exc}")
+    print(f"Add-ons folder: {folder}")
+    for name, about in LOADED_ADDONS.items():
+        print(f"  {name}: {about or '(no description)'}")
+        print(f"    tools: {', '.join(ADDON_TOOLS.get(name, [])) or '(none)'}")
+    print("All add-ons load. Restart the server (or your AI app) to use them.")
+
+
+if MODE in ("stdio", "serve"):
+    load_addons()
+
+
 # ---------------------------------------------------------------- entry point
 
 def set_passphrase() -> None:
@@ -3872,6 +4031,8 @@ def main() -> None:
         run_update()
     elif MODE == "version":
         print(current_version())
+    elif MODE == "addons":
+        show_addons()
     elif MODE == "check":
         check()
     elif MODE == "stdio":

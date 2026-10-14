@@ -507,6 +507,8 @@ def settings(csrf: str, mailboxes: list[dict], apps: list[dict], flash: tuple[st
         else:
             status = "Up to date." + (f' Newest release: {esc(upd["latest"])}.' if upd["latest"] else "")
         parts.append(f'<h2 id="about">About this server</h2><p class="lead">Version <b>{esc(about["version"])}</b>. {status}</p>')
+        if about.get("addons"):
+            parts.append(f'<p class="lead">Add-ons: <b>{esc(", ".join(about["addons"]))}</b>.</p>')
         if about.get("changelog"):
             parts.append(f'<details><summary>What\'s new</summary><div class="changelog">{about["changelog"]}</div></details>')
     parts.append('<div class="bar"><span class="muted">Changes count right away. Apps never see mail passwords.</span>'

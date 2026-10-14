@@ -85,6 +85,8 @@ Mailboxes 2 to 5 use the same settings with their number: `MAIL_2_...`, `MAIL_3_
 | Setting | Default | What it does |
 |---|---|---|
 | `ATTACH_MAX_MB` | `25` | Most MB of new files per email, and per upload |
+| `MAIL_ADDONS` | empty | Add-ons to turn on, by name, separated by commas. See [addons.md](addons.md) |
+| `MAIL_ADDONS_DIR` | `<config folder>/addons` | The folder add-ons are loaded from. Docker images use `/app/addons` |
 | `REMOVE_PHOTO_LOCATION` | `on` | `off` keeps the location and camera details in attached photos. Can also be turned off on the settings page |
 | `REMOVE_DOCUMENT_DETAILS` | `on` | `off` keeps the author and company in attached documents. Can also be turned off on the settings page |
 | `ATTACH_FOLDERS` | `~` | Folders the computer version may attach files from, separated by commas. Hidden files are never allowed |

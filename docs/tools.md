@@ -68,6 +68,10 @@ You don't call these yourself: you ask in plain words, and your AI app picks the
 
 **action** takes a list of IDs and one of: `archive` (also `markAsDone`), `moveToInbox`, `moveToTrash`, `moveToFolder` (with `folder`), `markAsSpam`, `markAsSeen`, `markAsUnseen`, `pin`, `unpin`, `unsubscribe`. `unsubscribe` only *shows* the unsubscribe link or address; it never clicks or sends anything.
 
+## Add-on tools
+
+Add-ons can add more tools, like `add_invite` from the calendar invite example. `accounts` lists the add-ons that are on. See [addons.md](addons.md).
+
 ## Settings
 
 **settings** shows what's on or off, your signature, your templates and the files on the upload page.

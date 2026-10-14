@@ -12,6 +12,9 @@ RUN uv sync --frozen --no-install-project --no-dev
 COPY src ./src
 RUN uv sync --frozen --no-dev
 
+# Add-ons you put in the addons/ folder of your copy are built in (turn them on with MAIL_ADDONS). docs/addons.md
+COPY addons ./addons
+
 # Everything that must survive a restart (login tokens, send log, signature, templates) lives in /data.
 # Mount a persistent volume or disk there. Without one it still works, but after each restart
 # you log in again and the send limits start from zero.
@@ -19,6 +22,7 @@ ENV HOST=0.0.0.0 \
     PORT=8765 \
     MAIL_CONFIG_DIR=/data \
     DATA_DIR=/data \
+    MAIL_ADDONS_DIR=/app/addons \
     PATH="/app/.venv/bin:$PATH"
 EXPOSE 8765
 

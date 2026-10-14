@@ -1,0 +1,53 @@
+name: Share an add-on (or an idea for one)
+description: Built an add-on, or have an idea? Share it so it can join the official version.
+title: "[Add-on] "
+labels: ["add-on"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for sharing! Good add-ons can join the official version in `examples/addons`, credited to you. How to write one: [docs/addons.md](https://github.com/s17sh70x2jfl031ag/Selfhost-Remote-Mail-MCP/blob/main/docs/addons.md).
+  - type: checkboxes
+    id: privacy
+    attributes:
+      label: Privacy check
+      options:
+        - label: I removed passwords, API keys, email addresses and other private details from everything below.
+          required: true
+  - type: dropdown
+    id: kind
+    attributes:
+      label: What are you sharing?
+      options:
+        - An add-on I built
+        - An idea for an add-on
+    validations:
+      required: true
+  - type: input
+    id: name
+    attributes:
+      label: Name
+      placeholder: calendar_invite
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What does it do?
+      description: In a few sentences, and what you'd ask your AI to use it.
+    validations:
+      required: true
+  - type: textarea
+    id: code
+    attributes:
+      label: The code, or a link to it
+      description: Paste the file, or link to a gist or repository. Leave empty for an idea.
+      render: python
+  - type: checkboxes
+    id: rules
+    attributes:
+      label: The add-on rules (for built add-ons)
+      options:
+        - label: It never sends email itself, and changes mail only through api.edit_draft.
+        - label: It keeps secrets in settings, not in the code.
+        - label: I'm happy for it to be included in the project under the MIT license, credited to me.
