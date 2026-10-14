@@ -24,6 +24,8 @@ You don't call these yourself: you ask in plain words, and your AI app picks the
 | `action` | Archive, move, trash, read or unread, pin, spam, unsubscribe link | Yes, but nothing is sent |
 | `send_email` | **Sends** a draft now | **Sends email** |
 | `schedule_send` | **Sends** a draft later, or cancels that | **Sends email later** |
+| `settings` | Shows the settings an AI app may change, and what only you can change | No |
+| `change_setting` | Changes one of six settings, only when you ask | Yes, and it tells you what changed |
 
 ## Reading
 
@@ -65,6 +67,23 @@ You don't call these yourself: you ask in plain words, and your AI app picks the
 ## Organising
 
 **action** takes a list of IDs and one of: `archive` (also `markAsDone`), `moveToInbox`, `moveToTrash`, `moveToFolder` (with `folder`), `markAsSpam`, `markAsSeen`, `markAsUnseen`, `pin`, `unpin`, `unsubscribe`. `unsubscribe` only *shows* the unsubscribe link or address; it never clicks or sends anything.
+
+## Settings
+
+**settings** shows what's on or off, your signature, your templates and the files on the upload page.
+
+**change_setting** changes only these, and only when you ask in the chat:
+
+| Setting | Example |
+|---|---|
+| Remove location from photos | *"Stop removing the location from my photos"* |
+| Remove author details from documents | *"Turn document cleaning back on"* |
+| Update check | *"Tell me when there's a new version"* |
+| Your signature | *"Change my signature to Alex Rivera, Studio Northwind"* (the old one is kept as a backup file) |
+| Templates | *"Save this as a template called thank-you"*, *"Delete the invoice template"* |
+| Files on the upload page | *"Delete the photo I uploaded"* |
+
+The AI always tells you what it changed, and the settings page lists every change under **Changes by AI apps** for 30 days. It can't change anything else: mailboxes, modes, which apps may send, limits, allowed recipients, read-only mode, the device log, the passphrase and the server settings stay yours. A setting in your hosting variables or settings file always wins over a change made here.
 
 ## Sending
 

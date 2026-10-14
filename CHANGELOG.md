@@ -2,6 +2,12 @@
 
 All notable changes to this project. Versions follow [semantic versioning](https://semver.org).
 
+## 0.5.0 (2026-10-14)
+
+- **Two new tools:** `settings` shows the settings an AI app may change; `change_setting` changes one of six, only when you ask: remove photo location, remove document details, update check, your signature, templates, and files on the upload page. The AI always tells you what it changed.
+- **Changes by AI apps** on the settings page: every change an AI app made, for 30 days.
+- The update check can now also be switched on or off by asking your AI (`UPDATE_CHECK` in the settings still wins).
+
 ## 0.4.0 (2026-10-14)
 
 - **Remember this device:** the settings and upload pages keep a browser signed in for 90 days (on by default), even across restarts. Changing the passphrase signs every browser out.

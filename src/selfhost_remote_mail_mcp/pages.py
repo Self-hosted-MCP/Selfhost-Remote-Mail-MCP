@@ -320,7 +320,7 @@ def _host_fields(prefix: str, imap_host: str = "", imap_port: str = "993", smtp_
 
 def settings(csrf: str, mailboxes: list[dict], apps: list[dict], flash: tuple[str, str] | None, max_boxes: int,
              server_read_only: bool, about: dict | None = None, uploads_on: bool = False,
-             devices: dict | None = None, privacy: list[dict] | None = None) -> str:
+             devices: dict | None = None, privacy: list[dict] | None = None, changes: list[dict] | None = None) -> str:
     """mailboxes: dicts with address, mode, source, name, imap_host, imap_port, smtp_host, smtp_port, username,
     smtp_username. apps: dicts with client_id, name, host, grant (list or None)."""
     if flash and flash[0] == "domain":
@@ -485,6 +485,17 @@ def settings(csrf: str, mailboxes: list[dict], apps: list[dict], flash: tuple[st
                          'details are kept.</p><div class="actions">'
                          + _post("/settings/device", csrf, {"action": "log_on"}, "Turn on the device log") + "</div>")
 
+    if changes is not None:
+        parts.append('<h2 id="changes">Changes by AI apps</h2><p class="lead">Settings an AI app changed because you '
+                     'asked it to, in the last 30 days. AI apps can only change photo location, document details, '
+                     'the update check, your signature, templates and uploaded files.</p>')
+        if changes:
+            rows = "".join(f'<div class="item"><div class="item-head"><b>{esc(c["what"].splitlines()[0])}</b></div>'
+                           f'<div class="muted">{esc(c["time"])} · {esc(c["app"])}</div></div>' for c in changes[:50])
+            parts.append(f'<div class="list">{rows}</div>')
+        else:
+            parts.append('<div class="list"><p class="empty">No changes by AI apps.</p></div>')
+
     if about:
         upd = about.get("update")
         if upd is None:
@@ -502,6 +513,7 @@ def settings(csrf: str, mailboxes: list[dict], apps: list[dict], flash: tuple[st
                  + _post("/settings/logout", csrf, {}, "Sign out") + "</div>")
     tabs = [("mailboxes", "Mailboxes"), ("apps", "Apps"), ("files", "Files") if uploads_on else None,
             ("privacy", "Privacy") if privacy is not None else None, ("devices", "Devices") if devices is not None else None,
+            ("changes", "AI changes") if changes is not None else None,
             ("about", "About") if about else None]
     return page('Selfhost Mail <span class="hl">MCP</span>', "Mailboxes, modes, and which AI apps may use them.",
                 "".join(parts), wide=True, tabs=[t for t in tabs if t])

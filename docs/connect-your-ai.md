@@ -31,7 +31,7 @@ Menus in these apps change often. If a label below doesn't match what you see, l
 | [Gemini CLI](#gemini-cli) | Yes | Yes | Not yet |
 | Any other MCP app | Usually | If it supports MCP login (OAuth) | No |
 
-The server was also tested end to end with the official MCP Python client, both ways, against a real mailbox: login, listing the 15 tools and calling them.
+The server was also tested end to end with the official MCP Python client, both ways, against a real mailbox: login, listing the tools and calling them.
 
 ## Before you start: the command path
 

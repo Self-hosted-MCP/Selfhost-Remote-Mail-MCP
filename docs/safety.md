@@ -147,6 +147,10 @@ The settings page (`/settings`, web version only) can add and change mailboxes, 
 
 One risk remains: anyone who learns your passphrase could add or change mailboxes, not only read mail. Use a long passphrase, and set `MAIL_SECRET_KEY` so the stored passwords can't be unlocked from a copy of the data folder alone.
 
+## Settings the AI may change
+
+Only six harmless ones, and only when you ask: photo location, document details, the update check, your signature, templates and uploaded files (see [tools.md](tools.md#settings)). It can't touch mailboxes, modes, sending permission, limits, allowed recipients, read-only mode, the device log or the passphrase, so an email that tricks the AI still can't weaken your protection. `change_setting` is marked as a tool that changes things, so you can set your AI app to ask you first. Every change is listed on the settings page.
+
 ## Attachments
 
 - **Programs and scripts are never attached**, and the server checks what's inside each file, so a program renamed to `photo.jpg` is refused. Zips are checked inside too.

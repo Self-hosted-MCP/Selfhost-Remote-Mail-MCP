@@ -113,6 +113,13 @@ If you use your own domain, yes: press **Check domain** on the settings page. It
 </details>
 
 <details>
+<summary><b>Can the AI change my settings?</b></summary>
+
+Only six, and only when you ask: removing photo location, removing document details, the update check, your signature, templates, and files on the upload page. It always tells you what it changed, and the settings page lists every change. Mailboxes, sending, limits and everything about safety stay yours. See [tools.md](tools.md#settings).
+
+</details>
+
+<details>
 <summary><b>I forgot my passphrase. What now?</b></summary>
 
 Set a new one. Nothing is lost, because the passphrase only guards the pages. It doesn't unlock any stored data.

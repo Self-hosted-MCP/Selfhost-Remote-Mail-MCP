@@ -71,7 +71,8 @@ Everything lives in one folder: `~/.config/selfhost-remote-mail-mcp/` on a compu
 | `state/send.lock` | Empty. Makes sure two sends never happen at once | |
 | `mailboxes.json` (in Docker: `/data/mailboxes.json`) | Mailboxes added on the settings page. Their passwords are **encrypted** | Only your user account. The key is `MAIL_SECRET_KEY`, or `secret.key` next to it if that isn't set |
 | `labels.json` | The names you gave mailboxes, like "Work" | Only your user account |
-| `prefs.json` | The switches on the settings page: photo location, document details, device log | Only your user account |
+| `prefs.json` | The switches on the settings page: photo location, document details, device log, update check | Only your user account |
+| `changes.json` | What AI apps changed, for 30 days: the time, the app's name and the change | Only your user account |
 | `sessions.json` | Browsers remembered on the settings page: a **fingerprint** of each sign-in, its device (like "iPhone · Safari"), network address and times | Only your user account |
 | `signins.json` | The device log: each sign-in of the **last 7 days** (time, page, device, network address, right or wrong passphrase). Turn it off on the settings page or with `DEVICE_LOG=off`, which deletes it | Only your user account |
 | `uploads/` | Files from the upload page, **encrypted**, until they're deleted (1 hour after first use, or 24 hours) | Only your user account |

@@ -93,13 +93,15 @@ The server is a small program. Your AI app talks to it through **MCP** (Model Co
 
 **Privacy for your files.** Photos you attach lose their location, and documents lose the author's name, before they're sent. Both are on by default and can be turned off on the settings page. The server never loads pictures or links inside emails, so senders can't track when you read them.
 
+**Settings you can change by asking.** *"Change my signature"*, *"save this as a template"*, *"stop removing photo locations"*. The AI may change six harmless settings when you ask and always tells you. Everything that affects safety stays on the settings page, where only you can change it.
+
 **See who signed in.** The settings page lists the devices signed in and every sign-in of the last 7 days, wrong passphrases included. Sign out any device you don't recognise.
 
 **Check your domain.** If you use your own domain (like `you@yourname.com`), one button checks the records that keep your emails out of spam (SPF, DKIM, DMARC) and says in plain words what to fix.
 
 **Updates, if you want them.** Get told when there's a new release, or let it update itself, official releases only. See [docs/updates.md](docs/updates.md).
 
-All 15 tools, with examples: [docs/tools.md](docs/tools.md).
+All 17 tools, with examples: [docs/tools.md](docs/tools.md).
 
 ## Safety and privacy
 
