@@ -1,5 +1,11 @@
 # The add-on library
 
+> [!NOTE]
+> **The add-on pages**
+> - **Add-on library** (this page): ready-made add-ons to turn on
+> - [Add-ons guide](../../../docs/addons.md): turn one on, write your own, test it
+> - [Your add-ons folder](../../../addons/README.md): where your own add-on files go with Docker or a fork
+
 Ready-made add-ons that come with the server. **All of them are off** until you turn them on, and each one has its own page with what it does, what to ask your AI app and its settings.
 
 | Add-on | What it does | Sends email by itself | Talks to | Extra packages |

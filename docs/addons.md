@@ -1,5 +1,11 @@
 # Add-ons
 
+> [!NOTE]
+> **The add-on pages**
+> - [Add-on library](../src/selfhost_remote_mail_mcp/library/README.md): ready-made add-ons to turn on
+> - **Add-ons guide** (this page): turn one on, write your own, test it
+> - [Your add-ons folder](../addons/README.md): where your own add-on files go with Docker or a fork
+
 An add-on adds your own features to the server without changing it. It works like a socket: you plug in one Python file, and your AI app gets new tools. Updates to the server keep working, because your file stays separate.
 
 The quickest way in is the **add-on library**: ready-made add-ons that come with the server, off until you turn them on (below). You can also write your own.

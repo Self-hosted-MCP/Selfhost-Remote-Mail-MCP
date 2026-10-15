@@ -1,5 +1,7 @@
 # pdf_maker
 
+Part of the [add-on library](../README.md), which lists every add-on. How add-ons work: [the add-ons guide](../../../../docs/addons.md).
+
 Turns text into a clean PDF and attaches it to a draft: a proposal, a summary, meeting notes, a price list. Your AI app writes the text, the server makes the PDF.
 
 ## What you can ask

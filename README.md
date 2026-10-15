@@ -110,7 +110,15 @@ The server is a small program. Your AI app talks to it through **MCP** (Model Co
 
 <p align="center"><img src="docs/images/languages.png" alt="The login page in Japanese, Greek, Portuguese (Brazil) and Hindi" width="640"></p>
 
-**Add-ons.** Extra features you turn on when you want them, from the [add-on library](src/selfhost_remote_mail_mcp/library/README.md) that comes with the server (all off by default), or your own small Python files. An AI coding agent can turn one on or build one for you. See [docs/addons.md](docs/addons.md).
+**Add-ons.** Extra features you turn on when you want them, from the [add-on library](src/selfhost_remote_mail_mcp/library/README.md) that comes with the server (all off by default), or your own small Python files. An AI coding agent can turn one on or build one for you. See [the add-ons guide](docs/addons.md).
+
+| Add-on | What it does |
+|---|---|
+| [calendar_invite](src/selfhost_remote_mail_mcp/library/calendar_invite/README.md) | Attaches a calendar invite to a draft |
+| [pdf_maker](src/selfhost_remote_mail_mcp/library/pdf_maker/README.md) | Turns text into a PDF and attaches it |
+| [invoices](src/selfhost_remote_mail_mcp/library/invoices/README.md) | Numbered quotes, proformas and invoices as PDFs |
+
+Turn one on: `selfhost-remote-mail-mcp addons enable pdf_maker`, or add its name to `MAIL_ADDONS`.
 
 **Updates, if you want them.** Get told when there's a new release, or let it update itself, official releases only. See [docs/updates.md](docs/updates.md).
 

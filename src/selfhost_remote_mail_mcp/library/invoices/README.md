@@ -1,5 +1,7 @@
 # invoices
 
+Part of the [add-on library](../README.md), which lists every add-on. How add-ons work: [the add-ons guide](../../../../docs/addons.md).
+
 Makes a numbered **quote**, **proforma invoice** or **invoice** as a PDF, with the totals worked out, and attaches it to a draft.
 
 > [!IMPORTANT]

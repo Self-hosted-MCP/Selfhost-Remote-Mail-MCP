@@ -1,5 +1,7 @@
 # calendar_invite
 
+Part of the [add-on library](../README.md), which lists every add-on. How add-ons work: [the add-ons guide](../../../../docs/addons.md).
+
 Attaches a calendar invite (`.ics`) to a draft, so the person you write to can add the meeting to their calendar in one tap. Works with Apple Calendar, Google Calendar, Outlook and most others.
 
 ## What you can ask
