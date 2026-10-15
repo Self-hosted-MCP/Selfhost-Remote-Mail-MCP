@@ -59,7 +59,7 @@ This adds one command, `selfhost-remote-mail-mcp`. To check, run `selfhost-remot
 selfhost-remote-mail-mcp setup
 ```
 
-It asks for two things:
+It asks for two things (skipped if you already answered them):
 
 1. **A passphrase**, 12 or more characters. It locks your settings page. Only a scrambled version (hash) is saved. Save it in your password manager (Apple Passwords, Google Password Manager, 1Password ...).
 2. **Whether another copy of this server already uses the same mailboxes**, for example on a server or in Docker. Most people answer no. If you answer yes, this copy leaves scheduled emails and add-ons to the other one, so nothing happens twice.
@@ -176,6 +176,8 @@ Pick one. Both are free.
 tailscale funnel --bg 8765
 ```
 
+(If setup picked another port, like 8766, use that number here and below.)
+
 It prints an address like `https://your-computer.your-tailnet.ts.net`. That address stays the same.
 
 **Cloudflare Tunnel (if you own a domain on Cloudflare).** Follow Cloudflare's [create a tunnel](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/get-started/create-remote-tunnel/) guide and point a hostname such as `mail.yourdomain.com` at `http://localhost:8765`.
@@ -217,7 +219,7 @@ On a Mac and on Linux, `setup` already did this. The server starts by itself whe
 
 Its log: on a Mac `~/Library/Logs/selfhost-remote-mail-mcp.log`, on Linux `journalctl --user -u selfhost-remote-mail-mcp`.
 
-While it runs, you have the settings page, the upload page, scheduled send and add-ons that work by themselves (follow-ups, webhooks, out of office). When your computer is off, those pause until it's back.
+While it runs, you have the settings page, the upload page, scheduled send and add-ons that work by themselves (out of office, webhooks). When your computer is off, those pause until it's back.
 
 <details>
 <summary><b>Windows</b></summary>

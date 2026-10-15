@@ -58,7 +58,7 @@ Mailboxes 2 to 5 use the same settings with their number: `MAIL_2_...`, `MAIL_3_
 | `SEND_DAILY_LIMIT` | `40` | Most emails **each mailbox** sends per day (now and scheduled together). Resets at midnight |
 | `SEND_MINUTE_LIMIT` | `3` | Most emails sent per minute, **all mailboxes together** |
 | `SCHEDULED_SEND` | `on` | `off` stops this copy from sending scheduled emails (`serve` only). Use it on a second copy that shares the mailboxes |
-| `ADDON_JOBS` | `on` | `off` stops this copy's add-ons from working in the background (follow-ups, out of office, webhooks). Use it on a second copy that shares the mailboxes |
+| `ADDON_JOBS` | `on` | `off` stops this copy's add-ons from working in the background (out of office, webhooks). Use it on a second copy that shares the mailboxes |
 
 ## Safety and privacy
 
@@ -89,7 +89,7 @@ Mailboxes 2 to 5 use the same settings with their number: `MAIL_2_...`, `MAIL_3_
 | `ATTACH_MAX_MB` | `25` | Most MB of new files per email, and per upload |
 | `REMOVE_PHOTO_LOCATION` | `on` | `off` keeps the location and camera details in attached photos. Can also be turned off on the settings page |
 | `REMOVE_DOCUMENT_DETAILS` | `on` | `off` keeps the author and company in attached documents. Can also be turned off on the settings page |
-| `ATTACH_FOLDERS` | `~` | Folders the computer version may attach files from, separated by commas. Hidden files are never allowed |
+| `ATTACH_FOLDERS` | `~` | Folders AI apps on your computer may attach files from, separated by commas. Hidden files are never allowed |
 | `UPLOAD_PAGE` | `on` | `off` removes the upload page (`/upload`) from the web version. See [attachments.md](attachments.md) |
 | `UPLOAD_LINKS` | `on` | `off` turns off one-time upload links, which let an AI app upload a file you dropped into the chat. Can also be turned off on the settings page. See [attachments.md](attachments.md#drop-a-file-in-the-chat) |
 

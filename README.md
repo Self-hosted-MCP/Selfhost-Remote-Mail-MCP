@@ -124,7 +124,7 @@ The server is a small program. Your AI app talks to it through **MCP** (Model Co
 
 **Updates, if you want them.** Get told when there's a new release, or let it update itself, official releases only. See [docs/updates.md](docs/updates.md).
 
-All 17 tools, with examples: [docs/tools.md](docs/tools.md).
+All 18 tools, with examples: [docs/tools.md](docs/tools.md).
 
 ## Add-ons
 

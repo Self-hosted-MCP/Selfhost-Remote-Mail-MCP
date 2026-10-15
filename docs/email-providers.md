@@ -3,7 +3,7 @@
 This server logs in to your mailbox the same way any mail app does: **IMAP** to read and **SMTP** to send. This page lists the settings for over 40 providers, and how to get the right password for each.
 
 > [!TIP]
-> Run `selfhost-remote-mail-mcp setup`. For providers marked **auto** below, it fills in the server names for you. You only type your address and password.
+> Add your mailbox on the settings page (or with `selfhost-remote-mail-mcp setup --terminal`). For providers marked **auto** below, it fills in the server names for you. You only type your address and password.
 
 > [!IMPORTANT]
 > Most big providers don't accept your normal password from apps. They want an **app password**: a separate password for one app, which you can delete any time without changing your real one. If yours needs one, make it first ([steps below](#how-to-make-an-app-password)).
@@ -184,7 +184,7 @@ MAIL_USERNAME=you
 SMTP_USERNAME=you@icloud.com
 ```
 
-`setup` sets this up for you when you give it the short login name.
+`setup --terminal` sets this up for you when you give it the short login name.
 
 ### Zoho
 

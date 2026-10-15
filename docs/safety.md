@@ -157,7 +157,7 @@ When you drop a file into the chat, the AI uploads it with a one-time link: one 
 
 ## Add-ons
 
-Add-ons run inside the server with its full power, so only turn on ones you wrote or trust. They can't be added by an AI app or an email, only as a file on your server named in `MAIL_ADDONS`. Their tools still go through the same checks: mailbox modes, each app's choices and file checks. They can't send email themselves. See [addons.md](addons.md).
+Add-ons run inside the server with its full power, so only turn on ones you wrote or trust. They can't be added by an AI app or an email, only as a file on your server named in `MAIL_ADDONS`. Their tools still go through the same checks: mailbox modes, each app's choices and file checks. They can't send email themselves, except an add-on whose whole job is sending, like Out of office, which says so on its page. See [addons.md](addons.md).
 
 ## Attachments
 

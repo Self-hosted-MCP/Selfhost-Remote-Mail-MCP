@@ -30,7 +30,7 @@ flowchart LR
     P -->|"draft changes go through<br/>the same checks"| M["your mailbox"]
 ```
 
-Nothing new opens to the internet. Add-on tools live at the same address, behind the same passphrase. And an add-on can't send email by itself. Only `send_email` and `schedule_send` send, so your AI app can still ask you first.
+Nothing new opens to the internet. Add-on tools live at the same address, behind the same passphrase. And an add-on can't send email by itself, except one whose whole job is sending, like Out of office, which says so on its page. Otherwise only `send_email` and `schedule_send` send, so your AI app can still ask you first.
 
 ## The add-on library
 
@@ -128,7 +128,7 @@ SETTINGS = [
 ]
 ```
 
-`key` is the part after your add-on's prefix (`MY_QUOTES_CLIENT_NAME`). `"choices": "timezone"` shows a list of time zones instead of a text box. `required` shows **Needs setting up** until it's filled. `secret` boxes are never shown again once saved. When a required setting is missing, tell the user where to add it: `api.setup_link()` is the address of your setup page (empty on the computer version).
+`key` is the part after your add-on's prefix (`MY_QUOTES_CLIENT_NAME`). `"choices": "timezone"` shows a list of time zones instead of a text box. `required` shows **Needs setting up** until it's filled. `secret` boxes are never shown again once saved. When a required setting is missing, tell the user where to add it: `api.setup_link()` is the address of your setup page (empty when no web server runs, so there's no page).
 
 ### 4. Change drafts
 
@@ -254,7 +254,7 @@ The agent finds its full checklist in [AGENTS.md](../AGENTS.md#add-ons-for-a-use
 selfhost-remote-mail-mcp addons enable calendar_invite
 ```
 
-It turns it on and checks that it loads. When it says "All add-ons load", restart your AI app.
+It turns it on and checks that it loads. When it says "All add-ons load", restart the server (on a computer: `selfhost-remote-mail-mcp service restart`) and your AI app.
 
 **A library add-on, on a hosting company or Docker:** add its name to `MAIL_ADDONS` (the host's variables, or `.env` then `docker compose up -d`).
 

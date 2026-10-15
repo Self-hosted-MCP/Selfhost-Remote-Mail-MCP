@@ -43,7 +43,7 @@ The AI saves a draft and shows it to you. Nothing is sent yet.
 - *Which files did I upload?* then *Attach the photo I just uploaded.*
 - *Attach the beach photos, but make them smaller.*
 - *Send that iPhone photo as a JPG.*
-- *Attach ~/Desktop/invoice.pdf* (computer version)
+- *Attach ~/Desktop/invoice.pdf* (AI apps on your computer)
 
 ## Settings
 

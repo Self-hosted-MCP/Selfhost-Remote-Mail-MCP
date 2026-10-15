@@ -177,5 +177,5 @@ Nothing is saved until you choose.
 | `REMOVE_PHOTO_LOCATION` | `on` | `off`: photos keep their location and camera details |
 | `REMOVE_DOCUMENT_DETAILS` | `on` | `off`: documents keep their author and company |
 | `ATTACH_MAX_MB` | `25` | Most MB of new files per email, and per upload |
-| `ATTACH_FOLDERS` | `~` | Folders the computer version may attach files from, separated by commas |
+| `ATTACH_FOLDERS` | `~` | Folders AI apps on your computer may attach files from, separated by commas |
 | `UPLOAD_PAGE` | `on` | `off` removes the upload page from the web version |

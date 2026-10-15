@@ -43,6 +43,7 @@ The settings page has a bar at the top with its sections:
 |---|---|
 | **Mailboxes** | See each mailbox, test its login, check its domain, rename it, and edit or remove ones added on this page. **Add a mailbox** is right below |
 | **Apps** | The AI apps that logged in: choose their mailboxes, whether they may send, or disconnect them |
+| **Add-ons** | Turn library add-ons on or off and set them up |
 | **Files** | A link to the upload page, for files to attach |
 | **Privacy** | Turn photo location and document author removal on or off |
 | **Devices** | Browsers signed in to these pages (sign any out), and every sign-in of the last 7 days. The log can be turned off |

@@ -122,7 +122,7 @@ def not_this_computer(monkeypatch, tmp_path_factory):
     """Tests never see or change the real computer: a fake home folder (start-at-login files), and no web
     version answering on this computer unless a test says so."""
     monkeypatch.setenv("HOME", str(tmp_path_factory.mktemp("home")))
-    monkeypatch.setattr(server, "local_health", lambda port, timeout=1.0: False)
+    monkeypatch.setattr(server, "local_health", lambda port, timeout=1.0, same=False: False)
 
 
 @pytest.fixture(autouse=True)

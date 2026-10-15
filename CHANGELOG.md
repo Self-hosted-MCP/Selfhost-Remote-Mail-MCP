@@ -2,6 +2,13 @@
 
 All notable changes to this project. Versions follow [semantic versioning](https://semver.org).
 
+## 0.17.1 (2026-10-15)
+
+- **setup leaves your own server alone:** if this server's web version already runs on the computer (for example your own systemd service on a VPS), setup and `service install` say so and change nothing, instead of moving it to another port.
+- **The local pages are the right ones:** the AI on your computer only points to the settings and upload pages of the copy that shares its settings, never to another copy on the same port (like Docker).
+- `service install` again picks up a changed start-at-login file. A port in use by any program counts as taken. `update` no longer starts a server you stopped. The passphrase must be in the settings file, where the background copy can read it.
+- Guides: uninstalling removes the start-at-login file first, the own-server guide uses `set-passphrase` instead of `setup`, and a few leftovers from before 0.17.0 are fixed (tool count, add-ons that send, `setup --terminal`).
+
 ## 0.17.0 (2026-10-15)
 
 - **The full version on every computer.** `setup` now asks for a passphrase, starts the server in the background, makes it start by itself when you log in (Mac and Linux), and opens your settings page at `http://localhost:8765/settings`. You add your mailbox there, the same way as on a server. Every computer now gets the settings page, the upload page, scheduled send and add-ons that work in the background. On Windows, start it by hand for now.

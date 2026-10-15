@@ -45,7 +45,7 @@ Not yet. Microsoft no longer accepts passwords from mail apps for those accounts
 <details>
 <summary><b>Can I use two mailboxes?</b></summary>
 
-Yes, up to 5 in one server, at any providers. Each gets a mode (full, draft only, read only) and a name, and each AI app only gets the ones you tick. Add them on the settings page, with `setup`, or in the settings file. See [mailboxes.md](mailboxes.md).
+Yes, up to 5 in one server, at any providers. Each gets a mode (full, draft only, read only) and a name, and each AI app only gets the ones you tick. Add them on the settings page, with `setup --terminal`, or in the settings file. See [mailboxes.md](mailboxes.md).
 
 </details>
 
@@ -211,7 +211,7 @@ Each only installs official releases. Turn on `UPDATE_CHECK=on` (or ask your AI:
 <details>
 <summary><b>How do I remove it completely?</b></summary>
 
-See "Deleting everything" in [privacy.md](privacy.md#deleting-everything), then uninstall it (computer: `uv tool uninstall selfhost-remote-mail-mcp`; hosting: delete the service; own server: `docker compose down -v`).
+See "Deleting everything" in [privacy.md](privacy.md#deleting-everything), then uninstall it (computer: `selfhost-remote-mail-mcp service remove`, then `uv tool uninstall selfhost-remote-mail-mcp`; hosting: delete the service; own server: `docker compose down -v`).
 
 </details>
 

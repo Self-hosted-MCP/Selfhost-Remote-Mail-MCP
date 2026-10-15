@@ -46,7 +46,7 @@ The docs are for people who have never used a terminal. Use short sentences and 
 
 ## Adding an email provider
 
-Add it to the table in [docs/email-providers.md](docs/email-providers.md) with a link to the provider's own help page. If `setup` should fill it in, add it to `PROVIDERS` in `server.py` too.
+Add it to the table in [docs/email-providers.md](docs/email-providers.md) with a link to the provider's own help page. If the settings page and `setup --terminal` should fill it in, add it to `PROVIDERS` in `server.py` too.
 
 ## Credit
 

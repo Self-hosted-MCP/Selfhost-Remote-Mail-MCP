@@ -32,14 +32,14 @@ Everything that travels is encrypted. Everything secret that's stored is encrypt
 |---|---|
 | The server and your mail provider | Always encrypted: IMAP over SSL (port 993) and SMTP over SSL (465) or STARTTLS (587), TLS 1.2 or newer, and the provider's certificate is always checked. There is no unencrypted fallback |
 | An AI app and the server, over the internet | HTTPS, from your hosting company, Caddy or a tunnel. The login system refuses plain `http://` addresses (except `localhost`) |
-| Your browser and the login or settings pages | HTTPS. The pages tell browsers to never use plain HTTP again (HSTS), can't be shown inside other sites, and are never cached |
+| Your browser and the login or settings pages | HTTPS (on a computer, `http://localhost`, which never leaves it). The pages tell browsers to never use plain HTTP again (HSTS), can't be shown inside other sites, and are never cached |
 | An AI app and the server, on the same computer | A direct pipe between two programs; nothing goes over a network |
 
 **Stored**
 
 | What | How it's kept |
 |---|---|
-| Mail passwords, on a computer | In your **system keychain** (macOS Keychain, Windows Credential Manager, Linux Secret Service), which the operating system encrypts. `setup` offers this by default. If there's no keychain, in the private settings file |
+| Mail passwords, on a computer | In your **system keychain** (macOS Keychain, Windows Credential Manager, Linux Secret Service), which the operating system encrypts. `setup --terminal` offers this. Mailboxes added on the settings page are encrypted in the data folder instead (row below). If there's no keychain, in the private settings file |
 | Mail passwords, on a hosting company | In the host's secret variables, which the host encrypts |
 | Mail passwords added on the settings page | **Encrypted** (Fernet: AES with an authentication code) with `MAIL_SECRET_KEY` |
 | Your passphrase | As a **one-way hash** if you use `set-passphrase` (PBKDF2, 600,000 rounds). `LOGIN_PASSPHRASE` keeps it as text, in your host's secret variables |
@@ -114,6 +114,7 @@ To give the AI less, you can:
 
 ## Deleting everything
 
+1. On a computer, first run `selfhost-remote-mail-mcp service remove`, so it no longer starts at login. On a Mac, also delete `~/Library/Logs/selfhost-remote-mail-mcp.log`.
 1. Delete the folder (`~/.config/selfhost-remote-mail-mcp/`, or the `/data` volume or disk).
 2. Delete the app password at your mail provider.
 3. Remove the connector from your AI apps.

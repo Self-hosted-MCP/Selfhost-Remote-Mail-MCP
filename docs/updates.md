@@ -24,7 +24,7 @@ The settings page always shows your version and the latest changes under **About
 
 | How you run it | Update |
 |---|---|
-| Your computer | `selfhost-remote-mail-mcp update`, then restart your AI app (and `serve`, if you use it) |
+| Your computer | `selfhost-remote-mail-mcp update`, then restart your AI app. The server in the background restarts by itself (Mac, Linux) |
 | A hosting company | Run the **Update from official releases** action in your fork (see below), or merge the release tag yourself |
 | Your own server | `./scripts/update.sh` in your copy of the project |
 
@@ -53,7 +53,7 @@ Save as `~/Library/LaunchAgents/com.selfhost-remote-mail-mcp.update.plist` (repl
 </plist>
 ```
 
-Turn it on with `launchctl load` and that path.
+Turn it on with `launchctl bootstrap gui/$(id -u)` and that path.
 
 </details>
 
@@ -104,7 +104,7 @@ Already using **Coolify, Dokploy** or similar? Point it at a release tag instead
 
 ## Going back
 
-- **Computer:** `uv tool install --force git+https://github.com/s17sh70x2jfl031ag/Selfhost-Remote-Mail-MCP@vX.Y.Z` (the version you want, for example `v0.6.0`).
+- **Computer:** `uv tool install --force git+https://github.com/s17sh70x2jfl031ag/Selfhost-Remote-Mail-MCP@vX.Y.Z` (the version you want, for example `v0.6.0`), then `selfhost-remote-mail-mcp service restart`.
 - **Own server:** `git checkout vX.Y.Z && docker compose up -d --build` (the version you want).
 - **Hosting company:** revert the update commit in your fork; the host rebuilds.
 

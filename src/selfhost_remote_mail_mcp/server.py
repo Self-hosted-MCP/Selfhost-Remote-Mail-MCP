@@ -18,9 +18,10 @@ Commands (see `selfhost-remote-mail-mcp help`):
     stdio           run for one AI app on this computer (Claude Desktop, Claude Code, Codex, ...)
     serve           run as a web server with a passphrase login (phone, claude.ai, ChatGPT, ...)
     set-passphrase  choose the passphrase for the settings page and logins (only its hash is stored)
-    update          install the newest official release (computer version, needs uv)
+    update          install the newest official release (on a computer, needs uv)
     version         show the installed version
-    addons          load the add-ons in MAIL_ADDONS and list their tools (a check; starts nothing)
+    addons          load the add-ons in MAIL_ADDONS and list their tools (a check; starts nothing);
+                    addons list | enable NAME | disable NAME
     translate CODE  make or update the web pages' translation file for a language (e.g. ko), for an AI agent
                     or a person to fill in; translate --check CODE checks it
 
@@ -128,6 +129,14 @@ SETTINGS = ("MAIL_ADDRESS", "MAIL_NAME", "MAIL_USERNAME", "SMTP_USERNAME", "MAIL
 
 
 def read_env() -> dict[str, str]:
+    cfg = read_env_file()
+    cfg.update({k: v for k, v in os.environ.items() if v and (k in SETTINGS or re.fullmatch(r"MAIL_\d+_[A-Z_]+", k))})
+    return cfg
+
+
+def read_env_file() -> dict[str, str]:
+    """The settings file alone, without this process's environment: what a copy started elsewhere (the one in
+    the background) will see."""
     cfg = {}
     if ENV_FILE.exists():
         if os.name != "nt" and ENV_FILE.stat().st_mode & 0o077:
@@ -138,7 +147,6 @@ def read_env() -> dict[str, str]:
                 continue
             key, value = line.split("=", 1)
             cfg[key.strip()] = value.strip()
-    cfg.update({k: v for k, v in os.environ.items() if v and (k in SETTINGS or re.fullmatch(r"MAIL_\d+_[A-Z_]+", k))})
     return cfg
 
 
@@ -2974,7 +2982,7 @@ def build_server(remote: bool) -> MCPServer:
 
     @server.custom_route("/health", methods=["GET"])
     async def health(request: Request) -> Response:
-        return Response("ok")
+        return Response("ok", headers={"X-Mail-MCP-Copy": copy_id()})
 
     @server.custom_route("/icon.svg", methods=["GET"])
     async def icon_svg(request: Request) -> Response:
@@ -3897,7 +3905,8 @@ def settings() -> str:
     lines.append("- uploaded files (may be deleted): " + (", ".join(waiting) if waiting else "none"))
     library = library_addons()
     if library or LOADED_ADDONS:
-        base = f"{pages_url(cfg)}/settings/addon/" if pages_url(cfg) else ""
+        page = pages_url(cfg)
+        base = f"{page}/settings/addon/" if page else ""
         lines += ["", "Add-ons. You can't turn them on or set them up: give the user the setup link, where they "
                       "turn it on and fill in what it needs" + ("" if base else " (on this computer: the settings "
                                                                  "file, see each add-on's page in the add-on library)")
@@ -5106,7 +5115,7 @@ def setup_mailbox() -> None:
         smtp_port = int(ask("SMTP port (465 or 587)", "465"))
     username = ask("Login name, if it isn't your email address (Enter to skip)", "")
     if domain in ("icloud.com", "me.com", "mac.com"):
-        print("iCloud: if the login fails, run setup again and give the part before the @ as the login name.")
+        print("iCloud: if the login fails, run setup --terminal again and give the part before the @ as the login name.")
     label = ask("A short name for this mailbox, like Work or Personal (Enter to skip)", "")
     mode = "full"
     if slot > 1:
@@ -5124,7 +5133,7 @@ def setup_mailbox() -> None:
     if problems:
         print("\n".join(problems))
         if ask("Save these settings anyway? (y/n)", "n").lower() != "y":
-            sys.exit("Nothing saved. Fix the settings and run setup again.")
+            sys.exit("Nothing saved. Fix the settings and run setup --terminal again.")
     else:
         print("Logins work.")
     in_keychain = False
@@ -5156,12 +5165,12 @@ def setup(args: list[str]) -> None:
     if "--terminal" in args:
         setup_mailbox()
     secret_box()   # the key exists before two copies could each make one
-    cfg = read_env()
+    cfg = read_env_file()   # the background copy won't see this terminal's variables
     if not (cfg.get("LOGIN_HASH") or len(cfg.get("LOGIN_PASSPHRASE", "")) >= 12):
         print("Choose a passphrase. It locks your settings page, and AI apps that connect over the internet "
               "ask for it once. Save it in your password manager.")
         set_passphrase()
-    if not cfg.get("SCHEDULED_SEND") and not cfg.get("ADDON_JOBS"):
+    if not cfg.get("SCHEDULED_SEND") and not cfg.get("ADDON_JOBS") and not running_elsewhere():
         other = ask("Does another copy of this server already use the same mailboxes (on a server, a hosting "
                     "company or in Docker)? (y/n)", "n").lower().startswith("y")
         if other:   # that copy sends the scheduled emails and runs the add-ons; doing it here too would double them
@@ -5195,26 +5204,37 @@ def local_url(cfg: dict | None = None) -> str:
     return f"http://localhost:{int((cfg or read_env()).get('PORT') or 8765)}"
 
 
+def copy_id() -> str:
+    """Tells copies apart without saying anything about them: a fingerprint of the data folder. Two copies with
+    the same one share settings, mailboxes and uploads."""
+    return token_key(str(STATE_DIR.resolve()))[:16]
+
+
 def pages_url(cfg: dict | None = None) -> str:
     """Where the user opens the settings and upload pages: this server's address on the web version; for an AI
     app's copy on this computer, the web version running in the background, if it answers. "" when none runs."""
     cfg = cfg or read_env()
     if PROVIDER is not None or MODE == "serve":   # this is the web version
         return getattr(PROVIDER, "public_url", "") or public_url(cfg)
-    return local_url(cfg) if local_health(int(cfg.get("PORT") or 8765), timeout=0.5) else ""
+    return local_url(cfg) if local_health(int(cfg.get("PORT") or 8765), timeout=0.5, same=True) else ""
 
 
-def local_health(port: int, timeout: float = 1.0) -> bool:
-    """True when a copy of this server answers on this computer's port."""
+def local_health(port: int, timeout: float = 1.0, same: bool = False) -> bool:
+    """True when a copy of this server answers on this computer's port. same=True: only one that uses this
+    copy's data folder (not, say, a Docker copy with its own)."""
     try:
         with urllib.request.urlopen(f"http://127.0.0.1:{port}/health", timeout=timeout) as resp:
-            return resp.read(10).strip() == b"ok"
+            return resp.read(10).strip() == b"ok" and (not same or resp.headers.get("X-Mail-MCP-Copy") == copy_id())
     except Exception:
         return False
 
 
 def port_free(port: int) -> bool:
     import socket
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as probe:
+        probe.settimeout(0.5)
+        if probe.connect_ex(("127.0.0.1", port)) == 0:   # something listens, even on all addresses (Docker)
+            return False
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
         if os.name != "nt":   # a port left in TIME_WAIT by a server that just stopped is free for the next one
             sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -5267,7 +5287,7 @@ def service_write() -> Path:
                                "StandardOutPath": str(log), "StandardErrorPath": str(log),
                                **({"EnvironmentVariables": env} if env else {})}).decode()
     else:
-        quote = lambda part: '"' + part.replace("\\", "\\\\").replace('"', '\\"') + '"'
+        quote = lambda part: '"' + part.replace("\\", "\\\\").replace('"', '\\"').replace("%", "%%").replace("$", "$$") + '"'
         text = "\n".join(["[Unit]", "Description=Selfhost-Remote-Mail-MCP web version", "", "[Service]",
                           "ExecStart=" + " ".join(quote(p) for p in command), "Restart=on-failure", "RestartSec=30",
                           *[f"Environment={quote(f'{k}={v}')}" for k, v in env.items()],
@@ -5275,6 +5295,17 @@ def service_write() -> Path:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(text)
     return path
+
+
+def service_load() -> bool:
+    """Loads the start-at-login file again, so a changed one counts, and starts it."""
+    if sys.platform == "darwin":
+        domain = f"gui/{os.getuid()}"
+        if _run("launchctl", "print", f"{domain}/{SERVICE_LABEL}") == 0:
+            _run("launchctl", "bootout", f"{domain}/{SERVICE_LABEL}")
+            wait_until_stopped()
+        return _run("launchctl", "bootstrap", domain, str(service_file())) == 0
+    return service_start()   # systemd reads the file again on daemon-reload
 
 
 def service_start() -> bool:
@@ -5294,10 +5325,14 @@ def service_stop() -> bool:
         done = _run("launchctl", "bootout", f"gui/{os.getuid()}/{SERVICE_LABEL}") == 0
     else:
         done = _run("systemctl", "--user", "stop", f"{APP}.service") == 0
-    port, end = int(read_env().get("PORT") or 8765), time.time() + 10
-    while local_health(port, timeout=0.5) and time.time() < end:
-        time.sleep(0.3)
+    wait_until_stopped()
     return done
+
+
+def wait_until_stopped(seconds: float = 10) -> None:
+    port, end = int(read_env().get("PORT") or 8765), time.time() + seconds
+    while local_health(port, timeout=0.5, same=True) and time.time() < end:
+        time.sleep(0.3)
 
 
 def wait_for_server(port: int, seconds: float = 20) -> bool:
@@ -5309,9 +5344,20 @@ def wait_for_server(port: int, seconds: float = 20) -> bool:
     return False
 
 
+def running_elsewhere() -> bool:
+    """This copy's web version already runs, started some other way (your own systemd service, a window)."""
+    return not service_installed() and local_health(int(read_env().get("PORT") or 8765), same=True)
+
+
 def service_install() -> bool:
     """Makes the web version start by itself at login and starts it now. Returns True once it answers."""
-    cfg = read_env()
+    cfg = read_env_file()   # what the background copy will see: not this terminal's own variables
+    if running_elsewhere():
+        print(f"This server's web version already runs at {local_url()}, started another way. Nothing installed.")
+        return True
+    if os.environ.get("MAIL_SECRET_KEY") and not cfg.get("MAIL_SECRET_KEY"):
+        print("Note: MAIL_SECRET_KEY is set only in this terminal. Put it in the settings file too, or the copy "
+              "in the background can't read mailboxes saved with it.")
     if service_file() is None:
         print("On this system, start-at-login isn't automatic yet. Follow 'Keep it running in the background' "
               "in docs/setup-computer.md.")
@@ -5332,7 +5378,7 @@ def service_install() -> bool:
         print(f"Port {port} is taken, so this one uses {new}.")
         port = new
     path = service_write()
-    if not service_start():
+    if not service_load():
         print(f"Couldn't start it in the background ({path}). Start it by hand: {APP} serve")
         return False
     print(f"The web version starts by itself when you log in ({path}).")
@@ -5441,8 +5487,8 @@ def update_line() -> str:
 
 
 def run_update() -> None:
-    """The `update` command, for the computer version: installs the newest official release with uv.
-    Never installs unreleased code. The web version (serve) must be restarted afterwards."""
+    """The `update` command, on a computer: installs the newest official release with uv.
+    Never installs unreleased code. Restarts the web version in the background if it runs."""
     try:
         latest = fetch_latest_release()
     except Exception as exc:
@@ -5464,7 +5510,7 @@ def run_update() -> None:
     result = subprocess.run([uv, "tool", "install", "--force", source])
     if result.returncode:
         sys.exit("The update failed; the version you had is still installed.")
-    restarted = service_installed() and service_start()
+    restarted = service_installed() and local_health(int(read_env().get("PORT") or 8765), same=True) and service_start()
     print(f"Updated to {tag}. " + ("The web version restarted with it. " if restarted else "")
           + f"Restart your AI app to use it. What's new: {latest['url']}")
 

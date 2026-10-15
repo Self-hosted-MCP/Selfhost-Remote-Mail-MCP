@@ -98,14 +98,14 @@ Run the mail container with `-p 127.0.0.1:8765:8765` so only nginx can reach it,
 <details>
 <summary><b>Without Docker</b></summary>
 
-Install it as in [setup-computer.md](setup-computer.md), run `selfhost-remote-mail-mcp serve` as a systemd service, and put any HTTPS reverse proxy (Caddy, nginx, Traefik) in front of `127.0.0.1:8765`.
+Install it with uv as in [setup-computer.md](setup-computer.md) (steps 1 and 2), choose a passphrase with `selfhost-remote-mail-mcp set-passphrase` (not `setup`, which makes a service that only runs while you're logged in), run `selfhost-remote-mail-mcp serve` as a systemd service, and put any HTTPS reverse proxy (Caddy, nginx, Traefik) in front of `127.0.0.1:8765`.
 
 </details>
 
 <details>
 <summary><b>Running two copies</b></summary>
 
-Two copies of this server must never use the same mailbox with *separate* `/data` folders, or scheduled emails could be sent twice. During a normal redeploy, where old and new containers briefly share the same volume, a lock file makes sure each email goes out once. To stop a second copy from sending scheduled emails, set `SCHEDULED_SEND=off` on it.
+Two copies of this server must never use the same mailbox with *separate* `/data` folders, or scheduled emails could be sent twice. During a normal redeploy, where old and new containers briefly share the same volume, a lock file makes sure each email goes out once. To stop a second copy from sending scheduled emails and running background add-ons, set `SCHEDULED_SEND=off` and `ADDON_JOBS=off` on it. On a computer, `setup` asks about this and sets both.
 
 </details>
 

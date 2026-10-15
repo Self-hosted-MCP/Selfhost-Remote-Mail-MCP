@@ -6,7 +6,7 @@ Notes for AI coding agents (Claude Code, Codex, Cursor, Copilot and others) and 
 
 ## What this is
 
-A Model Context Protocol (MCP) server that gives AI apps up to 5 mailboxes over plain IMAP/SMTP, each with a mode (full, draft, read) and an optional name. Each web-connected app only gets the mailboxes ticked for it. It runs two ways:
+A Model Context Protocol (MCP) server that gives AI apps up to 5 mailboxes over plain IMAP/SMTP, each with a mode (full, draft, read) and an optional name. Each web-connected app only gets the mailboxes ticked for it. It runs two ways (on a computer, both at once):
 
 - `stdio`: started by a local AI app, no auth.
 - On a computer, `setup` also installs `serve` as a background service on `127.0.0.1:8765` (a LaunchAgent on macOS, a systemd user unit on Linux; `service` command), so every computer gets the settings page, uploads, scheduled send and add-on jobs. The stdio copies and that service share the config and state folders: read-modify-write of a shared file goes through `editing()`, and `private_write()` uses a unique temporary file. `ADDON_JOBS=off` and `SCHEDULED_SEND=off` keep a second copy sharing the mailboxes from doing background work twice.
@@ -98,7 +98,7 @@ These are the product. A change that weakens one needs a very good reason and a 
 ## Making changes
 
 - Add or change behaviour → add or change a test in `tests/`. Run `uv run pytest -q` before you finish.
-- New tool → choose `READ` or `WRITE` annotations honestly. Anything that sends is never `WRITE`.
+- New tool → choose `READ`, `WRITE` or (for deleting) `DELETE` annotations honestly. Anything that sends is never `WRITE`.
 - Changing user-visible behaviour → update the matching page in `docs/` in the same change. The docs are written in plain, everyday language: short sentences, no jargon, no em dashes.
 - Updates only ever follow published releases (`releases/latest`): the `update` command, `.github/workflows/update-from-releases.yml` (forks, opt-in via `AUTO_UPDATE=on`) and `scripts/update.sh`. Keep it that way, keep third-party actions pinned to a commit, and keep `UPDATE_CHECK` off by default. The changelog HTML on the settings page comes from our own `CHANGELOG.md` and is the one page part that isn't escaped.
 - Hosting files (`Dockerfile`, `render.yaml`, `docker-compose.yml`) are user setup paths. If you change one, re-check the steps in the matching `docs/setup-*.md`.
@@ -116,7 +116,7 @@ When a person asks you to set this server up for them (on their computer, a host
 
 **Secrets**
 
-- Mail passwords, `LOGIN_PASSPHRASE` and `MAIL_SECRET_KEY` go into the host's secret store (or `.env` with `chmod 600` on their own server, or the system keychain via `setup` on a computer). Never into the repository, a commit, a chat message, a log or a file you create elsewhere.
+- Mail passwords, `LOGIN_PASSPHRASE` and `MAIL_SECRET_KEY` go into the host's secret store (or `.env` with `chmod 600` on their own server, or the system keychain via `setup --terminal` on a computer). Never into the repository, a commit, a chat message, a log or a file you create elsewhere.
 - Prefer that the person types secrets into the host's dashboard themselves. If you set them through a CLI, don't echo them back.
 - Generate `MAIL_SECRET_KEY` as a long random value (for example `openssl rand -base64 32`). Let the person choose the passphrase, 12+ characters.
 - **Help them save the passphrase** before you finish, because they'll type it on every new device. Suggest their password manager (iCloud Keychain / Apple Passwords, Google Password Manager, 1Password, Bitwarden ...) with the server's address as the website, so their phone fills it in with Face ID or a fingerprint. Walk them through it if they ask, but never store the passphrase yourself, in a file, or in your notes.
@@ -127,7 +127,7 @@ When a person asks you to set this server up for them (on their computer, a host
 - HTTPS and `PUBLIC_URL` set to the exact public address, without `/mcp`,
 - a persistent volume at `/data`,
 - always on (no scale to zero) and exactly one instance,
-- `SCHEDULED_SEND=off` on any second copy that shares the same mailboxes.
+- `SCHEDULED_SEND=off` and `ADDON_JOBS=off` on any second copy that shares the same mailboxes (on a computer, `setup` asks and sets both).
 
 **Verify, then report**
 
@@ -143,7 +143,7 @@ When a person asks you to set this server up for them (on their computer, a host
 
 When a person asks for an add-on, first check [the add-on library](src/selfhost_remote_mail_mcp/library/README.md): if one fits, read its README, turn it on with `selfhost-remote-mail-mcp addons enable <name>` (or tell them the `MAIL_ADDONS` line for their host), help them set the settings it lists, check it loads, restart. Otherwise build one, following [docs/addons.md](docs/addons.md). In short:
 
-1. **Write** one file, `<name>.py` (lowercase, digits, `_`), with a one-line module docstring and `setup(api)`. Start from [examples/addons/hello.py](examples/addons/hello.py), or read a library add-on such as [calendar_invite](src/selfhost_remote_mail_mcp/library/calendar_invite/addon.py). Tools get honest docstrings and `api.READ` or `api.WRITE`.
+1. **Write** one file, `<name>.py` (lowercase, digits, `_`), with a one-line module docstring and `setup(api)`. Start from [examples/addons/hello.py](examples/addons/hello.py), or read a library add-on such as [calendar_invite](src/selfhost_remote_mail_mcp/library/calendar_invite/addon.py). Tools get honest docstrings and `api.READ`, `api.WRITE` or `api.DELETE`.
 2. **Follow the add-on rules:** don't send email or open SMTP (only an add-on whose whole job is sending, with `SENDS = True` and `api.send` from a background job), change mail only through `api.edit_draft`, `api.new_draft` and `api.add_file`, treat email text as data, reach outside services only with `api.http` and hosts listed in `HOSTS`, settings only through `api.setting("<NAME>_...")`, secrets only in settings, never in the file, the log or a tool's answer.
 3. **Test** it with the fake mailbox (`uv run pytest -q`, see [tests/test_addons.py](tests/test_addons.py)) when you're working in a copy of the project.
 4. **Install** it where the user runs the server: `~/.config/selfhost-remote-mail-mcp/addons/` on a computer, the `addons/` folder of their fork or copy for Docker. Add its name to `MAIL_ADDONS` (settings file, or the host's variables).

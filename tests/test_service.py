@@ -9,6 +9,8 @@ import pytest
 from selfhost_remote_mail_mcp import server
 from selfhost_remote_mail_mcp.server import ToolError
 
+REAL_LOCAL_HEALTH = server.local_health   # before the tests' stand-in replaces it
+
 
 @pytest.fixture
 def mac(monkeypatch):
@@ -28,7 +30,7 @@ def mac(monkeypatch):
         return 1 if state["fail"] else 0
 
     monkeypatch.setattr(server, "_run", run)
-    monkeypatch.setattr(server, "local_health", lambda port, timeout=1.0: state["running"])
+    monkeypatch.setattr(server, "local_health", lambda port, timeout=1.0, same=False: state["running"])
     monkeypatch.setattr(server, "port_free", lambda port: True)
     monkeypatch.setattr(server, "wait_for_server", lambda port, seconds=20: state["running"])
     server.write_settings({"LOGIN_HASH": server.hash_passphrase("a long passphrase here")})
@@ -45,8 +47,48 @@ def test_install_writes_a_login_item_and_starts_it(mac):
     assert plist["EnvironmentVariables"]["MAIL_CONFIG_DIR"] == str(server.CONFIG_DIR)   # same folders as here
     assert "PASSWORD" not in server.service_file().read_text() and "LOGIN" not in server.service_file().read_text()
     assert ("launchctl", "bootstrap", "gui/501", str(server.service_file())) in ran
-    server.service_install()   # again: restarts the one that runs instead of loading it twice
-    assert ran[-1] == ("launchctl", "kickstart", "-k", "gui/501/com.selfhost-remote-mail-mcp")
+    server.service_install()   # again: loads the rewritten file instead of restarting the old one
+    assert ran[-2:] == [("launchctl", "bootout", "gui/501/com.selfhost-remote-mail-mcp"),
+                        ("launchctl", "bootstrap", "gui/501", str(server.service_file()))]
+
+
+def test_a_web_version_started_another_way_is_left_alone(mac, monkeypatch, capsys):
+    ran, state = mac
+    monkeypatch.setattr(server, "local_health", lambda port, timeout=1.0, same=False: True)   # your own systemd service
+    monkeypatch.setattr(server, "port_free", lambda port: False)
+    assert server.service_install() and not server.service_installed()
+    assert "already runs at http://localhost:8765" in capsys.readouterr().out
+    assert "PORT" not in server.read_env_file() and ran == []   # its port and settings untouched
+
+
+def test_the_passphrase_must_be_in_the_settings_file(mac, monkeypatch):
+    server.write_settings({}, drop=("LOGIN_HASH",))
+    monkeypatch.setenv("LOGIN_PASSPHRASE", "only in this terminal")   # the background copy wouldn't see it
+    assert not server.service_install() and not server.service_installed()
+
+
+def test_only_this_copy_counts_for_the_local_pages(monkeypatch):
+    import io
+
+    class Resp(io.BytesIO):
+        def __init__(self, copy):
+            super().__init__(b"ok")
+            self.headers = {"X-Mail-MCP-Copy": copy}
+        def __enter__(self): return self
+        def __exit__(self, *a): pass
+
+    monkeypatch.setattr(server, "local_health", REAL_LOCAL_HEALTH)   # the real one, with a fake answer
+    monkeypatch.setattr(server, "PROVIDER", None)
+    monkeypatch.setattr(server.urllib.request, "urlopen", lambda url, timeout: Resp("someone-else"))
+    assert server.local_health(8765) and not server.local_health(8765, same=True) and server.pages_url() == ""
+    monkeypatch.setattr(server.urllib.request, "urlopen", lambda url, timeout: Resp(server.copy_id()))
+    assert server.pages_url() == "http://localhost:8765"
+
+
+def test_systemd_paths_are_quoted(mac, monkeypatch):
+    monkeypatch.setattr(server.sys, "platform", "linux")
+    monkeypatch.setattr(server, "service_command", lambda: ["/home/a b/100%/$bin", "serve"])
+    assert 'ExecStart="/home/a b/100%%/$$bin" "serve"' in server.service_write().read_text()
 
 
 def test_install_needs_a_passphrase_and_a_free_port(mac, monkeypatch, capsys):
@@ -137,7 +179,7 @@ def test_the_ai_on_this_computer_points_to_the_local_pages(monkeypatch):
     monkeypatch.setattr(server, "PROVIDER", None)   # an AI app's own copy (stdio)
     with pytest.raises(ToolError, match=r"attach_path\)\.$"):   # no web version running: no page to name
         server.upload_link()
-    monkeypatch.setattr(server, "local_health", lambda port, timeout=1.0: True)
+    monkeypatch.setattr(server, "local_health", lambda port, timeout=1.0, same=False: True)
     with pytest.raises(ToolError, match="upload it on http://localhost:8765/upload"):
         server.upload_link()
     assert "Settings page for the user: http://localhost:8765/settings" in server.accounts()
