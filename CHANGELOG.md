@@ -2,6 +2,10 @@
 
 All notable changes to this project. Versions follow [semantic versioning](https://semver.org).
 
+## 0.16.2 (2026-10-15)
+
+- **Safer when two copies share one computer:** the web version and the copy your AI app starts can now change the same settings at the same moment without one undoing the other (a switch, an add-on, a name, the change list). Each save uses its own temporary file, and two copies starting for the first time can no longer each make a different secret key.
+
 ## 0.16.1 (2026-10-15)
 
 - **Update check after an update:** the settings page could name a newest release older than the server itself, from a check saved before the update. The server now checks again right after it was updated.

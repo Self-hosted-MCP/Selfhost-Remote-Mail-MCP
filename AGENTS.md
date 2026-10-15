@@ -33,6 +33,7 @@ tests/test_domain.py                     the domain check (DNS answers faked)
 tests/test_settings_tool.py              settings / change_setting: the six allowed settings, the change list
 tests/test_addons.py                     add-ons: loading, the api, checks that still apply, the examples
 tests/test_languages.py                  page languages: picking, fallback, translate command, unmarked texts
+tests/test_shared_files.py               files two copies change at once: locks, temporary files, one secret key
 src/selfhost_remote_mail_mcp/i18n.py     page languages: _(), picking a language, the translate command's helpers
 src/selfhost_remote_mail_mcp/locales/    one JSON file per language: English text -> translation
 examples/addons/                         hello.py, the smallest add-on, to copy when writing your own

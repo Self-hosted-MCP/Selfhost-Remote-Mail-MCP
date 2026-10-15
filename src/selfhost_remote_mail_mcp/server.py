@@ -49,6 +49,7 @@ import string
 import smtplib
 import ssl
 import sys
+import tempfile
 import threading
 import time
 from contextlib import contextmanager
@@ -145,11 +146,26 @@ def config() -> dict[str, str]:
 
 
 def private_write(path: Path, text: str) -> None:
+    """Writes the whole file at once, owner-only. Each write uses its own temporary name, so two processes
+    writing at the same moment never trip over each other."""
     path.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
-    tmp = path.with_suffix(".tmp")
-    tmp.write_text(text)
-    tmp.chmod(0o600)
-    tmp.replace(path)
+    fd, tmp = tempfile.mkstemp(dir=path.parent, prefix=path.name + ".", suffix=".tmp")
+    try:
+        with os.fdopen(fd, "w") as f:
+            f.write(text)
+        os.chmod(tmp, 0o600)
+        os.replace(tmp, path)
+    except BaseException:
+        Path(tmp).unlink(missing_ok=True)
+        raise
+
+
+@contextmanager
+def editing(path: Path):
+    """Hold this while reading, changing and writing back a shared file. The web version and an AI app's copy
+    on the same computer can change the same file; the lock keeps one from undoing the other's change."""
+    with file_lock(path.parent / (path.name + ".lock")):
+        yield
 
 
 # ---------------------------------------------------------------- mailboxes
@@ -287,7 +303,9 @@ def secret_box():
         key = base64.urlsafe_b64encode(hashlib.sha256(secret.encode()).digest())
     else:
         if not KEY_FILE.exists():
-            private_write(KEY_FILE, Fernet.generate_key().decode())
+            with editing(KEY_FILE):   # two copies starting at once must not each make their own key
+                if not KEY_FILE.exists():
+                    private_write(KEY_FILE, Fernet.generate_key().decode())
         key = KEY_FILE.read_text().strip().encode()
     return Fernet(key)
 
@@ -341,12 +359,13 @@ def clean_label(value: str) -> str:
 
 
 def save_label(address: str, label: str) -> None:
-    names = json.loads(LABELS_FILE.read_text()) if LABELS_FILE.exists() else {}
-    if label:
-        names[address] = label
-    else:
-        names.pop(address, None)
-    private_write(LABELS_FILE, json.dumps(names, indent=1))
+    with editing(LABELS_FILE):
+        names = json.loads(LABELS_FILE.read_text()) if LABELS_FILE.exists() else {}
+        if label:
+            names[address] = label
+        else:
+            names.pop(address, None)
+        private_write(LABELS_FILE, json.dumps(names, indent=1))
 
 
 def current_app() -> str | None:
@@ -2441,7 +2460,8 @@ def read_prefs() -> dict:
 
 
 def set_pref(name: str, on: bool) -> None:
-    private_write(PREFS_FILE, json.dumps({**read_prefs(), name: on}))
+    with editing(PREFS_FILE):
+        private_write(PREFS_FILE, json.dumps({**read_prefs(), name: on}))
 
 
 def device_log_on() -> bool:
@@ -3776,13 +3796,14 @@ def app_name() -> str:
 def record_change(what: str) -> str:
     """Keeps a list of what AI apps changed (30 days), and returns the line the AI must pass on to the user."""
     now = time.time()
-    try:
-        changes = json.loads(CHANGES_FILE.read_text())
-    except (OSError, ValueError):
-        changes = []
-    changes = [c for c in changes if c.get("time", 0) > now - CHANGES_KEEP]
-    changes.insert(0, {"time": now, "app": app_name(), "what": what})
-    private_write(CHANGES_FILE, json.dumps(changes[:200]))
+    with editing(CHANGES_FILE):
+        try:
+            changes = json.loads(CHANGES_FILE.read_text())
+        except (OSError, ValueError):
+            changes = []
+        changes = [c for c in changes if c.get("time", 0) > now - CHANGES_KEEP]
+        changes.insert(0, {"time": now, "app": app_name(), "what": what})
+        private_write(CHANGES_FILE, json.dumps(changes[:200]))
     return (f"Done: {what}. Tell the user exactly this change now. It's also listed under 'Changes by AI apps' "
             "on the settings page.")
 
@@ -4670,9 +4691,10 @@ def page_addons() -> list[str]:
 
 
 def set_page_addon(name: str, on: bool) -> None:
-    prefs = read_prefs()
-    names = [n for n in page_addons() if n != name] + ([name] if on else [])
-    private_write(PREFS_FILE, json.dumps({**prefs, "addons": names}))
+    with editing(PREFS_FILE):
+        prefs = read_prefs()
+        names = [n for n in page_addons() if n != name] + ([name] if on else [])
+        private_write(PREFS_FILE, json.dumps({**prefs, "addons": names}))
 
 
 def unload_addon(name: str) -> None:
@@ -4865,10 +4887,11 @@ def set_passphrase() -> None:
 def write_settings(values: dict[str, str], drop: tuple[str, ...] = ()) -> None:
     """Add or replace keys in the settings file, keeping everything else as it is."""
     gone = set(values) | set(drop)
-    lines = [l for l in ENV_FILE.read_text().splitlines() if l.split("=", 1)[0].strip() not in gone] \
-        if ENV_FILE.exists() else []
-    lines += [f"{k}={v}" for k, v in values.items() if v]
-    private_write(ENV_FILE, "\n".join(lines) + "\n")
+    with editing(ENV_FILE):
+        lines = [l for l in ENV_FILE.read_text().splitlines() if l.split("=", 1)[0].strip() not in gone] \
+            if ENV_FILE.exists() else []
+        lines += [f"{k}={v}" for k, v in values.items() if v]
+        private_write(ENV_FILE, "\n".join(lines) + "\n")
 
 
 # IMAP host, IMAP port, SMTP host, SMTP port. 587 means STARTTLS, 465 means SSL from the start.
@@ -5164,7 +5187,10 @@ def update_status(force: bool = False) -> dict | None:
         except Exception as exc:
             print(f"update check failed: {type(exc).__name__}", file=sys.stderr)
             cached = {**cached, "checked": time.time(), "for": current}
-        private_write(UPDATE_FILE, json.dumps(cached))
+        try:
+            private_write(UPDATE_FILE, json.dumps(cached))
+        except OSError as exc:   # only a reminder: a failed save must never break the tools
+            print(f"update check not saved: {type(exc).__name__}", file=sys.stderr)
     latest = cached.get("tag", "")
     return {"current": current, "latest": latest, "url": cached.get("url", ""),
             "newer": bool(latest) and version_tuple(latest) > version_tuple(current)}
