@@ -2,6 +2,15 @@
 
 All notable changes to this project. Versions follow [semantic versioning](https://semver.org).
 
+## 0.10.0 (2026-10-14)
+
+- **The add-on library:** ready-made add-ons that come with the server, all off until you turn them on. `selfhost-remote-mail-mcp addons list` shows them, `addons enable <name>` and `addons disable <name>` turn one on or off. Each has its own page. The first three:
+  - `calendar_invite`: attaches a calendar invite to a draft (moved from `examples/addons`; your `MAIL_ADDONS` setting keeps working). Now with event details, and long lines folded as calendar apps expect.
+  - `pdf_maker`: turns text with headings, lists, tables and links into a PDF and attaches it.
+  - `invoices`: numbered quotes, proformas and invoices as PDFs, with exact totals, and a list of what you made.
+- **Add-on extras:** packages some library add-ons need (`fpdf2`, `tzdata`), already in the Docker image. On a computer: see each add-on's page. `update` keeps them.
+- **More for add-on writers:** read emails (`api.find`, `api.message`, `api.replies_to`), make drafts (`api.new_draft`), keep encrypted data (`api.store`), run background jobs (`api.every`, `api.new_mail`), reach outside services they list (`api.http`), and, for add-ons whose job is sending, send through the normal limits (`api.send`). A file of your own replaces the library add-on of the same name.
+
 ## 0.9.0 (2026-10-14)
 
 - **The pages in 20 languages:** English, Spanish, Portuguese (Brazil), French, German, Italian, Dutch, Polish, Swedish, Turkish, Russian, Ukrainian, Japanese, Chinese (Simplified and Traditional), Korean, Hindi, Indonesian, Vietnamese and Greek. They follow the browser; `LANGUAGE` can fix one. Missing texts fall back to English.

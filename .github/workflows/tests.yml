@@ -20,7 +20,7 @@ jobs:
       - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884  # v10.3.0, pinned
         with:
           python-version: ${{ matrix.python }}
-      - run: uv sync --frozen
+      - run: uv sync --frozen --extra addons
       - run: uv run pytest -q
       - name: Shell scripts are valid
         run: bash -n scripts/update.sh

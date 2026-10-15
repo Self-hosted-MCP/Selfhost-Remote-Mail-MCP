@@ -126,7 +126,7 @@ def test_edit_draft_respects_read_only_mailboxes(monkeypatch, mailbox):
         server.AddonAPI("x").edit_draft("Drafts#1", lambda m: None)
 
 
-def test_the_example_addons(mailbox, monkeypatch):
+def test_the_example_and_library_addons(mailbox, monkeypatch):
     monkeypatch.setenv("CALENDAR_INVITE_ORGANIZER", "me@example.com")
     server.load_addons("hello,calendar_invite", EXAMPLES)
     assert server.LOADED_ADDONS["hello"].startswith("Says hello")
@@ -147,7 +147,7 @@ def test_the_addons_command(capsys, monkeypatch):
     monkeypatch.setenv("MAIL_ADDONS_DIR", str(EXAMPLES))
     server.show_addons()
     out = capsys.readouterr().out
-    assert "hello: Says hello" in out and "tools: hello" in out and "All add-ons load" in out
+    assert "hello (own file): Says hello" in out and "tools: hello" in out and "All add-ons load" in out
     monkeypatch.setenv("MAIL_ADDONS", "")
     server.show_addons()
     assert "No add-ons are turned on" in capsys.readouterr().out

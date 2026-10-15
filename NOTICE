@@ -1,7 +1,34 @@
 Selfhost-Remote-Mail-MCP
-Original project by s17sh70x2jfl031ag
-https://github.com/s17sh70x2jfl031ag/Selfhost-Remote-Mail-MCP
+Copyright (c) 2026 s17sh70x2jfl031ag and Selfhost-Remote-Mail-MCP contributors
+Original project: https://github.com/s17sh70x2jfl031ag/Selfhost-Remote-Mail-MCP
+License: MIT (see LICENSE)
 
-This project is under the MIT license (see LICENSE). If you fork, copy or build on it,
-the license asks you to keep the copyright notice. Please also keep this NOTICE file and
-a line such as "Based on Selfhost-Remote-Mail-MCP by s17sh70x2jfl031ag" in your README.
+Using, copying or building on this project
+------------------------------------------
+
+You may use, change, share and sell this project, including inside closed
+or commercial products. In return:
+
+Required by the MIT license
+  Every copy, fork or product that includes all or a large part of this
+  project must keep the copyright line above and the full text of LICENSE.
+  The license only allows copies that keep them.
+
+Asked by the author
+  - Keep this NOTICE file.
+  - Credit the project where people can see it, for example in your README,
+    "About" page or app credits:
+      Based on Selfhost-Remote-Mail-MCP by s17sh70x2jfl031ag
+      https://github.com/s17sh70x2jfl031ag/Selfhost-Remote-Mail-MCP
+  - Keep the credit in the login page footer.
+  - Say clearly that your version is changed, and don't present it as the
+    official project.
+
+To cite the project, use GitHub's "Cite this repository" button, which reads
+CITATION.cff.
+
+Third-party files
+-----------------
+
+- Noto Sans fonts (src/selfhost_remote_mail_mcp/library/_pdf/fonts/), copyright The Noto Project Authors,
+  under the SIL Open Font License 1.1 (see OFL.txt in that folder).

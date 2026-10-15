@@ -122,6 +122,7 @@ def mailbox(monkeypatch):
     monkeypatch.setattr(server.smtplib, "SMTP_SSL", FakeSMTP)
     FakeIMAP.stores = {}
     server._contacts_cache.clear()
+    shutil.rmtree(server.ADDON_DATA, ignore_errors=True)   # add-on data is encrypted with the key removed below
     for f in (server.STORE_FILE, server.KEY_FILE):
         if f.exists():
             f.unlink()

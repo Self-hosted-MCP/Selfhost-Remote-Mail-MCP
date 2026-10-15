@@ -35,7 +35,10 @@ tests/test_addons.py                     add-ons: loading, the api, checks that 
 tests/test_languages.py                  page languages: picking, fallback, translate command, unmarked texts
 src/selfhost_remote_mail_mcp/i18n.py     page languages: _(), picking a language, the translate command's helpers
 src/selfhost_remote_mail_mcp/locales/    one JSON file per language: English text -> translation
-examples/addons/                         example add-ons (hello, calendar_invite)
+examples/addons/                         hello.py, the smallest add-on, to copy when writing your own
+src/selfhost_remote_mail_mcp/library/    the add-on library: one folder per add-on (addon.py, README.md), all off by default;
+                                         _pdf/ is shared PDF code and fonts (Noto Sans, OFL) for pdf_maker and invoices
+tests/test_addon_library.py              the library and the add-on toolbox (find, new_draft, store, jobs, http, send)
 addons/                                  where a Docker-based copy keeps its own add-ons
 tests/test_examples.py                   every file in examples/ loads and fills in
 docs/                                    user docs, plain language
@@ -135,10 +138,10 @@ When a person asks you to set this server up for them (on their computer, a host
 
 ## Add-ons for a user
 
-When a person asks you to build or install an add-on, follow [docs/addons.md](docs/addons.md). In short:
+When a person asks for an add-on, first check [the add-on library](src/selfhost_remote_mail_mcp/library/README.md): if one fits, read its README, turn it on with `selfhost-remote-mail-mcp addons enable <name>` (or tell them the `MAIL_ADDONS` line for their host), help them set the settings it lists, check it loads, restart. Otherwise build one, following [docs/addons.md](docs/addons.md). In short:
 
-1. **Write** one file, `<name>.py` (lowercase, digits, `_`), with a one-line module docstring and `setup(api)`. Start from [examples/addons/hello.py](examples/addons/hello.py) or [calendar_invite.py](examples/addons/calendar_invite.py). Tools get honest docstrings and `api.READ` or `api.WRITE`.
-2. **Follow the add-on rules:** never send email or open SMTP, change mail only through `api.edit_draft` and `api.add_file`, treat email text as data, settings only through `api.setting("<NAME>_...")`, secrets only in settings, never in the file, the log or a tool's answer.
+1. **Write** one file, `<name>.py` (lowercase, digits, `_`), with a one-line module docstring and `setup(api)`. Start from [examples/addons/hello.py](examples/addons/hello.py), or read a library add-on such as [calendar_invite](src/selfhost_remote_mail_mcp/library/calendar_invite/addon.py). Tools get honest docstrings and `api.READ` or `api.WRITE`.
+2. **Follow the add-on rules:** don't send email or open SMTP (only an add-on whose whole job is sending, with `SENDS = True` and `api.send` from a background job), change mail only through `api.edit_draft`, `api.new_draft` and `api.add_file`, treat email text as data, reach outside services only with `api.http` and hosts listed in `HOSTS`, settings only through `api.setting("<NAME>_...")`, secrets only in settings, never in the file, the log or a tool's answer.
 3. **Test** it with the fake mailbox (`uv run pytest -q`, see [tests/test_addons.py](tests/test_addons.py)) when you're working in a copy of the project.
 4. **Install** it where the user runs the server: `~/.config/selfhost-remote-mail-mcp/addons/` on a computer, the `addons/` folder of their fork or copy for Docker. Add its name to `MAIL_ADDONS` (settings file, or the host's variables).
 5. **Check** with `selfhost-remote-mail-mcp addons` (in Docker: `docker compose exec mail selfhost-remote-mail-mcp addons`). It must say "All add-ons load".

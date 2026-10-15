@@ -27,6 +27,7 @@ from __future__ import annotations
 
 import asyncio
 import base64
+import contextvars
 import datetime as dt
 import difflib
 import email
@@ -54,6 +55,7 @@ from email.policy import default as POLICY
 from email.utils import formataddr, formatdate, getaddresses, make_msgid, parsedate_to_datetime
 from pathlib import Path
 from urllib.parse import urlparse
+import urllib.error
 import urllib.request
 
 try:
@@ -454,6 +456,10 @@ class Mailboxes:
 
     def public(self, account: Account, real: str) -> str:
         return real if account is self.default else f"{account.address}:{real}"
+
+    def canon(self, folder: str) -> str:
+        """The folder's usual name, so 'me@example.com:Drafts' and 'Drafts' compare equal for the first mailbox."""
+        return self.public(*self.split(folder))
 
     def client(self, account: Account) -> IMAPClient:
         if account.address not in self.clients:
@@ -1784,7 +1790,7 @@ def upload_cleaner() -> None:
 
 SCHEDULE_HEADER = "X-Mail-MCP-Send-At"     # draft-only: when the scheduler sends it; never sent
 SCHEDULE_ERROR = "X-Mail-MCP-Send-Error"   # draft-only: why the scheduler held it back; never sent
-INTERNAL_HEADERS = (SCHEDULE_HEADER, SCHEDULE_ERROR)
+INTERNAL_HEADERS = (SCHEDULE_HEADER, SCHEDULE_ERROR, "X-Mail-MCP-Addon")
 LATE_GRACE = dt.timedelta(hours=2)          # a scheduled email later than this (server was down) is held, not sent
 
 
@@ -3297,7 +3303,7 @@ def draft(to: list[str] | None = None, cc: list[str] | None = None, bcc: list[st
         mine = [a.address for a in c.accounts]
         if delete:
             f, u = split_id(delete)
-            if f != drafts:
+            if c.canon(f) != c.canon(drafts):
                 raise ToolError(f"{delete} is not in {drafts}, so it isn't a draft.")
             move(c, f, [u], need(found, "trash"))
             return f"Draft {delete} moved to {found['trash']}."
@@ -3307,7 +3313,7 @@ def draft(to: list[str] | None = None, cc: list[str] | None = None, bcc: list[st
         old_top = ""
         if edit:
             f, u = split_id(edit)
-            if f != drafts:
+            if c.canon(f) != c.canon(drafts):
                 raise ToolError(f"{edit} is not in {drafts}, so it can't be edited as a draft.")
             old = fetch_msg(c, f, u)
             to = to if to is not None else addr_list([old.get("To")])
@@ -3451,7 +3457,7 @@ def send_email(draft_id: str) -> str:
     with imap() as c:
         found = roles(c, c.split(folder)[0])
         drafts = need(found, "drafts")
-        if folder != drafts:
+        if c.canon(folder) != c.canon(drafts):
             raise ToolError(f"{draft_id} is not in {drafts}. Only drafts can be sent.")
         rcpts, subject = deliver(cfg, c, found, uid)
     return f"Sent to {', '.join(rcpts)}: {subject}"
@@ -3482,7 +3488,7 @@ def schedule_send(draft_id: str, send_at: str | None = None, cancel: bool = Fals
     with imap() as c:
         box = c.split(folder)[0]
         drafts = need(roles(c, box), "drafts")
-        if folder != drafts:
+        if c.canon(folder) != c.canon(drafts):
             raise ToolError(f"{draft_id} is not in {drafts}. Only drafts can be scheduled.")
         if not cancel:
             c.check_send(box)
@@ -3782,6 +3788,44 @@ ADDONS_DIR = Path(os.environ.get("MAIL_ADDONS_DIR") or CONFIG_DIR / "addons").ex
 SENT_COPY_HOOKS: list = []   # add-on functions that may change the copy saved in Sent (never what's sent)
 LOADED_ADDONS: dict[str, str] = {}   # name -> one-line description
 ADDON_TOOLS: dict[str, list[str]] = {}   # name -> the tools it added
+ADDON_INFO: dict[str, dict] = {}   # name -> where it came from, whether it sends, which outside hosts it uses
+LIBRARY = Path(__file__).resolve().parent / "library"   # the add-ons that ship with the server, all off by default
+ADDON_DATA = STATE_DIR / "addons"   # each add-on's own saved data (api.store), encrypted
+ADDON_STORE_LOCKS: dict[str, threading.Lock] = {}
+ADDON_STORE_OPEN = threading.local()   # stores this thread has open, so a nested api.store() gets the same dict
+ADDON_DRAFT = "X-Mail-MCP-Addon"   # draft-only: which add-on made the draft (api.send only sends its own); never sent
+ADDON_JOBS: list[dict] = []   # background jobs added with api.every
+ADDON_JOB: contextvars.ContextVar[str | None] = contextvars.ContextVar("addon_job", default=None)
+
+
+@contextmanager
+def file_lock(path: Path, wait: bool = True):
+    """An exclusive lock on a file, shared by threads and by two containers using the same /data. With
+    wait=False it yields False at once when someone else holds it."""
+    path.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
+    with path.open("a+") as f:
+        try:
+            if fcntl:
+                fcntl.flock(f, fcntl.LOCK_EX if wait else fcntl.LOCK_EX | fcntl.LOCK_NB)
+            else:
+                f.seek(0)
+                msvcrt.locking(f.fileno(), msvcrt.LK_LOCK if wait else msvcrt.LK_NBLCK, 1)
+        except OSError:
+            yield False
+            return
+        try:
+            yield True
+        finally:
+            if fcntl:
+                fcntl.flock(f, fcntl.LOCK_UN)
+            else:
+                f.seek(0)
+                msvcrt.locking(f.fileno(), msvcrt.LK_UNLCK, 1)
+
+
+class _NoRedirect(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, *a, **k):
+        return None
 
 
 class AddonAPI:
@@ -3831,18 +3875,19 @@ class AddonAPI:
             INTERNAL_HEADERS = (*INTERNAL_HEADERS, name)
 
     def edit_draft(self, draft_id: str, change) -> str:
-        """Opens a draft, lets change(msg) edit it (an email.message.EmailMessage), saves it and returns the new
-        draft ID. Only drafts in a mailbox this app may write to; a scheduled time is kept."""
+        """Opens a draft, lets change(msg) edit it (an email.message.EmailMessage) or return a new message, saves it
+        and returns the new draft ID. Only drafts in a mailbox this app may write to; a scheduled time is kept."""
         with imap() as c:
             folder, uid = split_id(draft_id)
             box = c.split(folder)[0]
             if not c.writable(box):
                 c.refuse(box, "draft")
             drafts = need(roles(c, box), "drafts")
-            if folder != drafts:
+            if c.canon(folder) != c.canon(drafts):
                 raise ToolError(f"{draft_id} is not in {drafts}, so it isn't a draft.")
             msg = fetch_msg(c, folder, uid)
-            change(msg)
+            result = change(msg)   # change edits msg, or returns a whole new message (e.g. an encrypted one)
+            msg = result if isinstance(result, EmailMessage) else msg
             new = replace_draft(c, drafts, uid, msg)
         return make_id(drafts, new) if new else f"(saved in {drafts})"
 
@@ -3870,9 +3915,272 @@ class AddonAPI:
     def log(self, text: str) -> None:
         print(f"add-on {self.name}: {text}", file=sys.stderr, flush=True)
 
+    # -- reading mail. In a tool call: the AI app's own mailboxes, and IDs as that app sees them. In a background
+    # job (api.every): every mailbox, one at a time, with IDs of that mailbox (pass account= with them).
+    @contextmanager
+    def _mail(self, account: str | None = None):
+        if ADDON_JOB.get() is None:
+            with imap() as c:
+                c.chosen = c.account(account) if account else c.default
+                yield c
+            return
+        accounts = all_accounts(config())
+        if not accounts:
+            raise ToolError("No mailbox is set up yet.")
+        with imap(accounts) as c:
+            c.chosen = c.account(account) if account else c.default
+            c.in_job = True
+            yield c
+
+    @staticmethod
+    def _where(c, email_id: str, account: str | None) -> tuple[str, int]:
+        """The folder and UID of an ID. IDs from find() and new_draft() carry their mailbox; a short one
+        ('INBOX#12') means the chosen mailbox, and in a background job it needs account= to say which."""
+        folder, uid = split_id(email_id)
+        if c.split(folder)[0] is c.default and not folder.partition(":")[1]:
+            if account:
+                folder = f"{c.chosen.address}:{folder}"
+            elif getattr(c, "in_job", False) and len(c.accounts) > 1:
+                raise ToolError(f"{email_id} doesn't say which mailbox it's in: pass account= in a background job.")
+        return folder, uid
+
+    def mailboxes(self) -> list[str]:
+        """The mailboxes the AI app calling this tool may use. Save them with anything a background job will do
+        later for this request, so the job stays inside the same mailboxes."""
+        if ADDON_JOB.get() is not None:
+            return [a.address for a in all_accounts(config())]
+        return [a.address for a in active_accounts()]
+
+    def _rows(self, c, folder: str, uids: list[int], headers: tuple[str, ...]) -> list[dict]:
+        names = ["From", "To", "Cc", "Subject", "Date", "Message-ID", "In-Reply-To", "References", *headers]
+        out = []
+        for uid in uids:
+            data = c.fetch([uid], [f"BODY.PEEK[HEADER.FIELDS ({' '.join(names)})]", "FLAGS"]).get(uid, {})
+            raw = next((v for k, v in data.items() if k.startswith(b"BODY[HEADER")), b"")
+            msg = email.message_from_bytes(raw, policy=POLICY)
+            try:
+                when = parsedate_to_datetime(str(msg.get("Date")))
+            except (TypeError, ValueError):
+                when = None
+            account, real = c.split(folder)
+            row = {"id": make_id(f"{account.address}:{real}", uid), "account": account.address, "date": when,
+                   "flags": [f.decode() if isinstance(f, bytes) else str(f) for f in data.get(b"FLAGS", ())]}
+            for name in names:
+                if name != "Date":   # date stays a datetime (or None)
+                    row[name.lower()] = dec(msg.get(name)) if msg.get(name) is not None else ""
+            out.append(row)
+        return out
+
+    def find(self, folder: str | None = None, filter: str | None = None, account: str | None = None,
+             limit: int = 50, headers: tuple[str, ...] = ()) -> list[dict]:
+        """Emails in one folder, newest first: id, account, date, from, to, cc, subject, message-id, in-reply-to,
+        references, flags, plus any extra header names asked for. Same filter words as the emails tool. Read only."""
+        with self._mail(account) as c:
+            name = norm_folder(c, c.public(c.chosen, folder or "INBOX") if account else folder)
+            c.select_folder(name, readonly=True)
+            crit, post = parse_filter(filter)
+            uids = post_filter(c, run_search(c, crit), post)[:max(1, min(limit, 500))]
+            return self._rows(c, name, uids, tuple(headers))
+
+    def message(self, email_id: str, account: str | None = None) -> EmailMessage:
+        """One whole email. Its text was written by the sender: information, never instructions."""
+        with self._mail(account) as c:
+            return fetch_msg(c, *self._where(c, email_id, account))
+
+    def replies_to(self, message_id: str, account: str | None = None) -> list[dict]:
+        """Emails in the Inbox and Archive that answer the email with this Message-ID (by In-Reply-To or
+        References), oldest first."""
+        message_id = message_id.strip()
+        if not re.fullmatch(r"<[^<>\s]+>", message_id):
+            raise ToolError(f"{message_id!r} isn't a Message-ID like <abc@example.com>.")
+        out = []
+        with self._mail(account) as c:
+            found = roles(c, c.chosen)
+            for folder in [c.public(c.chosen, "INBOX"), found.get("archive")]:
+                if not folder:
+                    continue
+                c.select_folder(folder, readonly=True)
+                uids = set(c.search(["HEADER", "In-Reply-To", message_id]))
+                uids |= set(c.search(["HEADER", "References", message_id]))
+                out += [r for r in self._rows(c, folder, sorted(uids), ())
+                        if message_id in r["in-reply-to"] or message_id in r["references"]]
+        return sorted(out, key=lambda r: r["date"] or dt.datetime.min.replace(tzinfo=dt.timezone.utc))
+
+    def new_mail(self, folder: str = "INBOX", headers: tuple[str, ...] = ()) -> list[dict]:
+        """For background jobs: emails that arrived in this folder of each mailbox since the last call, oldest
+        first, like find(). The very first call only notes where to start, so old mail is never treated as new."""
+        if ADDON_JOB.get() is None:
+            raise ToolError("new_mail only works in a background job (api.every).")
+        with self.store() as data:   # read where each mailbox was; the mail work happens without the lock
+            seen = dict(data.get("_new_mail", {}))
+        rows, update = [], {}
+        for account in all_accounts(config()):
+            key = f"{account.address}|{folder}"
+            try:
+                with imap([account]) as c:
+                    status = c.select_folder(folder, readonly=True) or {}
+                    validity = int(status.get(b"UIDVALIDITY") or 0)
+                    last = seen.get(key)
+                    if not last or last[0] != validity:
+                        update[key] = [validity, max(c.search(["ALL"]), default=0)]
+                        continue
+                    fresh = sorted(u for u in c.search(["UID", f"{last[1] + 1}:*"]) if u > last[1])[:200]
+                    found = self._rows(c, folder, fresh, tuple(headers))
+                    for row in found:   # this mailbox alone was open: give each email its full ID
+                        row["id"] = f"{account.address}:{row['id']}" if ":" not in row["id"].split("#")[0] else row["id"]
+                    rows += found
+                    if fresh:
+                        update[key] = [validity, max(fresh)]
+            except ToolError:
+                raise
+            except Exception as exc:   # one mailbox failing must not stop the others
+                self.log(f"new_mail skipped a mailbox: {type(exc).__name__}")
+        if update:
+            with self.store() as data:
+                data.setdefault("_new_mail", {}).update(update)
+        return rows
+
+    # -- drafts
+    def new_draft(self, to: list[str], subject: str, body: str, cc: list[str] | None = None,
+                  reply_to_id: str | None = None, headers: dict[str, str] | None = None,
+                  no_signature: bool = False, account: str | None = None) -> str:
+        """Saves a new draft (markdown body, the user's signature unless no_signature) and returns its ID.
+        reply_to_id answers that email: same thread, quoted, 'Re:' subject. Nothing is sent."""
+        with self._mail(account) as c:
+            box = c.chosen
+            extra = {k: v for k, v in (headers or {}).items() if v}
+            extra[ADDON_DRAFT] = self.name
+            quote = ""
+            if reply_to_id:
+                folder, uid = self._where(c, reply_to_id, account)
+                orig = fetch_msg(c, folder, uid)
+                box = c.split(folder)[0]
+                osubj = dec(orig.get("Subject"))
+                subject = subject or (osubj if re.match(r"(?i)re:", osubj) else f"Re: {osubj}")
+                msgid = str(orig.get("Message-ID", ""))
+                extra = {"In-Reply-To": msgid, "References": f"{orig.get('References', '')} {msgid}".strip(), **extra}
+                quote = reply_quote(orig)
+            if not c.writable(box):
+                c.refuse(box, "draft")
+            drafts = need(roles(c, box), "drafts")
+            msg, _top = compose(box, to=to, cc=cc or [], bcc=[], subject=subject, body_md=body, quote=quote,
+                                headers=extra, no_signature=no_signature)
+            uid = save_draft(c, drafts, msg)
+        if not uid:
+            return f"(saved in {drafts})"
+        account_of, real = c.split(drafts)
+        return make_id(f"{account_of.address}:{real}", uid)
+
+    # -- the add-on's own data
+    @contextmanager
+    def store(self):
+        """with api.store() as data: ... A dict saved for this add-on only, encrypted on disk with the same key
+        as the mailbox passwords. Changes are saved when the block ends. Keep it small (1 MB at most)."""
+        held = ADDON_STORE_OPEN.__dict__.setdefault("open", {})
+        if self.name in held:   # already open in this thread: the same dict, saved when the outer block ends
+            yield held[self.name]
+            return
+        ADDON_DATA.mkdir(mode=0o700, parents=True, exist_ok=True)
+        path = ADDON_DATA / f"{self.name}.json"
+        with ADDON_STORE_LOCKS.setdefault(self.name, threading.Lock()), \
+                file_lock(ADDON_DATA / f"{self.name}.lock") as got:
+            if not got:
+                raise ToolError(f"add-on {self.name}: its saved data is busy. Try again.")
+            data = {}
+            if path.exists():
+                try:
+                    data = json.loads(secret_box().decrypt(path.read_bytes()))
+                except Exception:
+                    raise RuntimeError(f"add-on {self.name}: its saved data can't be read. Did MAIL_SECRET_KEY "
+                                       f"change? Nothing was overwritten ({path}).") from None
+            before = json.dumps(data, sort_keys=True, default=str)
+            held[self.name] = data
+            try:
+                yield data
+            finally:
+                held.pop(self.name, None)
+            text = json.dumps(data, sort_keys=True, default=str)
+            if text != before:
+                if len(text) > 1_000_000:
+                    raise ToolError(f"add-on {self.name}: its saved data would be over 1 MB. Remove old entries.")
+                tmp = path.with_suffix(".tmp")
+                tmp.write_bytes(secret_box().encrypt(text.encode()))
+                os.chmod(tmp, 0o600)
+                tmp.replace(path)
+
+    # -- background jobs
+    def every(self, minutes: int, func) -> None:
+        """Runs func() every few minutes (5 at least) while the web version runs. Only one copy of the server
+        runs it at a time. Inside it, the mail functions see every mailbox (modes still apply)."""
+        number = sum(1 for j in ADDON_JOBS if j["addon"] == self.name) + 1
+        label = re.sub(r"\W", "_", getattr(func, "__name__", "job"))
+        ADDON_JOBS.append({"addon": self.name, "name": f"{self.name}.{number}.{label}",
+                           "every": max(5, int(minutes)) * 60, "func": func})
+
+    # -- outside services
+    def http(self, method: str, url: str, *, json_body=None, data: bytes | None = None,
+             headers: dict[str, str] | None = None, timeout: int = 20) -> tuple[int, dict, bytes]:
+        """A web request to a host listed in the add-on's HOSTS or in one of its own *_URL settings. https only
+        (plain http only to this computer or a .local name). Redirects aren't followed. Returns (status, headers, body)."""
+        parts = urlparse(url)
+        host = (parts.hostname or "").lower()
+        allowed = {h.lower() for h in ADDON_INFO.get(self.name, {}).get("hosts", ())}
+        prefix = re.sub(r"\W", "_", self.name).upper() + "_"
+        for key, value in {**read_env(), **os.environ}.items():
+            if key.startswith(prefix) and key.endswith("_URL") and value:
+                allowed.add((urlparse(value).hostname or "").lower())
+        if host not in allowed:
+            raise ToolError(f"add-on {self.name} may not reach {host or url!r}: add it to HOSTS or a *_URL setting.")
+        local = host in ("localhost", "127.0.0.1", "::1") or host.endswith(".local")
+        if parts.scheme != "https" and not (parts.scheme == "http" and local):
+            raise ToolError(f"add-on {self.name}: only https addresses are allowed.")
+        body = data
+        send_headers = {"User-Agent": f"{APP}-addon", **(headers or {})}
+        if json_body is not None:
+            body = json.dumps(json_body).encode()
+            send_headers.setdefault("Content-Type", "application/json")
+        req = urllib.request.Request(url, data=body, headers=send_headers, method=method.upper())
+        opener = urllib.request.build_opener(_NoRedirect)
+        try:
+            with opener.open(req, timeout=timeout) as resp:
+                return resp.status, dict(resp.headers), resp.read(10_000_001)[:10_000_000]
+        except urllib.error.HTTPError as exc:
+            return exc.code, dict(exc.headers or {}), exc.read(1_000_000) if exc.fp else b""
+
+    # -- sending, for add-ons whose whole job is sending (SENDS = True), from background jobs only
+    def send(self, draft_id: str, account: str | None = None) -> str:
+        """Sends one draft the add-on made, through the normal path: the mailbox must be in full mode, and the
+        daily and per-minute limits, the send log and the Sent copy all apply. Background jobs only."""
+        if not ADDON_INFO.get(self.name, {}).get("sends"):
+            raise ToolError(f"add-on {self.name} may not send: it doesn't say SENDS = True.")
+        if ADDON_JOB.get() is None:
+            raise ToolError("Add-ons send only from background jobs. In a chat, the AI uses send_email.")
+        cfg = config()
+        with self._mail(account) as c:
+            folder, uid = self._where(c, draft_id, account)
+            account_of = c.split(folder)[0]
+            found = roles(c, account_of)
+            if c.canon(folder) != c.canon(need(found, "drafts")):
+                raise ToolError(f"{draft_id} isn't a draft.")
+            if str(fetch_msg(c, folder, uid, full=False).get(ADDON_DRAFT, "")) != self.name:
+                raise ToolError(f"add-on {self.name} only sends drafts it made itself.")
+            rcpts, subject = deliver(cfg, c, found, uid)
+        return f"sent to {len(rcpts)} recipient(s)"
+
+
+def library_addons() -> dict[str, str]:
+    """The add-ons that ship with the server: name -> one-line description."""
+    out = {}
+    for path in sorted(LIBRARY.glob("*/addon.py")):
+        head = re.search(r'^"""(.+)', path.read_text(encoding="utf-8"))
+        out[path.parent.name] = head.group(1).strip().rstrip('"') if head else ""
+    return out
+
 
 def load_addons(names: str | None = None, folder: Path | None = None) -> list[str]:
-    """Loads the add-ons named in MAIL_ADDONS (comma-separated) from the add-ons folder. Returns their names."""
+    """Loads the add-ons named in MAIL_ADDONS (comma-separated): your own file in the add-ons folder if there is
+    one, else the add-on of that name from the library. Returns their names."""
+    import importlib
     import importlib.util
     names = names if names is not None else (os.environ.get("MAIL_ADDONS") or read_env().get("MAIL_ADDONS", ""))
     folder = folder or Path(read_env().get("MAIL_ADDONS_DIR") or ADDONS_DIR).expanduser()
@@ -3883,19 +4191,78 @@ def load_addons(names: str | None = None, folder: Path | None = None) -> list[st
         if name in LOADED_ADDONS:
             continue
         path = folder / f"{name}.py"
-        if not path.is_file():
-            raise RuntimeError(f"add-on {name}: {path} doesn't exist")
-        spec = importlib.util.spec_from_file_location(f"mail_addon_{name}", path)
-        module = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(module)
+        in_library = (LIBRARY / name / "addon.py").is_file()
+        if path.is_file():
+            spec = importlib.util.spec_from_file_location(f"mail_addon_{name}", path)
+            module = importlib.util.module_from_spec(spec)
+            source = "own file, replaces the library one" if in_library else "own file"
+        elif in_library:
+            spec, module, source = None, None, "library"
+        else:
+            raise RuntimeError(f"add-on {name}: {path} doesn't exist, and the library has no add-on called {name}. "
+                               f"Library add-ons: {', '.join(library_addons()) or 'none'}")
+        needs = []
+        for line in re.findall(r"^NEEDS\s*=\s*\[([^\]]*)\]", (path if spec else LIBRARY / name / "addon.py").read_text(), re.M):
+            needs += re.findall(r"[\"']([A-Za-z0-9_.]+)[\"']", line)
+        missing = [n for n in needs if importlib.util.find_spec(n) is None]
+        if missing:
+            raise RuntimeError(f"add-on {name} needs the Python package {', '.join(missing)}. Install the add-on "
+                               f"extras: see the add-on's README (the Docker image has them)")
+        try:
+            if spec:
+                spec.loader.exec_module(module)
+            else:   # a package, so a library add-on can keep helpers in files next to addon.py
+                module = importlib.import_module(f"{__package__ or 'selfhost_remote_mail_mcp'}.library.{name}.addon")
+        except ModuleNotFoundError as exc:
+            raise RuntimeError(f"add-on {name}: it imports {exc.name}, which isn't installed. If that's a package "
+                               f"it needs, list it in NEEDS and install the add-on extras: uv sync --extra addons") from None
         if not callable(getattr(module, "setup", None)):
             raise RuntimeError(f"add-on {name}: it needs a setup(api) function")
+        ADDON_INFO[name] = {"source": source, "sends": getattr(module, "SENDS", False) is True,
+                            "hosts": tuple(getattr(module, "HOSTS", ()))}
         api = AddonAPI(name)
         module.setup(api)
         LOADED_ADDONS[name] = (module.__doc__ or "").strip().splitlines()[0] if module.__doc__ else ""
         ADDON_TOOLS[name] = api.tools
         loaded.append(name)
     return loaded
+
+
+def run_jobs_once(now: float | None = None) -> list[str]:
+    """Runs every add-on job that is due. A job runs in one copy of the server at a time, and its last run is
+    kept next to its lock, so two copies sharing /data don't both run it. Returns one line per problem."""
+    now = now or time.time()
+    out = []
+    for job in ADDON_JOBS:
+        lock = STATE_DIR / "jobs" / f"{job['name']}.lock"
+        with file_lock(lock, wait=False) as got:
+            if not got:
+                continue
+            try:
+                last = float(lock.read_text().strip() or 0)
+            except (OSError, ValueError):
+                last = 0.0
+            if now - last < job["every"] - 30:
+                continue
+            lock.write_text(str(now))
+            token = ADDON_JOB.set(job["name"])
+            try:
+                job["func"]()
+            except Exception as exc:   # one job failing never stops the others
+                out.append(f"add-on {job['addon']}: job {job['name']} failed: {type(exc).__name__}")
+            finally:
+                ADDON_JOB.reset(token)
+    return out
+
+
+def jobs_loop() -> None:
+    while True:
+        time.sleep(30)
+        try:
+            for line in run_jobs_once():
+                print(line, file=sys.stderr, flush=True)
+        except Exception as exc:
+            print(f"add-on jobs: {type(exc).__name__}: {exc}", file=sys.stderr, flush=True)
 
 
 TOOL_NAMES: list[str] = [   # the built-in tools; add-ons can't reuse these names
@@ -3940,12 +4307,40 @@ def run_translate(args: list[str]) -> None:
     print(f"Then check it: {APP} translate --check {code}. The pages use it after a restart.")
 
 
-def show_addons() -> None:
-    """The `addons` command: proves the add-ons load, and lists what each one adds."""
+def show_addons(args: list[str] | None = None) -> None:
+    """The `addons` command. No arguments: loads the add-ons that are on and lists what each one adds.
+    `addons list`: every library add-on. `addons enable <name>` / `addons disable <name>`: edits MAIL_ADDONS."""
+    args = args or []
     folder = Path(read_env().get("MAIL_ADDONS_DIR") or ADDONS_DIR).expanduser()
     names = os.environ.get("MAIL_ADDONS") or read_env().get("MAIL_ADDONS", "")
+    on = [n.strip() for n in names.split(",") if n.strip()]
+    if args[:1] == ["list"]:
+        print("Add-ons in the library (all off until you turn them on):")
+        for name, about in library_addons().items():
+            print(f"  {'[on] ' if name in on else ''}{name}: {about}")
+        print(f"Turn one on: {APP} addons enable <name>. What each one needs: the README in "
+              f"https://github.com/{REPO}/tree/main/src/selfhost_remote_mail_mcp/library")
+        return
+    if args[:1] in (["enable"], ["disable"]):
+        if len(args) != 2:
+            sys.exit(f"Usage: {APP} addons {args[0]} <name>")
+        name, enable = args[1], args[0] == "enable"
+        if enable and name not in library_addons() and not (folder / f"{name}.py").is_file():
+            sys.exit(f"There's no add-on called {name}. See: {APP} addons list")
+        new = (on + [name] if name not in on else on) if enable else [n for n in on if n != name]
+        if os.environ.get("MAIL_ADDONS") is not None:
+            sys.exit(f"MAIL_ADDONS is set where the server runs (your host's variables or Docker settings), not in "
+                     f"the settings file. Set it there to: MAIL_ADDONS={','.join(new)}")
+        write_settings({"MAIL_ADDONS": ",".join(new)})
+        print(f"{name} is {'on' if enable else 'off'}. MAIL_ADDONS={','.join(new)}")
+        if not enable:
+            print("Restart the server (or your AI app) for it to take effect.")
+            return
+        names = ",".join(new)
+    if args and args[0] not in ("enable",):
+        sys.exit(f"Unknown: addons {' '.join(args)}. Use: addons, addons list, addons enable <name>, addons disable <name>")
     if not names.strip():
-        print(f"No add-ons are turned on (MAIL_ADDONS is empty). Add-ons folder: {folder}")
+        print(f"No add-ons are turned on (MAIL_ADDONS is empty). See the library: {APP} addons list")
         return
     try:
         load_addons(names, folder)
@@ -3953,8 +4348,13 @@ def show_addons() -> None:
         sys.exit(f"An add-on didn't load: {exc}")
     print(f"Add-ons folder: {folder}")
     for name, about in LOADED_ADDONS.items():
-        print(f"  {name}: {about or '(no description)'}")
+        info = ADDON_INFO.get(name, {})
+        print(f"  {name} ({info.get('source', '')}): {about or '(no description)'}")
         print(f"    tools: {', '.join(ADDON_TOOLS.get(name, [])) or '(none)'}")
+        if info.get("sends"):
+            print("    sends email by itself (see its README)")
+        if info.get("hosts"):
+            print(f"    talks to: {', '.join(info['hosts'])}")
     print("All add-ons load. Restart the server (or your AI app) to use them.")
 
 
@@ -4306,7 +4706,11 @@ def run_update() -> None:
     if not uv:
         sys.exit("uv isn't on this computer's PATH. Install uv, or update by hand: see docs/updates.md.")
     print(f"Updating {current} -> {tag} ...")
-    result = subprocess.run([uv, "tool", "install", "--force", f"git+https://github.com/{REPO}@{tag}"])
+    import importlib.util
+    source = f"git+https://github.com/{REPO}@{tag}"
+    if importlib.util.find_spec("fpdf"):   # the add-on extras are installed: keep them
+        source = f"{APP}[addons] @ {source}"
+    result = subprocess.run([uv, "tool", "install", "--force", source])
     if result.returncode:
         sys.exit("The update failed; the version you had is still installed.")
     print(f"Updated to {tag}. Restart your AI app, or the web version (serve), to use it. What's new: {latest['url']}")
@@ -4325,7 +4729,7 @@ def main() -> None:
     elif MODE == "version":
         print(current_version())
     elif MODE == "addons":
-        show_addons()
+        show_addons(sys.argv[2:])
     elif MODE == "translate":
         run_translate(sys.argv[2:])
     elif MODE == "check":
@@ -4345,6 +4749,8 @@ def main() -> None:
         if (env.get("SCHEDULED_SEND") or "on").lower() not in ("off", "false", "0", "no"):
             threading.Thread(target=scheduler_loop, name="scheduler", daemon=True).start()
         threading.Thread(target=upload_cleaner, name="uploads", daemon=True).start()
+        if ADDON_JOBS:
+            threading.Thread(target=jobs_loop, name="addon-jobs", daemon=True).start()
         public_host = urlparse(public).hostname or "localhost"
         mcp.run(
             "streamable-http",

@@ -7,10 +7,10 @@ WORKDIR /app
 
 # dependencies first, so code changes rebuild fast
 COPY pyproject.toml uv.lock README.md LICENSE NOTICE CHANGELOG.md ./
-RUN uv sync --frozen --no-install-project --no-dev
+RUN uv sync --frozen --no-install-project --no-dev --extra addons
 
 COPY src ./src
-RUN uv sync --frozen --no-dev
+RUN uv sync --frozen --no-dev --extra addons
 
 # Add-ons you put in the addons/ folder of your copy are built in (turn them on with MAIL_ADDONS). docs/addons.md
 COPY addons ./addons

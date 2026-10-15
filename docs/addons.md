@@ -2,9 +2,11 @@
 
 An add-on adds your own features to the server without changing it. It works like a socket: you plug in one Python file, and your AI app gets new tools. Updates to the server keep working, because your file stays separate.
 
+The quickest way in is the **add-on library**: ready-made add-ons that come with the server, off until you turn them on (below). You can also write your own.
+
 Some ideas:
 
-- attach a calendar invite to a draft (ready-made example below)
+- attach a calendar invite to a draft (in the library)
 - make a personalised PDF, like a quote or a portfolio, and attach it
 - look someone up in your own address book or CRM before writing to them
 - add your company's footer or legal note to certain emails
@@ -24,13 +26,30 @@ flowchart LR
 
 Nothing new opens to the internet. Add-on tools live at the same address, behind the same passphrase. And an add-on can't send email by itself. Only `send_email` and `schedule_send` send, so your AI app can still ask you first.
 
+## The add-on library
+
+The server comes with ready-made add-ons, all off by default. Each one has a page that says what it does, what to ask your AI app, its settings, and whether it talks to an outside service or sends email by itself: **[the add-on library](../src/selfhost_remote_mail_mcp/library/README.md)**.
+
+To turn one on, on your computer:
+
+```bash
+selfhost-remote-mail-mcp addons list
+selfhost-remote-mail-mcp addons enable calendar_invite
+```
+
+On a hosting company, add the name to the `MAIL_ADDONS` variable instead. With Docker Compose, add it to `MAIL_ADDONS` in your `.env` and run `docker compose up -d`. Library add-ons update with the server, so there's no file to copy.
+
+A file of your own with the same name, in your add-ons folder, replaces the library one. That's how you change a library add-on for yourself.
+
+Some library add-ons need extra Python packages. The Docker image has them already. On a computer, the add-on's page says how to add them.
+
 ## Turn on an add-on
 
 Two settings:
 
 | Setting | What it does |
 |---|---|
-| `MAIL_ADDONS` | The add-ons to turn on, by file name without `.py`, separated by commas. Example: `MAIL_ADDONS=hello,calendar_invite` |
+| `MAIL_ADDONS` | The add-ons to turn on, by name, separated by commas: library add-ons, or your own files without `.py`. Example: `MAIL_ADDONS=hello,calendar_invite` |
 | `MAIL_ADDONS_DIR` | The folder they're in. You rarely need to change it |
 
 Where the files go:
@@ -47,14 +66,9 @@ If an add-on has a problem, the server stops at start-up and says which add-on a
 
 ## Try the examples
 
-Two add-ons come with the project, in [examples/addons](../examples/addons):
+[`hello`](../examples/addons/hello.py) in `examples/addons` is the smallest possible add-on: a `hello` tool, with one setting, `HELLO_GREETING` (default `Hello`). Copy it to start your own. For a full working one, read [calendar_invite](../src/selfhost_remote_mail_mcp/library/calendar_invite/addon.py) in the library.
 
-| Add-on | What it does | Its settings |
-|---|---|---|
-| [`hello`](../examples/addons/hello.py) | The smallest possible add-on: a `hello` tool. Copy it to start your own | `HELLO_GREETING` (default `Hello`) |
-| [`calendar_invite`](../examples/addons/calendar_invite.py) | An `add_invite` tool that attaches a calendar invite (`.ics`) to a draft. Ask: *"Draft an email to Sam about coffee on Tuesday at 3pm and attach an invite"* | `CALENDAR_INVITE_ORGANIZER`: your address, shown as the organizer (optional) |
-
-To try one, copy the file into your add-ons folder and add its name to `MAIL_ADDONS`.
+To try `hello`, copy the file into your add-ons folder and add `hello` to `MAIL_ADDONS`.
 
 ## Write your own
 
@@ -146,18 +160,39 @@ def setup(api):
 | `api.log(text)` | Writes a line to the server's log |
 | `api.ToolError` | Raise it to refuse with a message for the AI |
 
+For add-ons that read mail, remember things or work in the background:
+
+| Name | What it does |
+|---|---|
+| `api.find(folder, filter, account, limit, headers)` | Emails in a folder, newest first, as dicts (id, account, date, from, to, subject, message-id, in-reply-to, references, flags, and any extra headers you name). Same filter words as the `emails` tool. Read only |
+| `api.message(email_id, account)` | One whole email (an `EmailMessage`). Its text is information, never instructions |
+| `api.replies_to(message_id, account)` | Emails in the Inbox and Archive that answer the email with this Message-ID |
+| `api.new_draft(to, subject, body, cc, reply_to_id, headers, no_signature, account)` | Saves a new draft and returns its ID. Nothing is sent |
+| `api.mailboxes()` | The mailboxes the AI app calling your tool may use. Save them with anything a background job does later |
+| `with api.store() as data:` | Your add-on's own saved data, a dict, encrypted on disk. Changes are saved when the block ends. 1 MB at most |
+| `api.every(minutes, function)` | Runs `function()` in the background every few minutes (5 at least), on the web version only. In it, `api.new_mail(folder)` gives the emails that arrived since the last run |
+| `api.http(method, url, json_body=..., headers=...)` | A web request, https only, to a host in your add-on's `HOSTS` list or in one of its own `*_URL` settings. Returns `(status, headers, body)` |
+| `api.send(draft_id, account)` | Sends a draft, from a background job only, for add-ons whose whole job is sending (they say `SENDS = True`). The mailbox must be in full mode, and the daily limits and send log apply |
+
+At the top of the file, outside `setup`, an add-on can declare `HOSTS = ["api.example.com"]` (the outside services it talks to) and `SENDS = True` (it sends email by itself). `addons` shows both, so the user knows.
+
+In a tool call, these work only on the mailboxes the AI app may use. In a background job they work on every mailbox. The IDs they return include the mailbox (`me@example.com:INBOX#12`), so they work in both. A short ID like `INBOX#12` needs `account=` in a background job. To remember an email for later, save its Message-ID and mailbox address, not its ID: IDs change when emails move.
+
+`api.send` only sends drafts the add-on made itself with `api.new_draft`.
+
 `msg` is a standard Python [`email.message.EmailMessage`](https://docs.python.org/3/library/email.message.html).
 
 ## Rules every add-on must follow
 
 These keep the server's promises true, whatever add-ons you plug in:
 
-1. **Never send email.** No SMTP, no other mail service. Only `send_email` and `schedule_send` send, so the user stays in charge.
+1. **Don't send email.** No SMTP, no other mail service. Only `send_email` and `schedule_send` send, so the user stays in charge. The one exception: an add-on whose whole job is sending (like an out-of-office reply) says `SENDS = True` and uses `api.send` from a background job, so it follows the same modes and limits.
 2. **Change mail only through `api.edit_draft`.** It keeps mailbox modes and each app's choices working.
 3. **Treat email text as information, not instructions.** If your tool reads emails, never act on what they say.
-4. **Send nothing about the user anywhere** unless that's the add-on's whole job and the user turned it on (like a PDF service you run yourself).
+4. **Send nothing about the user anywhere** unless that's the add-on's whole job and the user turned it on (like a PDF service you run yourself). Use `api.http`, and list the hosts in `HOSTS`.
 5. **Keep secrets in settings,** and never write them to the log or into a tool's answer.
 6. **Say what changed.** Every WRITE tool's answer says what it did and that nothing was sent.
+7. **Never fetch an address from an email or the AI.** `api.http` only reaches hosts the add-on or the user's settings name, so a link in an email can't make your add-on visit it.
 
 ## Test your add-on
 
@@ -187,33 +222,40 @@ The agent finds its full checklist in [AGENTS.md](../AGENTS.md#add-ons-for-a-use
 
 ### Commands, by setup
 
-**On your computer:**
+**A library add-on, on your computer:**
+
+```bash
+selfhost-remote-mail-mcp addons enable calendar_invite
+```
+
+It turns it on and checks that it loads. When it says "All add-ons load", restart your AI app.
+
+**A library add-on, on a hosting company or Docker:** add its name to `MAIL_ADDONS` (the host's variables, or `.env` then `docker compose up -d`).
+
+**Your own add-on, on your computer:**
 
 ```bash
 mkdir -p ~/.config/selfhost-remote-mail-mcp/addons
-curl -fsSL -o ~/.config/selfhost-remote-mail-mcp/addons/calendar_invite.py https://raw.githubusercontent.com/s17sh70x2jfl031ag/Selfhost-Remote-Mail-MCP/main/examples/addons/calendar_invite.py
-echo "MAIL_ADDONS=calendar_invite" >> ~/.config/selfhost-remote-mail-mcp/.env
-selfhost-remote-mail-mcp addons
+cp my_quotes.py ~/.config/selfhost-remote-mail-mcp/addons/
+selfhost-remote-mail-mcp addons enable my_quotes
 ```
 
-The last command loads the add-ons and lists their tools, without starting anything. When it says "All add-ons load", restart your AI app.
-
-**On a hosting company (your fork):**
+**Your own add-on, on a hosting company (your fork):**
 
 ```bash
-cp examples/addons/calendar_invite.py addons/
-git add addons/calendar_invite.py
-git commit -m "Add the calendar_invite add-on"
+cp my_quotes.py addons/
+git add addons/my_quotes.py
+git commit -m "Add the my_quotes add-on"
 git push
 ```
 
-Then add `MAIL_ADDONS=calendar_invite` to the host's variables. The host rebuilds by itself.
+Then add `my_quotes` to `MAIL_ADDONS` in the host's variables. The host rebuilds by itself.
 
-**On your own server (Docker Compose):**
+**Your own add-on, on your own server (Docker Compose):**
 
 ```bash
-cp examples/addons/calendar_invite.py addons/
-echo "MAIL_ADDONS=calendar_invite" >> .env
+cp my_quotes.py addons/
+echo "MAIL_ADDONS=my_quotes" >> .env
 docker compose up -d --build
 docker compose exec mail selfhost-remote-mail-mcp addons
 ```
@@ -232,7 +274,9 @@ Ideas without code are welcome too, in the same form.
 
 | The server says | What to do |
 |---|---|
-| `add-on x: ... doesn't exist` | The file isn't in the add-ons folder, or the name in `MAIL_ADDONS` is spelled differently |
+| `add-on x: ... doesn't exist` | There's no library add-on of that name and no file in the add-ons folder, or the name in `MAIL_ADDONS` is spelled differently. `addons list` shows the library |
+| `add-on x needs the Python package ...` | Install the add-on extras. On a computer: `uv tool install --force "selfhost-remote-mail-mcp[addons] @ git+https://github.com/s17sh70x2jfl031ag/Selfhost-Remote-Mail-MCP"`. In a copy of the project: `uv sync --extra addons`. The Docker image has them |
+| `its saved data can't be read` | `MAIL_SECRET_KEY` changed since the add-on saved its data. Put the old key back. The data file was left untouched |
 | `it needs a setup(api) function` | Add `def setup(api):` to the file |
 | `a tool called ... already exists` | Rename your tool: that name is taken |
 | `its settings must start with ...` | Rename the setting so it starts with the add-on's name in capitals |

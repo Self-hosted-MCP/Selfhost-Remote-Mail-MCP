@@ -5,12 +5,15 @@
 <p align="center"><b>Your own email inside Claude, ChatGPT, Codex and other AI apps.<br>On your computer and on your phone. Self-hosted, private, careful with sending.</b></p>
 
 <p align="center">
+<a href="#credits"><img src="https://img.shields.io/badge/-open%20source-brightgreen" alt="Open source"></a>
 <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="License: MIT"></a>
 <a href="pyproject.toml"><img src="https://img.shields.io/badge/python-3.11%2B-blue" alt="Python 3.11+"></a>
 <a href="https://modelcontextprotocol.io"><img src="https://img.shields.io/badge/MCP-server-black" alt="MCP server"></a>
 <a href="docs/connect-your-ai.md"><img src="https://img.shields.io/badge/works%20with-Claude%20%C2%B7%20ChatGPT%20%C2%B7%20Codex-orange" alt="Works with Claude, ChatGPT, Codex"></a>
 <a href="#choose-how-to-run-it"><img src="https://img.shields.io/badge/self--hosted-computer%20%C2%B7%20cloud%20%C2%B7%20server-green" alt="Self-hosted"></a>
 </p>
+
+<p align="center"><b>Free and open source under the MIT license.</b> Use it, fork it and change it, and keep the credit. See <a href="#credits">Credits</a>.</p>
 
 <p align="center">
 <a href="#quick-start-option-1-about-5-minutes">Quick start</a> ·
@@ -107,7 +110,7 @@ The server is a small program. Your AI app talks to it through **MCP** (Model Co
 
 <p align="center"><img src="docs/images/languages.png" alt="The login page in Japanese, Greek, Portuguese (Brazil) and Hindi" width="640"></p>
 
-**Add-ons.** Plug in your own features as small Python files, like a calendar invite or a quote PDF, without changing the server. Two examples are included, and an AI coding agent can build one for you. See [docs/addons.md](docs/addons.md).
+**Add-ons.** Extra features you turn on when you want them, from the [add-on library](src/selfhost_remote_mail_mcp/library/README.md) that comes with the server (all off by default), or your own small Python files. An AI coding agent can turn one on or build one for you. See [docs/addons.md](docs/addons.md).
 
 **Updates, if you want them.** Get told when there's a new release, or let it update itself, official releases only. See [docs/updates.md](docs/updates.md).
 

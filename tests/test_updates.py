@@ -54,10 +54,18 @@ def test_update_command_installs_the_release_tag(monkeypatch, capsys):
     ran = []
     monkeypatch.setattr(subprocess, "run", lambda args, **k: ran.append(args) or subprocess.CompletedProcess(args, 0))
     monkeypatch.setattr("shutil.which", lambda name: "/usr/bin/uv")
+    import importlib.util
+    real = importlib.util.find_spec
+    monkeypatch.setattr(importlib.util, "find_spec", lambda name, *a: None if name == "fpdf" else real(name, *a))
     server.run_update()
     assert ran == [["/usr/bin/uv", "tool", "install", "--force",
                     "git+https://github.com/s17sh70x2jfl031ag/Selfhost-Remote-Mail-MCP@v0.3.0"]]
     assert "Updated to v0.3.0" in capsys.readouterr().out
+    monkeypatch.setattr(importlib.util, "find_spec", real)   # with the add-on extras, they're kept
+    pytest.importorskip("fpdf")
+    server.run_update()
+    assert ran[-1][-1] == ("selfhost-remote-mail-mcp[addons] @ "
+                           "git+https://github.com/s17sh70x2jfl031ag/Selfhost-Remote-Mail-MCP@v0.3.0")
 
 
 def test_update_command_does_nothing_when_current(monkeypatch, capsys):
