@@ -86,7 +86,7 @@ The server is a small program. Your AI app talks to it through **MCP** (Model Co
 
 **Read.** List and search every folder with simple filters (for example `from:sam is:unread newer_than:7d`). Open whole conversations. Open attachments: pictures, PDFs and text files.
 
-**Write.** Make drafts: new emails, replies, reply-to-all and forwards. Your signature and saved templates are added for you. Drafts go to your normal Drafts folder, so you can also finish them in your usual mail app.
+**Write.** Make drafts: new emails, replies, reply-to-all and forwards. Each mailbox's signature and your saved templates are added for you. Drafts go to your normal Drafts folder, so you can also finish them in your usual mail app.
 
 **Drop a file in the chat, it goes in the email.** Drop a PDF or photo into your AI chat and say *"email this to Sam"*. Your AI app uploads it to your server by itself with a one-time link, attaches it and shows you the draft. You don't need the passphrase or another app. This works in AI apps that can run code, like Claude (web, desktop and phone), coding apps such as Claude Code, Cursor and Codex, and agents such as OpenClaw and Hermes Agent. If your app can't upload it, it gives you the link to pick the file yourself. Up to 25 MB. See [docs/attachments.md](docs/attachments.md#drop-a-file-in-the-chat).
 

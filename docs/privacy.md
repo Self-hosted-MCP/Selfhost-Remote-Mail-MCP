@@ -80,7 +80,8 @@ Everything lives in one folder: `~/.config/selfhost-remote-mail-mcp/` on a compu
 | `state/uploads/` | Files from the upload page, **encrypted**, until they're deleted (1 hour after first use, or 24 hours) | Only your user account |
 | `state/secret.key` | The key that unlocks `mailboxes.json` and uploads, only when `MAIL_SECRET_KEY` isn't set | Only your user account |
 | `state/update.json` | Only with the update check on: the newest version number and when it was checked | Only your user account |
-| `signature.html`, `signature.md`, `templates/` | What you put there, or what your AI saved when you asked. A replaced or removed one is kept next to it as `.old` | You |
+| `state/signatures.json` | Each mailbox's signature, by address | Only your user account |
+| `templates/` | What you put there, or what your AI saved when you asked. A replaced or removed one is kept next to it as `.old` | You |
 
 The server keeps **no copy of your emails**. Drafts and sent emails live in your mailbox, like with any mail app.
 

@@ -36,6 +36,7 @@ tests/test_addons.py                     add-ons: loading, the api, checks that 
 tests/test_languages.py                  page languages: picking, fallback, translate command, unmarked texts
 tests/test_shared_files.py               files two copies change at once: locks, temporary files, one secret key
 tests/test_service.py                    setup on a computer, the background service (system commands faked), local pages
+tests/test_mailbox_page.py               make default, mode, a signature per mailbox, remove with its clean-up
 src/selfhost_remote_mail_mcp/i18n.py     page languages: _(), picking a language, the translate command's helpers
 src/selfhost_remote_mail_mcp/locales/    one JSON file per language: English text -> translation
 examples/addons/                         hello.py, the smallest add-on, to copy when writing your own
@@ -156,5 +157,4 @@ When a person asks for an add-on, first check [the add-on library](src/selfhost_
 - Microsoft OAuth (Outlook.com, Microsoft 365).
 - Templates managed on the settings page.
 - Proton Bridge (self-signed certificate on localhost, STARTTLS on IMAP).
-- An easy way to add an HTML signature on hosting companies (`change_setting` writes a simple markdown one).
 - More providers in `PROVIDERS` (with a source for the settings).

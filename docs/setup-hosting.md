@@ -21,33 +21,28 @@ First, click **Fork** at the top of this project's GitHub page. That gives you y
 
 1. Sign up at [railway.com](https://railway.com) with your GitHub account and choose the **Hobby** plan ($5 a month, including $5 of usage, which this server stays well within).
 2. **New Project → Deploy from GitHub repo →** pick your fork. Railway finds the `Dockerfile` by itself and starts building. The first build fails or waits until step 3 is done; that's normal.
-3. Open the service, go to **Variables**, and add these (Raw Editor lets you paste them all at once):
+3. Open the service, go to **Variables**, and add these three (Raw Editor lets you paste them all at once):
 
    ```
-   MAIL_ADDRESS=you@example.com
-   MAIL_PASSWORD=your-app-password
-   IMAP_HOST=imap.example.com
-   SMTP_HOST=smtp.example.com
-   MAIL_NAME=Your Name
    LOGIN_PASSPHRASE=a long passphrase only you know
    MAIL_SECRET_KEY=a second long random value
    PORT=8765
    ```
 
-   `MAIL_SECRET_KEY` encrypts mailboxes you add later on the settings page. Make it long and random, and never change it.
-
-   Ports default to 993 (IMAP) and 465 (SMTP). Add `IMAP_PORT` or `SMTP_PORT` only if your provider uses others.
+   The passphrase locks your settings page. `MAIL_SECRET_KEY` encrypts the mailboxes you add there. Make it long and random, and never change it.
 4. **Settings → Networking → Generate Domain.** If it asks which port, type **8765**. You get an address like `https://your-mail.up.railway.app`. The server picks it up by itself.
 5. **Add a volume** (right-click the service, or the command palette: *Add Volume*) with mount path **`/data`**. Without it everything still works, but after each restart you log in again, the send limits start from zero, and your signature, templates, uploads and settings-page changes are lost.
 6. Wait for the deploy to turn green, then open `https://your-mail.up.railway.app/health`. It should say `ok`.
+7. **Add your mailbox:** open `https://your-mail.up.railway.app/settings`, type your passphrase, and use **Add a mailbox** ([below](#add-your-mailbox)).
 
 ## Render (about $7 a month plus $0.25 for the disk)
 
 1. Sign up at [render.com](https://render.com) with your GitHub account.
 2. **New → Blueprint →** pick your fork. Render reads `render.yaml` and sets up a web service with a 1 GB disk at `/data`.
-3. Fill in the blanks it asks for: `MAIL_ADDRESS`, `MAIL_PASSWORD`, `IMAP_HOST`, `SMTP_HOST`, `LOGIN_PASSPHRASE`, `MAIL_NAME`.
+3. Fill in the one blank it asks for: `LOGIN_PASSPHRASE`, a long passphrase only you know. It locks your settings page.
 4. Click **Apply**. The address (like `https://selfhost-remote-mail-mcp.onrender.com`) is picked up by itself.
 5. Open `https://your-address.onrender.com/health`. It should say `ok`.
+6. **Add your mailbox:** open `https://your-address.onrender.com/settings`, type your passphrase, and use **Add a mailbox** ([below](#add-your-mailbox)).
 
 > Render's free plan can't keep a disk and falls asleep when idle, which breaks scheduled send. So `render.yaml` uses the smallest paid instance.
 
@@ -97,12 +92,11 @@ Open `https://your-address/settings`, type your passphrase, and use **Add a mail
 
 ## Make it safer
 
-Add any of these to the Variables (Railway) or Environment (Render), then let it restart:
+## Add your mailbox
 
-- `MAIL_READ_ONLY=on` while you try it: the AI can only read.
-- `SEND_ALLOWED_RECIPIENTS=you@example.com,@yourcompany.com` to only ever send to people you list.
+On your settings page (`https://your-address/settings`), use **Add a mailbox**: your email address, your name as people should see it, and your password or app password. Server names fill in for well-known providers, and the login is tested before anything is saved. Choose its **mode**: full, draft only or read only. Trying it out? Choose **read only**, and change it later on the same page. More mailboxes, signatures and the default mailbox: [mailboxes.md](mailboxes.md).
 
-And in your AI app, set `send_email` and `schedule_send` to **Always ask**. More in [safety.md](safety.md).
+To make it safer, set `send_email` and `schedule_send` to **Always ask** in your AI app. To only ever send to people you list, add `SEND_ALLOWED_RECIPIENTS=you@example.com,@yourcompany.com` to the Variables (Railway) or Environment (Render). More in [safety.md](safety.md).
 
 ## Connect your AI app
 
@@ -125,8 +119,8 @@ Turn on the **Update from official releases** action in your fork, and new relea
 ## Optional extras
 
 - **Time zone** for the send log and the times you see: add `TZ=Europe/London` (or [your zone](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones)).
-- **Signature:** add `MAIL_SIGNATURE=Your Name\nWhat you do · example.com` (`\n` starts a new line). It is added under every draft.
-- **Templates and signature:** ask your AI, for example *"Save this as a template called thank-you"* or *"Change my signature"*. They're kept on the `/data` volume.
+- **Signature:** each mailbox has its own **Signature** box on the settings page. Or ask your AI: *"Change my signature"*.
+- **Templates:** ask your AI, for example *"Save this as a template called thank-you"*. They're kept on the `/data` volume.
 - **More settings:** [settings.md](settings.md).
 
 ## What we tested

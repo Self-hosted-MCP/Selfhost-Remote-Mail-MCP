@@ -7,7 +7,6 @@ What might come next. Nothing here has a date. If you want one of these, say so 
 - **Outlook.com, Hotmail and Microsoft 365**, through Microsoft's own sign-in (OAuth).
 - **Proton Mail** through Proton Bridge (needs support for its local, self-signed certificate).
 - **Gmail without app passwords**, through Google's own sign-in.
-- **HTML signatures on hosting companies** without a terminal (asking the AI sets a simple one).
 - **A one-click Railway template**, so option 2 needs no fork.
 - **A ready-made Docker image** on GitHub's container registry, so option 3 needs no build.
 - **A Claude Desktop extension** (`.mcpb` file) for a double-click install.

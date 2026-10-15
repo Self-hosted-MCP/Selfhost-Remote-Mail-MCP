@@ -29,7 +29,7 @@ def clean_state():
 def test_settings_shows_what_may_change():
     out = server.settings()
     assert "photo_location: on" in out and "document_details: on" in out and "update_check: off" in out
-    assert "signature: none" in out and "device log" in out and "Only the user can change everything else" in out
+    assert re.search(r"signature for [^\n]*me@example\.com\)?: none", out) and "device log" in out and "Only the user can change everything else" in out
     assert "device_log:" not in out
 
 

@@ -1,6 +1,7 @@
 # Option 3: your own server. Gives you https://<MAIL_DOMAIN> with a free certificate.
 #   1. Point a domain (e.g. mail.example.com) at your server's IP address.
-#   2. cp .env.example .env   and fill it in (MAIL_DOMAIN, mail settings, LOGIN_PASSPHRASE).
+#   2. cp .env.example .env   and fill it in (MAIL_DOMAIN, LOGIN_PASSPHRASE, MAIL_SECRET_KEY).
+#      Then add your mailboxes on https://<MAIL_DOMAIN>/settings.
 #   3. docker compose up -d
 # Full guide: docs/setup-own-server.md
 services:

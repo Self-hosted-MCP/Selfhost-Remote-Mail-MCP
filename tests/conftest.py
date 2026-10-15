@@ -132,7 +132,7 @@ def mailbox(monkeypatch):
     FakeIMAP.stores = {}
     server._contacts_cache.clear()
     shutil.rmtree(server.ADDON_DATA, ignore_errors=True)   # add-on data is encrypted with the key removed below
-    for f in (server.STORE_FILE, server.KEY_FILE):
+    for f in (server.STORE_FILE, server.KEY_FILE, server.SIGNATURES_FILE):
         if f.exists():
             f.unlink()
     FakeSMTP.sent = []

@@ -84,9 +84,10 @@ On the settings page, type your passphrase, then use **Add a mailbox**:
 
 1. your email address and your name as people should see it,
 2. the server names, filled in for you for well-known providers,
-3. your password or app password.
+3. your password or app password,
+4. its **mode**: full, draft only or read only. Trying it out? Choose **read only**, and change it later.
 
-The login is tested before anything is saved (nothing is sent). Your password is stored encrypted on your computer. Add more mailboxes the same way, up to 5, each with its own mode and a short name like *Work* ([mailboxes.md](mailboxes.md)).
+The login is tested before anything is saved (nothing is sent). Your password is stored encrypted on your computer. Add more mailboxes the same way, up to 5, each with its own mode, signature and a short name like *Work*. Pick which one is the default with **Make default** ([mailboxes.md](mailboxes.md)).
 
 The same page also turns on add-ons, sets privacy options and shows which devices signed in.
 
@@ -117,15 +118,12 @@ Testing you@yourname.com (full, nothing is sent)...
 
 ### Optional: signature and templates
 
-Put these in the same folder:
+- **Signature:** each mailbox has its own **Signature** box on the settings page. Plain text, or HTML for a designed one.
+- **Templates:** reusable emails with blanks to fill in, as `templates/*.md` files in the settings folder.
 
-- `signature.md` (plain text) or `signature.html` (with formatting): added under every draft.
-- `templates/*.md`: reusable emails with blanks to fill in.
-
-The [examples folder](../examples/) has five signature designs, two plain ones and five ready templates (thank you, follow-up, reschedule, invoice reminder, out of office). For example, to use the minimal signature and all templates:
+The [examples folder](../examples/) has five signature designs, two plain ones and five ready templates (thank you, follow-up, reschedule, invoice reminder, out of office). To use a signature design, open the file, put in your details, and paste it into a mailbox's **Signature** box. To use all templates:
 
 ```bash
-cp examples/signatures/minimal.html ~/.config/selfhost-remote-mail-mcp/signature.html
 cp -r examples/templates ~/.config/selfhost-remote-mail-mcp/
 ```
 
@@ -146,10 +144,7 @@ Then ask: *"Use the mail tools: what's new in my inbox today?"* The AI should li
 ## 7. Make it safer (2 minutes)
 
 1. In your AI app's settings, set the tools `send_email` and `schedule_send` to **Always ask**. Then nothing is sent without your yes.
-2. Trying it for the first time? Add `MAIL_READ_ONLY=on` to the settings file. The AI can then only read. Change it to `off` when you're ready. To open the settings file:
-   - Mac: `open -e ~/.config/selfhost-remote-mail-mcp/.env`
-   - Windows: `notepad $HOME\.config\selfhost-remote-mail-mcp\.env`
-   - Linux: `nano ~/.config/selfhost-remote-mail-mcp/.env`
+2. Trying it for the first time? Give the mailbox the mode **read only**. The AI can then only read. Change it on the settings page when you're ready.
 
 More options, such as only allowing certain recipients: [safety.md](safety.md#pick-a-safety-level).
 

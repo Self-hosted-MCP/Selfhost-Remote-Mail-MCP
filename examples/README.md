@@ -4,7 +4,7 @@ Starter files to copy into your settings folder (`~/.config/selfhost-remote-mail
 
 ## Signatures
 
-Pick one, put your own details in, and save it in your settings folder as **`signature.html`** (HTML designs) or **`signature.md`** (plain text). It's added under every draft. If both exist, the HTML one is used.
+Pick one, put your own details in, and paste it into a mailbox's **Signature** box on the settings page. Each mailbox has its own. HTML designs are used as written; plain text gets a `-- ` line above it.
 
 ![The five signature designs, each shown in a light and a dark mail app](../docs/images/signatures.png)
 

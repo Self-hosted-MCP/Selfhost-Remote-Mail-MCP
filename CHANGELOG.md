@@ -2,6 +2,14 @@
 
 All notable changes to this project. Versions follow [semantic versioning](https://semver.org).
 
+## 0.18.0 (2026-10-15)
+
+- **Make default:** a button on the settings page picks the mailbox used for new emails and plain folder names like `INBOX`. `MAIL_DEFAULT` in the settings wins over it. Start a new chat after changing it.
+- **A signature for each mailbox:** every mailbox has its own **Signature** box on the settings page, plain text or HTML. There's no shared signature any more. The one you had (`signature.html`, `signature.md` or `MAIL_SIGNATURE`) is copied to every mailbox once on update, and the old file is kept as `.old`. Asked to change your signature, the AI asks which mailbox, or all of them.
+- **Mode on each mailbox:** change full, draft only or read only on the page. When adding a mailbox, you now choose the mode yourself, with nothing pre-filled. `setup --terminal` asks too.
+- **Remove, with a check first:** a clear **Remove** on each mailbox added on the page shows what happens (emails stay, scheduled emails from it won't go out, apps lose it) and asks you to tick "Yes". Its name, signature and default choice are cleaned up.
+- **Mailboxes live on the settings page everywhere:** the hosting and own-server guides, `render.yaml`, `docker-compose.yml` and `.env.example` no longer ask for mail variables. You set a passphrase (and, on a host, the key), then add mailboxes on the page. Variables still work for anyone who prefers them.
+
 ## 0.17.1 (2026-10-15)
 
 - **setup leaves your own server alone:** if this server's web version already runs on the computer (for example your own systemd service on a VPS), setup and `service install` say so and change nothing, instead of moving it to another port.

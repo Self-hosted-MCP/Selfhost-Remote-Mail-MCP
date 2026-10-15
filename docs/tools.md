@@ -9,7 +9,7 @@ You don't call these yourself: you ask in plain words, and your AI app picks the
 
 | Tool | What it does | Changes anything? |
 |---|---|---|
-| `accounts` | Shows the mailboxes this app may use, each one's mode and special folders, signature status, the add-ons that are on, update notices and the allowed-recipients list | No |
+| `accounts` | Shows the mailboxes this app may use, each one's mode and special folders, which ones have a signature, the add-ons that are on, update notices and the allowed-recipients list | No |
 | `folders` | Lists folders with message and unread counts, and sizes if asked | No |
 | `emails` | Lists emails in one folder, with filters | No |
 | `search` | Searches every folder (or one), with full text for keyword searches | No |
@@ -64,7 +64,7 @@ You don't call these yourself: you ask in plain words, and your AI app picks the
 - **From another mailbox:** `account="Work"` (a name or an address). Replies already use the email's own mailbox.
 - **Template:** `template="thank-you"`, plus `placeholder=["topic=the workshop"]` for its own blanks. `{{recipient_name}}`, `{{recipient_first_name}}` and `{{my_name}}` fill themselves.
 - **Delete:** `delete=Drafts#55` moves it to Trash.
-- **Signature:** added by itself if you set one up. `no_signature=true` skips it, and `mode="signatures"` shows it.
+- **Signature:** each mailbox's own is added by itself, if it has one. `no_signature=true` skips it, and `mode="signatures"` shows them.
 
 ## Organising
 
@@ -100,7 +100,7 @@ Tools that change your calendar or use up an invoice number are good ones to set
 
 ## Settings
 
-**settings** shows what's on or off, your signature, your templates and the files on the upload page.
+**settings** shows what's on or off, each mailbox's signature, your templates and the files on the upload page.
 
 **change_setting** changes only these, and only when you ask in the chat:
 
@@ -109,7 +109,7 @@ Tools that change your calendar or use up an invoice number are good ones to set
 | Remove location from photos | *"Stop removing the location from my photos"* |
 | Remove author details from documents | *"Turn document cleaning back on"* |
 | Update check | *"Tell me when there's a new version"* |
-| Your signature | *"Change my signature to Alex Rivera, Studio Northwind"* (the old one is kept as a backup file) |
+| A mailbox's signature | *"Change my Work signature to Alex Rivera, Studio Northwind"*. With several mailboxes and none named, the AI asks which one, or all of them |
 | Templates | *"Save this as a template called thank-you"*, *"Delete the invoice template"* |
 | Files on the upload page | *"Delete the photo I uploaded"* |
 

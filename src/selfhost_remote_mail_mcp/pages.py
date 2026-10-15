@@ -580,7 +580,8 @@ def settings(csrf: str, mailboxes: list[dict], apps: list[dict], flash: tuple[st
     # mailboxes
     panel("mailboxes")
     parts.append(f'<h2>{esc(_("Mailboxes"))}</h2>'
-                 f'<p class="lead">{esc(_("The first one is the default. Each mailbox keeps its own mode."))}</p>')
+                 f'<p class="lead">{esc(_("The default mailbox is used for new emails and for plain folder names like INBOX. "
+                                "Each mailbox has its own mode and signature."))}</p>')
     if mailboxes:
         rows = []
         for i, m in enumerate(mailboxes):
@@ -591,7 +592,22 @@ def settings(csrf: str, mailboxes: list[dict], apps: list[dict], flash: tuple[st
                    f'<div class="muted">{esc(where)} · {esc(_(MODE_HELP[m["mode"]]))}</div><div class="actions">',
                    _post("/settings/mailbox", csrf, {"action": "test", "address": addr}, _("Test login")),
                    _post("/settings/mailbox", csrf, {"action": "domain", "address": addr}, _("Check domain"))]
+            if i > 0 and not m.get("default_locked"):
+                row.append(_post("/settings/mailbox", csrf, {"action": "default", "address": addr}, _("Make default")))
             row.append("</div>")
+            if web:
+                row.append(f'<details><summary>{esc(_("Mode"))}</summary><form method="post" action="/settings/mailbox">{_csrf(csrf)}'
+                           f'<input type="hidden" name="action" value="mode"><input type="hidden" name="address" value="{esc(addr)}">'
+                           f'<div class="grid"><div><label for="mo{i}">{esc(_("What the AI may do with this mailbox"))}</label>'
+                           f'<select id="mo{i}" name="mode">{mode_options(m["mode"])}</select>{mode_hint()}</div></div>'
+                           f'<div class="actions"><button type="submit">{esc(_("Save mode"))}</button></div></form></details>')
+            row.append(f'<details><summary>{esc(_("Signature"))}</summary><form method="post" action="/settings/mailbox">{_csrf(csrf)}'
+                       f'<input type="hidden" name="action" value="signature"><input type="hidden" name="address" value="{esc(addr)}">'
+                       f'<div class="grid"><div><label for="sg{i}">{esc(_("Signature for this mailbox"))} <span class="hint">'
+                       f'{esc(_("Added under every email written from it. Plain text, or HTML starting with <. Leave empty for none."))}'
+                       f'</span></label><textarea id="sg{i}" name="signature" rows="5" maxlength="20000">'
+                       f'{esc(m.get("signature", ""))}</textarea></div></div>'
+                       f'<div class="actions"><button type="submit">{esc(_("Save signature"))}</button></div></form></details>')
             row.append(f'<details><summary>{esc(_("Rename"))}</summary><form method="post" action="/settings/mailbox">{_csrf(csrf)}'
                        f'<input type="hidden" name="action" value="rename"><input type="hidden" name="address" value="{esc(addr)}">'
                        f'<div class="grid"><div><label for="r{i}">{esc(_("Name for this mailbox"))} <span class="hint">'
@@ -609,11 +625,20 @@ def settings(csrf: str, mailboxes: list[dict], apps: list[dict], flash: tuple[st
                         + _host_fields(f"e{i}", m["imap_host"], str(m["imap_port"]), m["smtp_host"], str(m["smtp_port"]),
                                        m["username"], m["smtp_username"])
                         + f'<div class="actions"><button type="submit">{esc(_("Save changes"))}</button></div></form>'
-                        + _post("/settings/mailbox", csrf, {"action": "delete", "address": addr}, _("Remove mailbox"), "danger",
-                                '<label class="confirm"><input type="checkbox" name="confirm" value="yes" required>'
-                                + esc(_("Yes, remove it from this server. Its emails stay in the mailbox.")) + "</label>")
                         + "</details>")
                 row.append(edit)
+                gone = [_("Its emails, folders and drafts stay in the mailbox, untouched."),
+                        _("Emails scheduled to go out later from it won't be sent."),
+                        _("AI apps can no longer use it, and its name and signature are deleted.")]
+                if i == 0:
+                    gone.append(_("It's the default now: the next mailbox becomes the default."))
+                row.append(f'<details><summary>{esc(_("Remove"))}</summary>'
+                           f'<p class="warn">{ICON_ALERT}<span>{esc(_("Remove {address} from this server?", address=addr))}</span></p>'
+                           f'<ul class="hint">{"".join(f"<li>{esc(g)}</li>" for g in gone)}</ul>'
+                           + _post("/settings/mailbox", csrf, {"action": "delete", "address": addr}, _("Remove for good"), "danger",
+                                   '<label class="confirm"><input type="checkbox" name="confirm" value="yes" required>'
+                                   + esc(_("Yes, remove it from this server.")) + "</label>")
+                           + "</details>")
             row.append("</div>")
             rows.append("".join(row))
         parts.append(f'<div class="list">{"".join(rows)}</div>')
@@ -632,7 +657,8 @@ def settings(csrf: str, mailboxes: list[dict], apps: list[dict], flash: tuple[st
             f'<div><label for="al">{esc(_("Name for this mailbox"))} <span class="hint">{esc(_("like Work"))}</span></label><input id="al" name="label" maxlength="40" autocomplete="off"></div>'
             f'<div><label for="an">{esc(_("Name on outgoing mail"))}</label><input id="an" name="name" autocomplete="off"></div>'
             f'<div><label for="ap">{esc(_("Password or app password"))}</label><input id="ap" type="password" name="password" required autocomplete="new-password"></div>'
-            f'<div><label for="am">{esc(_("Mode"))}</label><select id="am" name="mode">{mode_options("draft")}</select>{mode_hint()}</div>'
+            f'<div><label for="am">{esc(_("Mode"))}</label><select id="am" name="mode" required>'
+            f'<option value="" disabled selected>{esc(_("Choose a mode"))}</option>{mode_options("")}</select>{mode_hint()}</div>'
             f'</div><details><summary>{esc(_("Server settings"))}</summary><p class="hint">'
             + esc(_("Only needed for providers that aren't filled in by themselves. See docs/email-providers.md."))
             + "</p>" + _host_fields("a") + "</details>"

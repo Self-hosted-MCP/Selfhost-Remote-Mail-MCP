@@ -230,7 +230,7 @@ def test_adding_a_mailbox_that_cant_log_in_is_refused(monkeypatch):
         raise server.ToolError("The mail server refused the login")
     monkeypatch.setattr(server, "connect", refuse)
     kind, text = server.settings_action(p, "mailbox", {"action": "add", "address": "bad@example.com", "password": "x",
-                                                        "imap_host": "i", "smtp_host": "s"})
+                                                        "imap_host": "i", "smtp_host": "s", "mode": "full"})
     assert kind == "error" and "Not added" in text and not server.STORE_FILE.exists()
 
 

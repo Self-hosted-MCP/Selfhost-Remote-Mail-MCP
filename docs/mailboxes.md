@@ -31,17 +31,24 @@ Give mailboxes short names like **Work**, **Personal** or **Archive 2019**. You 
 
 **1. The settings page** (the easiest). Open `https://your-address/settings`, or on a computer `http://localhost:8765/settings`, and type your passphrase. You can then:
 
-- add a mailbox: the server names fill in for known providers, the login is tested before it's saved, and you pick a mode and a name,
+- add a mailbox: the server names fill in for known providers, the login is tested before it's saved, and you choose its mode (nothing is pre-filled) and a name,
 - test any mailbox's login (nothing is sent),
 - rename any mailbox,
-- change or remove the mailboxes you added there,
+- **Make default**: pick the mailbox used for new emails and for plain folder names like `INBOX`,
+- **Mode**: change what the AI may do with a mailbox,
+- **Signature**: each mailbox has its own, added under every email written from it. Plain text, or HTML starting with `<`. Empty means none,
+- **Remove**: it first shows what happens, then asks you to tick "Yes" before **Remove for good**. The emails stay in the mailbox,
+- edit the server settings or password of the mailboxes you added there,
 - choose which mailboxes each connected AI app may use, or disconnect an app.
+
+> [!NOTE]
+> After **Make default**, start a new chat in your AI app. Email IDs like `INBOX#123` from before now point to the new default's inbox.
 
 The settings page has a bar at the top with its sections:
 
 | Section | What you can do there |
 |---|---|
-| **Mailboxes** | See each mailbox, test its login, check its domain, rename it, and edit or remove ones added on this page. **Add a mailbox** is right below |
+| **Mailboxes** | See each mailbox, test its login, check its domain, rename it, make it the default, set its mode and signature, and edit or remove ones added on this page. **Add a mailbox** is right below |
 | **Apps** | The AI apps that logged in: choose their mailboxes, whether they may send, or disconnect them |
 | **Add-ons** | Turn library add-ons on or off and set them up |
 | **Files** | A link to the upload page, for files to attach |
@@ -65,7 +72,7 @@ MAIL_2_LABEL=Personal
 
 Server names and ports you leave out are copied from mailbox 1, which is handy for two addresses at the same provider. All the settings are in [settings.md](settings.md#several-mailboxes).
 
-Mailboxes from the settings file show on the settings page too. You can test and rename them there, but change them in the file.
+Mailboxes from the settings file show on the settings page too. You can test and rename them, make them the default and set their signature there, but change their mode or remove them in the file. To manage one fully on the page: delete it from the file (or your host's variables), then add it on the page.
 
 ## Each AI app gets its own choice
 

@@ -17,7 +17,7 @@ You need:
                       free certificate,                 │
                       renewed by itself                 ▼
                                                  mail-data volume
-                                           (logins, send log, signature)
+                                           (logins, send log, mailboxes)
 ```
 
 1. **Point your domain at the server.** In your DNS settings, add an `A` record for `mail.yourdomain.com` with your server's IP address. Ports 80 and 443 must be open.
@@ -30,7 +30,7 @@ You need:
    cp .env.example .env
    ```
 
-3. **Fill in `.env`:** your mail settings, `LOGIN_PASSPHRASE`, `MAIL_SECRET_KEY` (a long random value, for mailboxes added on the settings page) and `MAIL_DOMAIN=mail.yourdomain.com` (no `https://`). Then lock it: `chmod 600 .env`. More mailboxes: [mailboxes.md](mailboxes.md).
+3. **Fill in `.env`:** `LOGIN_PASSPHRASE` (it locks your settings page), `MAIL_SECRET_KEY` (a long random value that encrypts your mailboxes) and `MAIL_DOMAIN=mail.yourdomain.com` (no `https://`). Then lock it: `chmod 600 .env`.
 
 4. **Start it:**
 
@@ -40,16 +40,17 @@ You need:
 
 5. **Check it:** `https://mail.yourdomain.com/health` should say `ok`. Logs: `docker compose logs -f mail`.
 
+6. **Add your mailbox:** open `https://mail.yourdomain.com/settings`, type your passphrase, and use **Add a mailbox**. Choose its mode: full, draft only or read only. More mailboxes, signatures and the default mailbox: [mailboxes.md](mailboxes.md).
+
 Your AI app's server address is `https://mail.yourdomain.com/mcp`. See [connect-your-ai.md](connect-your-ai.md).
 
-**Make it safer.** Only ports 80 and 443 need to be open; the mail server itself isn't exposed, only Caddy is. Add `MAIL_READ_ONLY=on` or `SEND_ALLOWED_RECIPIENTS` to `.env` if you want ([safety.md](safety.md#pick-a-safety-level)), then run `docker compose up -d` again.
+**Make it safer.** Only ports 80 and 443 need to be open; the mail server itself isn't exposed, only Caddy is. Trying it out? Choose **read only** when you add the mailbox. To only ever send to people you list, add `SEND_ALLOWED_RECIPIENTS` to `.env` ([safety.md](safety.md#pick-a-safety-level)), then run `docker compose up -d` again.
 
 **Update:** `./scripts/update.sh` moves to the newest official release and restarts. It can run weekly by itself: [updates.md](updates.md).
 
-Everything that must survive restarts (login tokens, send log) is kept in the `mail-data` Docker volume. To add a signature or templates, copy them in:
+Everything that must survive restarts (login tokens, send log, mailboxes) is kept in the `mail-data` Docker volume. Each mailbox's signature is on the settings page. To add templates, copy them in:
 
 ```bash
-docker compose cp signature.html mail:/data/signature.html
 docker compose cp templates mail:/data/
 ```
 

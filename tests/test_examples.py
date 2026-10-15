@@ -19,19 +19,18 @@ def test_every_example_template_fills_in(monkeypatch, mailbox):
         assert all(f"X{p}" in out for p in manual), t["name"]
 
 
-def test_plain_signatures(monkeypatch):
-    monkeypatch.setattr(server, "SIGNATURE_HTML", EXAMPLES / "missing.html")
+def test_plain_signatures():
     for f in (EXAMPLES / "signatures").glob("plain-*.md"):
-        monkeypatch.setattr(server, "SIGNATURE", f)
-        assert server.signature()[0].startswith("-- \nAlex Rivera"), f.name
+        server.set_signature(["me@example.com"], f.read_text())   # a copy: the example files are never touched
+        assert server.signature("me@example.com")[0].startswith("-- \nAlex Rivera"), f.name
 
 
-def test_signature_designs_have_clean_text_copies(monkeypatch):
+def test_signature_designs_have_clean_text_copies():
     designs = sorted((EXAMPLES / "signatures").glob("*.html"))
     assert len(designs) == 5
     for f in designs:
-        monkeypatch.setattr(server, "SIGNATURE_HTML", f)
-        plain, html = server.signature()
+        server.set_signature(["me@example.com"], f.read_text())   # a copy: the example files are never touched
+        plain, html = server.signature("me@example.com")
         lines = plain.splitlines()
         assert lines[0] in ("Alex Rivera", "AR"), f.name
         assert all(line == line.strip() and line for line in lines), f.name

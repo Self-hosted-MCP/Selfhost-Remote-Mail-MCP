@@ -60,21 +60,42 @@ def test_main_mailbox_is_never_the_read_only_one(monkeypatch):
 
 
 def test_signature_added_when_present(mailbox):
+    server.SIGNATURES_FILE.unlink(missing_ok=True)
     assert "Signature: none" in server.accounts()
-    server.SIGNATURE.write_text("Me\nsig-line-123")
+    server.set_signature(["me@example.com"], "Me\nsig-line-123")
     try:
-        assert "Signature: set up" in server.accounts()
+        assert "Signature: set for me@example.com" in server.accounts()
         out = server.draft(to=["you@example.org"], subject="Hi", body="Hello.\n\nBest,")
         assert "sig-line-123" in out
         assert "sig-line-123" not in server.draft(to=["you@example.org"], subject="Hi", body="x", no_signature=True)
     finally:
-        server.SIGNATURE.unlink()
+        server.SIGNATURES_FILE.unlink()
 
 
-def test_signature_from_setting(monkeypatch):
+def test_an_old_shared_signature_is_copied_to_every_mailbox_once(monkeypatch):
+    server.SIGNATURES_FILE.unlink(missing_ok=True)
+    monkeypatch.setenv("MAIL_2_ADDRESS", "two@example.com")
+    monkeypatch.setenv("MAIL_2_PASSWORD", "x")
+    server.SIGNATURE.write_text("Me\nold-shared-sig")
+    try:
+        assert "old-shared-sig" in server.signature("me@example.com")[0]
+        assert "old-shared-sig" in server.signature("two@example.com")[0]
+        assert not server.SIGNATURE.exists() and server.SIGNATURE.with_name("signature.md.old").exists()
+        server.set_signature(["two@example.com"], "Two only")
+        assert "Two only" in server.signature("two@example.com")[0]   # not overwritten again
+    finally:
+        server.SIGNATURE.with_name("signature.md.old").unlink(missing_ok=True)
+        server.SIGNATURES_FILE.unlink(missing_ok=True)
+
+
+def test_signature_from_setting_is_copied_once(monkeypatch):
+    server.SIGNATURES_FILE.unlink(missing_ok=True)
     monkeypatch.setenv("MAIL_SIGNATURE", "Me\\nexample-sig")
     plain, html = server.signature()
     assert plain == "-- \nMe\nexample-sig" and "example-sig" in html
+    server.set_signature(["me@example.com"], "")   # removed on the page: the setting doesn't bring it back
+    assert server.signature() == ("", "")
+    server.SIGNATURES_FILE.unlink()
 
 
 def test_smtp_login_name():

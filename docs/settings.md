@@ -24,7 +24,8 @@ Required unless you add every mailbox on the [settings page](mailboxes.md).
 | `MAIL_NAME` | | | Your name on outgoing mail |
 | `MAIL_USERNAME` | | your address | Login name, if different from the address |
 | `SMTP_USERNAME` | | `MAIL_USERNAME` | Login name for sending only, if it differs from the reading one (iCloud sometimes needs this) |
-| `MAIL_SIGNATURE` | | | A simple signature, `\n` for new lines. `signature.html` or `signature.md` in the config folder win over it |
+| `MAIL_DEFAULT` | | the first mailbox | The default mailbox's address. Wins over **Make default** on the settings page |
+| `MAIL_SIGNATURE` | | | Old: before 0.18 the one signature for every mailbox. Now each mailbox has its own on the settings page; a value here is copied to every mailbox once |
 
 ## Several mailboxes
 
@@ -118,13 +119,12 @@ Mailboxes 2 to 5 use the same settings with their number: `MAIL_2_...`, `MAIL_3_
 
 | Setting | Default | What it is |
 |---|---|---|
-| `MAIL_CONFIG_DIR` | `~/.config/selfhost-remote-mail-mcp` | Your folder: settings file, `signature.html`, `signature.md`, `templates/` |
+| `MAIL_CONFIG_DIR` | `~/.config/selfhost-remote-mail-mcp` | Your folder: settings file and `templates/` |
 | `MAIL_ENV_FILE` | `<config folder>/.env` | Use a settings file somewhere else. This one and the two around it must be environment variables, since they say where the settings file is |
 | `DATA_DIR` | `<config folder>/state` | The server's own files: logins, send log, mailboxes added on the settings page, uploads, switches, devices and the AI change list. Every file is listed in [privacy.md](privacy.md#what-the-server-keeps). Docker images use `/data` |
 | `TZ` | system | Time zone for the send log and the times you see, e.g. `Europe/London`. Must be a real environment variable (or a hosting variable); the settings file can't set it |
 
 ## Files in your config folder
 
-- `signature.html`: added under every draft as written, except notes inside `<!-- -->`, which are removed. A clean plain-text copy is made from it. Five designs are in [examples/signatures](../examples/signatures/).
-- `signature.md`: a simpler signature in plain text or Markdown, if there's no `signature.html`.
+- `signature.html` or `signature.md`: before 0.18 the one signature for every mailbox. One found here is copied to every mailbox once, then renamed `.old`. Signatures now live on the settings page, one per mailbox: HTML is used as written (notes inside `<!-- -->` are removed, and a clean plain-text copy is made), plain text gets a `-- ` line above it.
 - `templates/*.md`: one template per file. Optional `Subject:` and `To:` lines, then a line with `---`, then the body. Placeholders look like `{{topic}}`. The [examples folder](../examples/) has five ready templates and seven signatures to copy.
