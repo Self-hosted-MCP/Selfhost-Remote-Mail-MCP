@@ -33,6 +33,9 @@ It works with almost any mailbox: Gmail, iCloud, Fastmail, Yahoo, Zoho, a mailbo
 You: Anything urgent from this week? Draft a reply to Sam saying Thursday works.
 AI:  Reads your inbox, writes the reply into your Drafts folder and shows it to you.
      Nothing goes out until you say "send it".
+
+You: (drops invoice.pdf into the chat) Email this to Sam.
+AI:  Uploads the file to your server by itself, attaches it to a draft and shows it to you.
 ```
 
 ## How it works, in one picture
@@ -76,6 +79,8 @@ The server is a small program. Your AI app talks to it through **MCP** (Model Co
 **Read.** List and search every folder with simple filters (for example `from:sam is:unread newer_than:7d`). Open whole conversations. Open attachments: pictures, PDFs and text files.
 
 **Write.** Make drafts: new emails, replies, reply-to-all and forwards. Your signature and saved templates are added for you. Drafts go to your normal Drafts folder, so you can also finish them in your usual mail app.
+
+**Drop a file in the chat, it goes in the email.** Drop a PDF or photo into Claude (web, desktop or phone) and say *"email this to Sam"*. Claude uploads it to your server by itself with a one-time link, attaches it and shows you the draft. You don't need the passphrase or another app. If Claude can't upload it, it gives you the link to pick the file yourself. Up to 25 MB. See [docs/attachments.md](docs/attachments.md#drop-a-file-in-the-chat).
 
 **Attach files.** From other emails, from your computer, files the AI writes (like a CSV), or photos and documents you upload from your phone on the upload page. Programs are refused, and suspect files (like spreadsheets with macros) need your OK. Photos go in HD, or smaller if you ask (the AI offers it when files are too big), and iPhone HEIC photos can become JPG after you say yes. See [docs/attachments.md](docs/attachments.md).
 

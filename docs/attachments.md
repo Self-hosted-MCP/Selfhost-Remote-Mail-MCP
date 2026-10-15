@@ -1,15 +1,57 @@
 # Attaching files
 
-Your AI can attach files to drafts in four ways:
+Your AI can attach files to drafts in five ways:
 
 | Where the file is | Say something like | Works on |
 |---|---|---|
+| **Dropped into the chat** | *"Email this to Sam"* | The web version, in AI apps that can run code (Claude, coding apps). Others give you a link |
 | In another email | *"Attach the PDF from Sam's email"* or *"Forward this with its attachments"* | Every version |
 | On your computer | *"Attach ~/Desktop/invoice.pdf"* | The computer version only |
 | Written by the AI | *"Put the list in a CSV and attach it"* | Every version (up to 2 MB per file) |
 | On your phone or anywhere else | Upload it on the upload page, then *"Attach the photo I just uploaded"* | The web version |
 
 Each email can carry up to **25 MB** of files (`ATTACH_MAX_MB`), which is what most providers accept.
+
+## Drop a file in the chat
+
+Drop a file into your AI chat and ask to email it. Behind the scenes:
+
+1. The AI asks your server for a **one-time upload link** (the `upload_link` tool).
+2. Its code tool sends the file to that link. You don't open anything.
+3. The AI attaches the file to a draft and shows it to you. It sends only when you say so.
+
+```mermaid
+flowchart LR
+    Y["You drop invoice.pdf<br/>into the chat"] --> A["Your AI app"]
+    A -->|"1. asks for a one-time link"| S["your mail server"]
+    A -->|"2. its code uploads the file"| S
+    S -->|"3. attached to a draft"| D["Drafts"]
+```
+
+### Turn it on in your AI app
+
+The AI needs a code tool that can reach your server. If yours isn't on, the AI tells you, and you can use the link meanwhile.
+
+| AI app | What to turn on |
+|---|---|
+| **Claude** (web, desktop app) | **Settings → Capabilities**: turn on **Code execution and file creation**, and **Allow network egress** (on by default for Free, Pro and Max). Start a new chat after changing it |
+| **Claude** phone app | Tap your name in the sidebar → **Capabilities** → **Code execution and file creation**. The rest follows your account's settings from the web |
+| **Claude** Team or Enterprise | An owner sets it in **Organization settings → Capabilities**. If network access is "package managers only", ask them to add your server's address (like `mail.yourdomain.com`) as an allowed domain |
+| **Claude Code, Cursor, VS Code, Gemini CLI** | Nothing. They run the upload from your computer; approve the command if they ask |
+| **Codex** | Its sandbox blocks internet by default. Add this to `~/.codex/config.toml`: `[sandbox_workspace_write]` then `network_access = true` on the next line, or approve the upload when it asks |
+| **ChatGPT** | Can't: its code has no internet. The AI gives you the link; open it and pick the file |
+
+**If it can't upload,** the AI tells you why (for example "turn on code execution" or "allow my code to reach your server") and gives you the link. Open it, choose the file, press **Upload**, and tell the AI it's done. No passphrase needed.
+
+**Why a link and not just the file:** AI apps can only send text to tools, never files, so a dropped file can't travel inside the request. The AI's code can send the real file over the internet, so the server gives it a one-time address to send it to.
+
+**Safety:**
+
+- Only an AI app you logged in can make a link. Each link works **once**, for one file, for **10 minutes**, and at most 5 can be open at a time.
+- The server keeps only a fingerprint of each link, never the link itself, and a restart ends all open links.
+- Files go through the same checks as everywhere: programs refused, suspect files and iPhone photos need your OK, photo location removed. They're stored encrypted and deleted 1 hour after use, or after 24 hours.
+- Every upload through a link shows in the settings page's **Sign-ins** list.
+- Turn links off under **Privacy** on the settings page, or with `UPLOAD_LINKS=off`. Then you upload files yourself on the upload page.
 
 ## The upload page
 
@@ -130,6 +172,7 @@ Nothing is saved until you choose.
 
 | Setting | Default | What it does |
 |---|---|---|
+| `UPLOAD_LINKS` | `on` | `off` turns off one-time upload links (dropping a file in the chat) |
 | `REMOVE_PHOTO_LOCATION` | `on` | `off`: photos keep their location and camera details |
 | `REMOVE_DOCUMENT_DETAILS` | `on` | `off`: documents keep their author and company |
 | `ATTACH_MAX_MB` | `25` | Most MB of new files per email, and per upload |

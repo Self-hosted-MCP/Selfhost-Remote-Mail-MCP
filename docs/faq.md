@@ -106,6 +106,13 @@ Not when you attach them through this server. It removes the location from jpg, 
 </details>
 
 <details>
+<summary><b>Can I drop a file into the chat and have it emailed?</b></summary>
+
+Yes, on the web version. Drop it in and say *"email this to Sam"*. Claude uploads it to your server with a one-time link and attaches it. Claude needs **Settings → Capabilities → Code execution and file creation** on; if it can't upload, it gives you the link to pick the file yourself. See [attachments.md](attachments.md#drop-a-file-in-the-chat).
+
+</details>
+
+<details>
 <summary><b>My photos are too big to send. What can I do?</b></summary>
 
 Ask: *"Make the photos smaller."* They're resized to look the same on screens, often 5 to 10 times lighter. If the files are over the 25 MB limit, the AI offers this by itself. See [attachments.md](attachments.md#photo-size-hd-or-smaller).

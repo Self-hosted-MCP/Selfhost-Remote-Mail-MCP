@@ -432,7 +432,9 @@ def settings(csrf: str, mailboxes: list[dict], apps: list[dict], flash: tuple[st
         help_text = {"remove_photo_location": "Photos from phones often hold the exact place they were taken, and "
                                               "the camera. Works for jpg, png and webp; the photo itself isn't changed.",
                      "remove_document_details": "Word, Excel, PowerPoint, OpenDocument and PDF files often hold the "
-                                                "author's name and company. Signed or locked PDFs are left alone."}
+                                                "author's name and company. Signed or locked PDFs are left alone.",
+                     "upload_links": "Lets an AI app upload a file you dropped into the chat, with a one-time link "
+                                     "(one file, 10 minutes). Off: you upload files yourself on the upload page."}
         rows = []
         for p in privacy:
             state = '<span class="badge lime">On</span>' if p["on"] else '<span class="badge read">Off</span>'
@@ -562,3 +564,28 @@ def uploads(csrf: str, files: list[dict], flash: tuple[str, str] | None, max_siz
                  + "</div>")
     return page('Files for your <span class="hl">emails</span>', "Upload a file, then ask your AI app to attach it.",
                 "".join(parts), wide=True)
+
+
+# ---------------------------------------------------------------- one-time upload link (no passphrase: the link is the key)
+
+def upload_link(error: str = "", done: dict | None = None, max_size: str = "25 MB") -> str:
+    """done: the stored file's details (name, level, why) after a successful upload."""
+    if done:
+        warn = (f'<p class="warn">{ICON_ALERT}<span>Check this: {esc(done["why"])}. Your AI app will ask you before '
+                'attaching it.</span></p>') if done.get("level") == "suspect" else ""
+        content = (message("ok", f"{done['name']} is uploaded.") + warn
+                   + '<p class="lead">Go back to your chat and tell your AI app it\'s done. This link is now used up.</p>')
+        return page('File <span class="hl">uploaded</span>', "It's waiting for your AI app to attach it.", content)
+    if error and "expired" in error:
+        steps = ('<ol class="steps"><li>Go back to your chat.</li><li>Ask your AI app for a new upload link.</li>'
+                 '<li>Open it within 10 minutes.</li></ol>')
+        return page("This link has expired", esc(error), steps)
+    content = (f'{message("error", error) if error else ""}'
+               '<form method="post" enctype="multipart/form-data">'
+               f'<label class="drop">{ICON_UPLOAD}<b>Choose a file</b>'
+               f'<span class="muted">Photos, PDFs, documents, audio, video or zip. Up to {esc(max_size)}.</span>'
+               '<input type="file" name="file" required></label>'
+               '<button class="block" type="submit">Upload</button></form>'
+               f'<p class="note">{ICON_SHIELD}<span>Your AI app made this link for one file. It works once and expires '
+               '10 minutes after it was made. Nothing is sent until you say so in your chat.</span></p>')
+    return page('Add a file for your <span class="hl">email</span>', "Pick the file, then go back to your chat.", content)

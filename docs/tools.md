@@ -24,6 +24,7 @@ You don't call these yourself: you ask in plain words, and your AI app picks the
 | `action` | Archive, move, trash, read or unread, pin, spam, unsubscribe link | Yes, but nothing is sent |
 | `send_email` | **Sends** a draft now | **Sends email** |
 | `schedule_send` | **Sends** a draft later, or cancels that | **Sends email later** |
+| `upload_link` | Makes a one-time link so the AI's code can upload a file you dropped into the chat | Only adds one waiting file |
 | `settings` | Shows the settings an AI app may change, and what only you can change | No |
 | `change_setting` | Changes one of six settings, only when you ask | Yes, and it tells you what changed |
 
@@ -58,6 +59,7 @@ You don't call these yourself: you ask in plain words, and your AI app picks the
 - **Forward:** `forward=INBOX#1234` includes its attachments.
 - **Edit:** `edit=Drafts#55` changes only the parts you give. A scheduled time is kept.
 - **Attach** files from other emails: `attach_from=["INBOX#1234#0"]`.
+- **A file dropped into the chat:** the AI calls `upload_link`, uploads the file with its code tool, then attaches it with `attach_upload` ([attachments.md](attachments.md#drop-a-file-in-the-chat)).
 - **Attach new files:** `attach_path=["~/Desktop/invoice.pdf"]` (computer version only), `attach_content=[{"name": "list.csv", "text": "..."}]` for small files the AI writes (up to 2 MB, `"base64"` for non-text), or `attach_upload=["Beach-day.jpg"]` for files from the upload page (by name, `["latest"]` for the newest, or a code). `mode="files"` lists the files waiting there. Photos lose their location and documents their author before they're attached, unless that's turned off ([attachments.md](attachments.md#private-details-are-removed)). `photos="smaller"` resizes new photos (default `"hd"`, as they are), and iPhone HEIC photos need `heic="jpg"` or `heic="keep"`, which the AI only sets after asking you ([attachments.md](attachments.md#photo-size-hd-or-smaller)). Programs are refused. Suspect files (macros, scripts, archives the server can't check) need `allow_suspect=true`, which the AI only sets after asking you. See [attachments.md](attachments.md).
 - **From another mailbox:** `account="Work"` (a name or an address). Replies already use the email's own mailbox.
 - **Template:** `template="thank-you"`, plus `placeholder=["topic=the workshop"]` for its own blanks. `{{recipient_name}}`, `{{recipient_first_name}}` and `{{my_name}}` fill themselves.

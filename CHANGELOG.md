@@ -2,6 +2,11 @@
 
 All notable changes to this project. Versions follow [semantic versioning](https://semver.org).
 
+## 0.8.0 (2026-10-14)
+
+- **Drop a file in the chat, it goes in the email:** the new `upload_link` tool gives the AI a one-time link (one file, 10 minutes, 25 MB), and its code tool uploads the file you dropped into the chat. If it can't, the AI gives you the link to pick the file yourself, with no passphrase. Works in Claude (web, desktop, phone) with code execution on, and in coding apps.
+- Upload links keep only a fingerprint, go through the usual file checks, show in the Sign-ins list, and can be turned off on the settings page or with `UPLOAD_LINKS=off`.
+
 ## 0.7.0 (2026-10-14)
 
 - **Photo size:** photos go as they are (HD), or smaller when you ask: at most 2560 pixels on the long side, at high quality, often 5 to 10 times lighter. When files are over the size limit, the AI offers to make the photos smaller instead of failing.

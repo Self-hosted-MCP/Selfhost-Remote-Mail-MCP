@@ -89,6 +89,7 @@ Mailboxes 2 to 5 use the same settings with their number: `MAIL_2_...`, `MAIL_3_
 | `REMOVE_DOCUMENT_DETAILS` | `on` | `off` keeps the author and company in attached documents. Can also be turned off on the settings page |
 | `ATTACH_FOLDERS` | `~` | Folders the computer version may attach files from, separated by commas. Hidden files are never allowed |
 | `UPLOAD_PAGE` | `on` | `off` removes the upload page (`/upload`) from the web version. See [attachments.md](attachments.md) |
+| `UPLOAD_LINKS` | `on` | `off` turns off one-time upload links, which let an AI app upload a file you dropped into the chat. Can also be turned off on the settings page. See [attachments.md](attachments.md#drop-a-file-in-the-chat) |
 
 ## Updates
 

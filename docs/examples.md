@@ -36,6 +36,7 @@ The AI saves a draft and shows it to you. Nothing is sent yet.
 
 ## Attach files
 
+- *(drop a file into the chat)* *Email this to Sam with a short note.*
 - *Attach the PDF from Sam's last email to my reply.*
 - *Put this list in a CSV and attach it.*
 - *Attach a calendar invite for Thursday 3pm.*

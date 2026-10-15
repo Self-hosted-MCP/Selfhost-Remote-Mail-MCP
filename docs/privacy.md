@@ -45,7 +45,7 @@ Everything that travels is encrypted. Everything secret that's stored is encrypt
 | Login keys of AI apps | Only **fingerprints** (SHA-256). A copied data folder can't be used to log in |
 | Send log | Times, counts and **fingerprints** only, unless you turn on `SEND_LOG_DETAILS` |
 | Your emails | **Not stored at all.** They stay in your mailbox |
-| Files on the upload page | **Encrypted** with `MAIL_SECRET_KEY`, file names too. Deleted 1 hour after first going into a draft, or after 24 hours |
+| Files on the upload page (and from upload links) | **Encrypted** with `MAIL_SECRET_KEY`, file names too. Deleted 1 hour after first going into a draft, or after 24 hours |
 | Mailbox names, app list, settings like limits | Plain text in private files (only your user account can read them). None of it is secret |
 
 **Where encrypting more wouldn't help, and what to do instead**
@@ -57,6 +57,7 @@ Everything that travels is encrypted. Everything secret that's stored is encrypt
 ## Your files and tracking
 
 - **Photos you attach lose their location** (GPS), camera and dates. iPhone HEIC photos only do once you agree to change them to JPG. **Documents lose the author's name**, last editor and company. On by default. See [attachments.md](attachments.md#private-details-are-removed).
+- **Files you drop into the chat** pass through your AI app's own code sandbox (where the chat already keeps them) on their way to your server.
 - **No tracking.** Many emails hide a tiny picture that tells the sender when and where you opened it. The server never loads pictures or links inside emails, so the sender never learns you opened it. The AI only gets the text.
 
 ## What the server keeps
