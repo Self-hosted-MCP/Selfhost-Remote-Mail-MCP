@@ -761,6 +761,14 @@ def format_msg(folder: str, uid: int, msg: EmailMessage, body_limit: int | None 
         lines.append(f"Attachment {mid}#{i}: {part.get_filename()} ({part.get_content_type()}, {size})")
     if partial:
         lines.append(f"(Large email, {human_size(partial)}: only the start was loaded; later attachments may be missing.)")
+    for addon, hook in list(READ_HOOKS):   # add-ons may add a short note about the email, e.g. a phishing warning
+        try:
+            note = hook(msg)
+        except Exception as exc:
+            print(f"add-on {addon}: note failed: {type(exc).__name__}", file=sys.stderr, flush=True)
+            note = None
+        if note:
+            lines.append(f"Note from add-on {addon}: {str(note)[:600]}")
     text = body_text(msg)
     if body_limit and len(text) > body_limit:
         text = text[:body_limit] + "\n[... cut short; use thread for the full text]"
@@ -3940,6 +3948,7 @@ def change_setting(setting: str, value: str = "", name: str = "") -> str:
 # setup(api) function and can add tools and change the copy saved in Sent. See docs/addons.md.
 ADDONS_DIR = Path(os.environ.get("MAIL_ADDONS_DIR") or CONFIG_DIR / "addons").expanduser()
 SENT_COPY_HOOKS: list = []   # add-on functions that may change the copy saved in Sent (never what's sent)
+READ_HOOKS: list = []   # (add-on, function(msg) -> short note or None), shown with each email the AI opens
 LOADED_ADDONS: dict[str, str] = {}   # name -> one-line description
 ADDON_TOOLS: dict[str, list[str]] = {}   # name -> the tools it added
 ADDON_INFO: dict[str, dict] = {}   # name -> where it came from, whether it sends, which outside hosts it uses
@@ -4074,6 +4083,48 @@ class AddonAPI:
     def log(self, text: str) -> None:
         print(f"add-on {self.name}: {text}", file=sys.stderr, flush=True)
 
+    def on_read(self, func) -> None:
+        """func(msg) runs on every email the AI opens and may return one short note (or None), shown with that
+        email. Keep it quick and local: no web requests. The note is information for the AI, not an action."""
+        READ_HOOKS.append((self.name, func))
+
+    def sender_checks(self, msg: EmailMessage) -> dict | None:
+        """The SPF, DKIM and DMARC results the user's own provider added to an email, as {"spf": "pass", ...,
+        "header.from": "example.com"}, or None when there are none that can be trusted. Headers a sender could
+        have written (lower down, from other servers) never count."""
+        return sender_checks(msg)
+
+    def locate(self, message_id: str, account: str | None = None) -> str:
+        """The current ID of the email with this exact Message-ID in Sent, Inbox or Archive, or ""."""
+        message_id = message_id.strip()
+        if not re.fullmatch(r"<[^<>\s]+>", message_id):
+            return ""
+        with self._mail(account) as c:
+            found = roles(c, c.chosen)
+            for folder in [found.get("sent"), c.public(c.chosen, "INBOX"), found.get("archive")]:
+                if not folder:
+                    continue
+                c.select_folder(folder, readonly=True)
+                for uid in sorted(c.search(["HEADER", "Message-ID", message_id]), reverse=True):
+                    row = self._rows(c, folder, [uid], ())
+                    if row and row[0]["message-id"] == message_id:   # the search also matches parts of the header
+                        return row[0]["id"]
+        return ""
+
+    def delete_draft(self, draft_id: str, account: str | None = None) -> None:
+        """Moves a draft this add-on made to Trash, e.g. after a failed send. Background jobs only, and never a
+        draft the user wrote."""
+        if ADDON_JOB.get() is None:
+            raise ToolError("delete_draft only works in a background job.")
+        with self._mail(account) as c:
+            folder, uid = self._where(c, draft_id, account)
+            found = roles(c, c.split(folder)[0])
+            if c.canon(folder) != c.canon(need(found, "drafts")):
+                raise ToolError(f"{draft_id} isn't a draft.")
+            if str(fetch_msg(c, folder, uid, full=False).get(ADDON_DRAFT, "")) != self.name:
+                raise ToolError(f"add-on {self.name} only deletes drafts it made itself.")
+            move(c, folder, [uid], need(found, "trash"))
+
     # -- reading mail. In a tool call: the AI app's own mailboxes, and IDs as that app sees them. In a background
     # job (api.every): every mailbox, one at a time, with IDs of that mailbox (pass account= with them).
     @contextmanager
@@ -4146,7 +4197,7 @@ class AddonAPI:
         with self._mail(account) as c:
             return fetch_msg(c, *self._where(c, email_id, account))
 
-    def replies_to(self, message_id: str, account: str | None = None) -> list[dict]:
+    def replies_to(self, message_id: str, account: str | None = None, headers: tuple[str, ...] = ()) -> list[dict]:
         """Emails in the Inbox and Archive that answer the email with this Message-ID (by In-Reply-To or
         References), oldest first."""
         message_id = message_id.strip()
@@ -4161,7 +4212,7 @@ class AddonAPI:
                 c.select_folder(folder, readonly=True)
                 uids = set(c.search(["HEADER", "In-Reply-To", message_id]))
                 uids |= set(c.search(["HEADER", "References", message_id]))
-                out += [r for r in self._rows(c, folder, sorted(uids), ())
+                out += [r for r in self._rows(c, folder, sorted(uids), tuple(headers))
                         if message_id in r["in-reply-to"] or message_id in r["references"]]
         return sorted(out, key=lambda r: r["date"] or dt.datetime.min.replace(tzinfo=dt.timezone.utc))
 
@@ -4202,9 +4253,10 @@ class AddonAPI:
     # -- drafts
     def new_draft(self, to: list[str], subject: str, body: str, cc: list[str] | None = None,
                   reply_to_id: str | None = None, headers: dict[str, str] | None = None,
-                  no_signature: bool = False, account: str | None = None) -> str:
+                  no_signature: bool = False, account: str | None = None, quote: bool = True) -> str:
         """Saves a new draft (markdown body, the user's signature unless no_signature) and returns its ID.
-        reply_to_id answers that email: same thread, quoted, 'Re:' subject. Nothing is sent."""
+        reply_to_id answers that email: same thread, 'Re:' subject, quoted unless quote=False. Nothing is sent."""
+        add_quote = quote
         with self._mail(account) as c:
             box = c.chosen
             extra = {k: v for k, v in (headers or {}).items() if v}
@@ -4218,7 +4270,7 @@ class AddonAPI:
                 subject = subject or (osubj if re.match(r"(?i)re:", osubj) else f"Re: {osubj}")
                 msgid = str(orig.get("Message-ID", ""))
                 extra = {"In-Reply-To": msgid, "References": f"{orig.get('References', '')} {msgid}".strip(), **extra}
-                quote = reply_quote(orig)
+                quote = reply_quote(orig) if add_quote else ""
             if not c.writable(box):
                 c.refuse(box, "draft")
             drafts = need(roles(c, box), "drafts")
@@ -4325,6 +4377,69 @@ class AddonAPI:
                 raise ToolError(f"add-on {self.name} only sends drafts it made itself.")
             rcpts, subject = deliver(cfg, c, found, uid)
         return f"sent to {len(rcpts)} recipient(s)"
+
+
+PROVIDER_AUTHSERV = {   # the names in a provider's own Authentication-Results, by its IMAP server's domain name
+    "gmail": {"google"}, "googlemail": {"google"}, "google": {"google"},
+    "me": {"icloud", "apple"}, "icloud": {"icloud", "apple"}, "apple": {"icloud", "apple"},
+    "office365": {"outlook", "microsoft", "protection"}, "outlook": {"outlook", "microsoft", "protection"},
+    "fastmail": {"messagingengine", "fastmail"}, "messagingengine": {"messagingengine", "fastmail"},
+    "yahoo": {"yahoo", "yahoodns", "aol"}, "aol": {"aol", "yahoo", "yahoodns"},
+    "zoho": {"zoho", "zohomail"}, "gmx": {"gmx"}, "web": {"web"}, "proton": {"proton", "protonmail"},
+}
+_SLD = {"co", "com", "org", "net", "gov", "ac", "edu", "or", "ne", "go"}
+
+
+def domain_name(host: str) -> str:
+    """mx3.mail.example.co.uk -> example."""
+    labels = [x for x in (host or "").lower().strip(".").split(".") if x]
+    if len(labels) >= 3 and len(labels[-1]) == 2 and labels[-2] in _SLD:
+        return labels[-3]
+    return labels[-2] if len(labels) >= 2 else (labels[0] if labels else "")
+
+
+def sender_checks(msg: EmailMessage) -> dict | None:
+    """See AddonAPI.sender_checks. Trusted: Authentication-Results above the first Received line (only the last
+    server can put a header there), or naming the mailbox provider's own checker. Microsoft's headers carry no
+    checker name: for Microsoft mailboxes the first such header counts."""
+    to = " ".join(str(msg.get(h, "")) for h in ("Delivered-To", "X-Original-To", "To", "Cc")).lower()
+    accounts = all_accounts(config())
+    mine = [a for a in accounts if a.address in to] or accounts
+    names: set[str] = set()
+    for a in mine:
+        for host in (a.imap_host, a.smtp_host):
+            n = domain_name(host)
+            names |= PROVIDER_AUTHSERV.get(n, {n})
+    microsoft = bool(names & {"microsoft", "outlook", "protection"})
+    results: dict = {}
+    seen_received, found, used_unnamed = False, False, False
+    for key, value in msg.items():
+        k = key.lower()
+        if k == "received":
+            seen_received = True
+            continue
+        if k != "authentication-results":
+            continue
+        text = re.sub(r"\s+", " ", str(value))
+        first = text.split(";", 1)[0].strip()
+        named = "=" not in first.split()[0] if first else False
+        authserv = first.split()[0].lower() if named else ""
+        trusted = (not seen_received or (named and domain_name(authserv) in names)
+                   or (not named and microsoft and not used_unnamed))
+        if not trusted:
+            continue
+        used_unnamed = used_unnamed or not named
+        found = True
+        for method in ("spf", "dkim", "dmarc"):
+            m = re.search(rf"\b{method}=([a-z]+)", text, re.I)
+            if m and method not in results:
+                results[method] = m.group(1).lower()
+        m = re.search(r"header\.from=([\w.-]+)", text, re.I)
+        if m and "header.from" not in results:
+            results["header.from"] = m.group(1).lower()
+        for d in re.findall(r"\bdkim=pass\b[^;]*?header\.(?:d|i)=@?([\w.-]+)", text, re.I):
+            results.setdefault("dkim.domains", []).append(d.lower())
+    return results if found else None
 
 
 def library_addons() -> dict[str, str]:
@@ -4519,6 +4634,7 @@ def unload_addon(name: str) -> None:
     for func in ADDON_HOOKS.pop(name, []):
         if func in SENT_COPY_HOOKS:
             SENT_COPY_HOOKS.remove(func)
+    READ_HOOKS[:] = [(a, f) for a, f in READ_HOOKS if a != name]
     LOADED_ADDONS.pop(name, None)
     ADDON_INFO.pop(name, None)
 

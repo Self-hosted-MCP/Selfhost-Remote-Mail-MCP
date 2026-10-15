@@ -124,6 +124,9 @@ The server is a small program. Your AI app talks to it through **MCP** (Model Co
 | [calendar_invite](src/selfhost_remote_mail_mcp/library/calendar_invite/README.md) | Attaches a calendar invite to a draft |
 | [pdf_maker](src/selfhost_remote_mail_mcp/library/pdf_maker/README.md) | Turns text into a PDF and attaches it |
 | [invoices](src/selfhost_remote_mail_mcp/library/invoices/README.md) | Numbered quotes, proformas and invoices as PDFs |
+| [phishing_alert](src/selfhost_remote_mail_mcp/library/phishing_alert/README.md) | Gives each email a trust level and warns about scams |
+| [follow_ups](src/selfhost_remote_mail_mcp/library/follow_ups/README.md) | Tells you which emails you sent got no reply in time |
+| [out_of_office](src/selfhost_remote_mail_mcp/library/out_of_office/README.md) | Answers new emails with your away message while you're away |
 
 Turn one on with its button on the settings page (**Add-ons** tab), with `selfhost-remote-mail-mcp addons enable pdf_maker`, or by adding its name to `MAIL_ADDONS`.
 

@@ -2,6 +2,14 @@
 
 All notable changes to this project. Versions follow [semantic versioning](https://semver.org).
 
+## 0.14.0 (2026-10-14)
+
+- **Three new library add-ons** (all off until you turn them on):
+  - `phishing_alert`: gives each email a trust level (high, medium or low) with the main reason in one line. It checks automatically when your AI app opens an email and only speaks up when something looks wrong: failed sender checks, lookalike domains, links that hide where they go, risky files. Normal newsletter tracking links don't count.
+  - `follow_ups`: *"Remind me if Sam doesn't reply in 3 days."* Lists what's due, clears itself when a real reply arrives.
+  - `out_of_office`: while you're away, answers new emails once per person with your message. It skips mailing lists, robots, Bcc, spam, forged senders and old mail, never quotes the original, and keeps to 20 replies a day.
+- **For add-on writers:** `api.on_read` (a short note with each email the AI opens), `api.sender_checks` (your provider's own SPF/DKIM/DMARC results, never ones a sender could fake), `api.locate`, `api.delete_draft`, and `quote=False` for `api.new_draft`.
+
 ## 0.13.0 (2026-10-14)
 
 - **New license: AGPL-3.0.** From this version the project is under the GNU Affero General Public License v3.0 (AGPL-3.0-only) with a few additional terms in `NOTICE`: keep the author credit in the page footers, mark changed versions as changed, and don't use the project's names for your own product. Anyone who shares a changed version, or runs one for other people over the internet, must offer its source code.

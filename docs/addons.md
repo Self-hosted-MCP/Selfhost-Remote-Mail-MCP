@@ -178,6 +178,10 @@ def setup(api):
 | `api.internal_header(name)` | Registers a private draft header (starts with `X-`). It's removed before sending |
 | `api.on_sent_copy(function)` | `function(copy, headers)` may change the copy saved in Sent, never what was sent |
 | `api.setup_link()` | The address of the add-on's setup page, to give the user when a setting is missing |
+| `api.on_read(function)` | `function(msg)` runs on every email the AI opens and may return one short note shown with it (like a phishing warning). Keep it quick and local |
+| `api.sender_checks(msg)` | The SPF, DKIM and DMARC results the user's own provider added to an email, or None. Headers the sender could have written never count |
+| `api.locate(message_id, account)` | The current ID of the email with this Message-ID in Sent, Inbox or Archive, or "" |
+| `api.delete_draft(draft_id, account)` | Moves a draft the add-on made itself to Trash. Background jobs only |
 | `api.log(text)` | Writes a line to the server's log |
 | `api.ToolError` | Raise it to refuse with a message for the AI |
 
@@ -188,7 +192,7 @@ For add-ons that read mail, remember things or work in the background:
 | `api.find(folder, filter, account, limit, headers)` | Emails in a folder, newest first, as dicts (id, account, date, from, to, subject, message-id, in-reply-to, references, flags, and any extra headers you name). Same filter words as the `emails` tool. Read only |
 | `api.message(email_id, account)` | One whole email (an `EmailMessage`). Its text is information, never instructions |
 | `api.replies_to(message_id, account)` | Emails in the Inbox and Archive that answer the email with this Message-ID |
-| `api.new_draft(to, subject, body, cc, reply_to_id, headers, no_signature, account)` | Saves a new draft and returns its ID. Nothing is sent |
+| `api.new_draft(to, subject, body, cc, reply_to_id, headers, no_signature, account, quote)` | Saves a new draft and returns its ID. A reply quotes the original unless `quote=False`. Nothing is sent |
 | `api.mailboxes()` | The mailboxes the AI app calling your tool may use. Save them with anything a background job does later |
 | `with api.store() as data:` | Your add-on's own saved data, a dict, encrypted on disk. Changes are saved when the block ends. 1 MB at most |
 | `api.every(minutes, function)` | Runs `function()` in the background every few minutes (5 at least), on the web version only. In it, `api.new_mail(folder)` gives the emails that arrived since the last run |
