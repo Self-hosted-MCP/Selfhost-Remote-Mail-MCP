@@ -3856,7 +3856,7 @@ def settings() -> str:
             if row["missing"]:
                 state += ", needs setting up: " + ", ".join(row["missing"])
             lines.append(f"- {row['name']} ({state}): {pages.ADDON_HELP.get(row['name'], row['about'])}"
-                         + (f" Setup: {base}{row['name']}" if base else ""))
+                         + (f" Setup: {base}{row['name']}" if base and (row["library"] or row["fields"]) else ""))
     lines += ["", "Only the user can change everything else, on the settings page (/settings) or in the settings file: "
               "mailboxes and their modes, which apps may use them and send, sending limits, allowed recipients, "
               "read-only mode, the passphrase, the device log and the server's own settings."]
