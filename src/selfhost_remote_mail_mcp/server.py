@@ -4017,6 +4017,7 @@ class AddonAPI:
 
     READ = READ
     WRITE = WRITE
+    DELETE = ToolAnnotations(read_only_hint=False, destructive_hint=True, open_world_hint=False)
     ToolError = ToolError
 
     def __init__(self, name: str):
@@ -4024,8 +4025,8 @@ class AddonAPI:
         self.tools: list[str] = []
 
     def tool(self, annotations: ToolAnnotations):
-        """Decorator for a new tool. Same rules as the built-in ones: a short, honest docstring, and READ or
-        WRITE annotations. A name that's already taken is refused."""
+        """Decorator for a new tool. Same rules as the built-in ones: a short, honest docstring, and READ,
+        WRITE or DELETE annotations. A name that's already taken is refused."""
         def register(func):
             taken = set(TOOL_NAMES)
             if func.__name__ in taken:

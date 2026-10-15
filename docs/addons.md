@@ -103,7 +103,7 @@ The AI reads each tool's name, its parameters and its docstring, and nothing els
 
 - **Name it by what it does:** `add_invite`, not `tool1`. Names must be new; a built-in name like `draft` is refused.
 - **Say in the docstring what it changes.** "Changes nothing", or "Attaches a file to a draft. Nothing is sent".
-- **Mark it honestly:** `api.READ` for tools that only look, `api.WRITE` for tools that change something. AI apps use this to decide when to ask you first.
+- **Mark it honestly:** `api.READ` for tools that only look, `api.WRITE` for tools that change something, `api.DELETE` for tools that delete something. AI apps use this to decide when to ask you first.
 - **Use plain parameters** (text, numbers, true/false, lists) with type hints, and explain each one in the docstring.
 - **Refuse clearly:** `raise api.ToolError("Bad time. Use 2026-10-20T15:00:00+01:00.")`. The AI shows the message and can try again.
 
@@ -171,7 +171,7 @@ def setup(api):
 
 | Name | What it does |
 |---|---|
-| `@api.tool(api.READ)` / `@api.tool(api.WRITE)` | Adds a tool. READ: only looks. WRITE: changes something |
+| `@api.tool(api.READ)` / `@api.tool(api.WRITE)` / `@api.tool(api.DELETE)` | Adds a tool. READ: only looks. WRITE: changes something. DELETE: deletes something |
 | `api.setting(name, default="")` | Reads one of the add-on's settings. The name starts with the add-on's name in capitals |
 | `api.edit_draft(draft_id, change)` | Opens a draft, runs `change(msg)` on it, saves it, returns the new ID |
 | `api.add_file(msg, name, mime_type, data, clean=True)` | Attaches a file, with the same checks as every new file: programs and suspect files are refused. `clean=True` removes photo location and document authors, like for files from the AI. Use `clean=False` only for files your add-on made itself |

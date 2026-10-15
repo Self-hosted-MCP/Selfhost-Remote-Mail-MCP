@@ -2,6 +2,12 @@
 
 All notable changes to this project. Versions follow [semantic versioning](https://semver.org).
 
+## 0.16.0 (2026-10-15)
+
+- **Calendar: change and delete events.** Your AI app can now see, add, change and delete events. Deleting is always double checked: it shows you the event and asks first. Repeating events can't be changed here, and events with guests can't be changed or deleted here, so no one gets an unexpected email.
+- **Calendar: one setting for which calendars.** "Calendars to use" (names separated by commas, empty means all) now covers reading and writing. The "Calendar for new events" setting is gone: with more than one calendar, your AI app asks you which one a new event goes in.
+- Add-on writers: `api.DELETE` marks a tool that deletes something.
+
 ## 0.15.3 (2026-10-15)
 
 - **Calendar reads all your calendars:** with "Calendars to read" empty, events and free times now come from every calendar on the account, and each event says which calendar it's in. To read only some, list their names separated by commas.

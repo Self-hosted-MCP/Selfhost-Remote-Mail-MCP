@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 """Batch 3 library add-ons: caldav (a fake calendar server) and webhooks (a fake receiver)."""
 import base64
+import contextlib
 import datetime as dt
 import hashlib
 import hmac
@@ -35,13 +36,33 @@ def tool(name, **args):
 class FakeEvent:
     def __init__(self, **fields):
         self.icalendar_component = icalendar.Event()
+        fields.setdefault("uid", f"uid-{fields['summary'].split()[0].lower()}")
         for k, v in fields.items():
             self.icalendar_component.add(k, v)
+        self.saved = self.deleted = False
+
+    def get_icalendar_instance(self):
+        cal = icalendar.Calendar()
+        cal.add_component(self.icalendar_component)
+        return icalendar.Calendar.from_ical(cal.to_ical())
+
+    @contextlib.contextmanager
+    def edit_icalendar_component(self):
+        yield self.icalendar_component
+
+    def save(self):
+        self.saved = True
+
+    def delete(self):
+        self.deleted = True
+        self.calendar.items.remove(self)
 
 
 class FakeCalendar:
     def __init__(self, name, items):
         self.name, self.items, self.added = name, items, []
+        for e in items:
+            e.calendar = self
 
     def get_display_name(self):
         return self.name
@@ -49,6 +70,13 @@ class FakeCalendar:
     def search(self, start, end, event, expand):
         assert event and expand
         return [e for e in self.items if start <= _as(e.icalendar_component["DTSTART"].dt, start.tzinfo) < end]
+
+    def get_event_by_uid(self, uid):
+        from caldav.lib.error import NotFoundError
+        for e in self.items:
+            if str(e.icalendar_component["UID"]) == uid:
+                return e
+        raise NotFoundError(uid)
 
     def add_event(self, ical):
         self.added.append(ical)
@@ -71,7 +99,11 @@ def cal(monkeypatch):
              FakeEvent(summary="Cancelled thing", dtstart=dt.datetime.combine(day, dt.time(16), tz),
                        dtend=dt.datetime.combine(day, dt.time(17), tz), status="CANCELLED")]
     home = [FakeEvent(summary="Piano", dtstart=dt.datetime.combine(day, dt.time(17), tz),
-                      dtend=dt.datetime.combine(day, dt.time(18), tz))]
+                      dtend=dt.datetime.combine(day, dt.time(18), tz)),
+            FakeEvent(summary="Yoga weekly", dtstart=dt.datetime.combine(day, dt.time(7), tz),
+                      dtend=dt.datetime.combine(day, dt.time(8), tz), rrule={"freq": "weekly"}),
+            FakeEvent(summary="Board meeting", dtstart=dt.datetime.combine(day, dt.time(19), tz),
+                      dtend=dt.datetime.combine(day, dt.time(20), tz), attendee="mailto:sam@example.com")]
     calendars = [FakeCalendar("Work", items), FakeCalendar("Home", home)]
 
     class Client:
@@ -91,25 +123,81 @@ def cal(monkeypatch):
 def test_events_free_times_and_adding(cal, monkeypatch):
     day, calendars = cal
     out = tool("calendar_events", start_date=day.isoformat(), days=1)
-    assert "10:00-11:00 · Call with Sam · Zoom · [Work]" in out and "Lunch" in out and "Cancelled" not in out
-    assert "17:00-18:00 · Piano · [Home]" in out   # empty means every calendar
+    assert "10:00-11:00 · Call with Sam · Zoom · [Work] · id: uid-call" in out and "Lunch" in out and "Cancelled" not in out
+    assert "17:00-18:00 · Piano · [Home] · id: uid-piano" in out   # empty means every calendar
     assert out.endswith("(times in UTC)")
     free = tool("calendar_free", start_date=day.isoformat(), days=1, minutes=30)
     assert free.startswith(f"{day:%a %d %b}: 09:00-10:00, 11:00-13:00, 14:00-17:00")   # the free holiday doesn't block
-    out = tool("add_event", title="Dentist, at 3", start=f"{day.isoformat()}T15:00:00+00:00", minutes=45)
+    start = f"{day.isoformat()}T15:00:00+00:00"
+    with pytest.raises(server.ToolError, match="Which calendar\\? Ask the user.*Work, Home"):
+        tool("add_event", title="Dentist", start=start)   # several calendars: the AI asks the user
+    with pytest.raises(server.ToolError, match="no calendar called 'Nope'"):
+        tool("add_event", title="Dentist", start=start, calendar="Nope")
+    out = tool("add_event", title="Dentist, at 3", start=start, minutes=45, calendar="work")
     assert out.startswith("Added to Work:") and "No one was invited" in out
     ical = calendars[0].added[-1]
     assert "SUMMARY:Dentist\\, at 3" in ical and "DTEND:" in ical and "ATTENDEE" not in ical and "ORGANIZER" not in ical
-    monkeypatch.setenv("CALDAV_ADD_TO", "home")
-    assert tool("add_event", title="Gym", start=f"{day.isoformat()}T18:00:00+00:00").startswith("Added to Home:")
+    assert tool("add_event", title="Gym", start=f"{day.isoformat()}T18:00:00+00:00", calendar="Home").startswith("Added to Home:")
     assert calendars[1].added
-    monkeypatch.setenv("CALDAV_ADD_TO", "")
-    monkeypatch.setenv("CALDAV_CALENDAR", "Home")   # only some calendars: no labels, new events go to the first named
+    monkeypatch.setenv("CALDAV_CALENDAR", "Home")   # only some calendars: no labels, the only one gets new events
     out = tool("calendar_events", start_date=day.isoformat(), days=1)
     assert "Piano" in out and "Lunch" not in out and "[Home]" not in out
     assert tool("add_event", title="Run", start=f"{day.isoformat()}T07:00:00+00:00").startswith("Added to Home:")
+    with pytest.raises(server.ToolError, match="no calendar called 'Work'"):
+        tool("add_event", title="Run", start=f"{day.isoformat()}T07:00:00+00:00", calendar="Work")
     monkeypatch.setenv("CALDAV_CALENDAR", "Work, Home")
     assert "Piano" in tool("calendar_events", start_date=day.isoformat(), days=1)
+
+
+def test_edit_event(cal, monkeypatch):
+    day, calendars = cal
+    lunch = calendars[0].items[1]
+    out = tool("edit_event", event_id="uid-lunch", start=f"{day.isoformat()}T12:30:00+00:00", location="Cafe")
+    assert out.startswith("Changed in Work:") and "12:30-13:30 · Lunch · Cafe" in out and "Before:" in out
+    assert lunch.saved and lunch.icalendar_component["SEQUENCE"] == 1   # the length stayed one hour
+    out = tool("edit_event", event_id="uid-lunch", title="Long lunch", minutes=90)
+    assert "12:30-14:00 · Long lunch" in out
+    with pytest.raises(server.ToolError, match="Nothing to change"):
+        tool("edit_event", event_id="uid-lunch")
+    with pytest.raises(server.ToolError, match="No event with the ID"):
+        tool("edit_event", event_id="uid-nope", title="x")
+    with pytest.raises(server.ToolError, match="repeats"):
+        tool("edit_event", event_id="uid-yoga", title="x")
+    with pytest.raises(server.ToolError, match="has guests"):
+        tool("edit_event", event_id="uid-board", title="x")
+    with pytest.raises(server.ToolError, match="all-day"):
+        tool("edit_event", event_id="uid-holiday", minutes=30)
+    monkeypatch.setenv("CALDAV_CALENDAR", "Home")   # only the calendars in use
+    with pytest.raises(server.ToolError, match="No event with the ID"):
+        tool("edit_event", event_id="uid-lunch", title="x")
+
+
+def test_delete_event_is_double_checked(cal):
+    day, calendars = cal
+    piano = calendars[1].items[0]
+    out = tool("delete_event", event_id="uid-piano")
+    assert out.startswith("Not deleted yet.") and "17:00-18:00 · Piano in Home" in out and "confirm=true" in out
+    assert not piano.deleted
+    assert tool("delete_event", event_id="uid-piano", confirm=True).startswith("Deleted: ")
+    assert piano.deleted and "Piano" not in tool("calendar_events", start_date=day.isoformat(), days=1)
+    assert "every date it repeats" in tool("delete_event", event_id="uid-yoga")
+    with pytest.raises(server.ToolError, match="has guests"):
+        tool("delete_event", event_id="uid-board", confirm=True)
+    annotations = server.mcp._tool_manager.get_tool("delete_event").annotations
+    assert annotations.destructive_hint and not annotations.read_only_hint
+
+
+def test_calendar_changes_share_the_daily_limit(cal):
+    day, calendars = cal
+    with server.AddonAPI("caldav").store() as data:
+        data["adds"] = {dt.datetime.now(dt.timezone.utc).date().isoformat(): 20}
+    with pytest.raises(server.ToolError, match="daily limit"):
+        tool("edit_event", event_id="uid-lunch", title="x")
+    with pytest.raises(server.ToolError, match="daily limit"):
+        tool("delete_event", event_id="uid-piano", confirm=True)
+    assert not calendars[1].items[0].deleted
+    with server.AddonAPI("caldav").store() as data:
+        data.clear()
 
 
 def test_calendar_errors_are_one_clear_line(cal, monkeypatch):
@@ -127,10 +215,6 @@ def test_calendar_errors_are_one_clear_line(cal, monkeypatch):
     with pytest.raises(server.ToolError, match="no calendar called 'Nope'"):
         tool("calendar_events")
     monkeypatch.setenv("CALDAV_CALENDAR", "")
-    monkeypatch.setenv("CALDAV_ADD_TO", "Nope")
-    with pytest.raises(server.ToolError, match="for new events"):
-        tool("add_event", title="x", start=f"{day.isoformat()}T10:00:00+00:00")
-    monkeypatch.setenv("CALDAV_ADD_TO", "")
     monkeypatch.setenv("CALDAV_WORK_HOURS", "18-09")
     with pytest.raises(server.ToolError, match="before the end"):
         tool("calendar_free", start_date=day.isoformat())
@@ -264,7 +348,7 @@ def test_a_bad_time_zone_never_half_adds_an_event(cal, monkeypatch):
     before = len(calendars[0].added)
     monkeypatch.setenv("CALDAV_TIMEZONE", "Europe/Lisbn")
     with pytest.raises(server.ToolError, match="time zone"):
-        tool("add_event", title="x", start=f"{day.isoformat()}T15:00:00+00:00")
+        tool("add_event", title="x", start=f"{day.isoformat()}T15:00:00+00:00", calendar="Work")
     assert len(calendars[0].added) == before
 
 
@@ -294,7 +378,7 @@ def test_webhook_400_is_retried_and_status_and_a_long_pause_resets(mailbox, hook
 
 def test_the_test_connection_button(cal, hook, monkeypatch):
     kind, text = server.settings_action(None, "addon_setup", {"name": "caldav", "action": "test"})
-    assert kind == "ok" and text.startswith("Connected. Reading 2 calendar(s): Work, Home. New events go to Work.")
+    assert kind == "ok" and text.startswith("Connected. Using 2 calendar(s): Work, Home. ")
     monkeypatch.setenv("CALDAV_PASSWORD", "wrong")
     kind, text = server.settings_action(None, "addon_setup", {"name": "caldav", "action": "test"})
     assert kind == "error" and "login failed" in text
