@@ -339,7 +339,8 @@ def panel_css(names: list[str]) -> str:
     return "<style>" + "".join(rules) + "</style>"
 
 
-def addon_setup(csrf: str, addon: dict, fields: list[dict], flash: tuple[str, str] | None) -> str:
+def addon_setup(csrf: str, addon: dict, fields: list[dict], flash: tuple[str, str] | None,
+                zones: list[str] | None = None) -> str:
     """One add-on's own page: turn it on or off, and fill in the settings it needs. fields: dicts with full,
     label, help, required, lines, secret, half, value, where ("server", "page" or ""), has_value."""
     name = addon["name"]
@@ -383,6 +384,15 @@ def addon_setup(csrf: str, addon: dict, fields: list[dict], flash: tuple[str, st
                 shown = "••••••" if f["secret"] else esc(f["value"])
                 box = (f'<div><label>{label}</label><p class="lead"><b>{shown}</b> '
                        f'<span class="badge">{esc(_("In server settings"))}</span></p></div>')
+            elif f.get("choices") == "timezone" and zones:
+                current = f["value"]
+                options = [f'<option value="">{esc(_("Not set"))}</option>']
+                if current and current not in zones:   # an old typo stays visible until it's fixed
+                    options.append(f'<option value="{esc(current)}" selected>{esc(current)} ({esc(_("not a time zone"))})</option>')
+                options += [f'<option value="{esc(z)}"{" selected" if z == current else ""}>{esc(z.replace("_", " "))}</option>'
+                            for z in zones]
+                box = (f'<div><label for="{fid}">{label}</label><select id="{fid}" name="{esc(f["full"])}">'
+                       + "".join(options) + f'</select>{hint}</div>')
             elif f["lines"] > 1 and not f["secret"]:
                 box = (f'<div><label for="{fid}">{label}</label><textarea id="{fid}" name="{esc(f["full"])}" '
                        f'rows="{f["lines"]}">{esc(f["value"])}</textarea>{hint}</div>')

@@ -20,7 +20,7 @@ SETTINGS = [
     {"key": "DAILY_MAX", "half": True, "label": N_("Most replies a day"), "help": N_("Empty means 20, the most allowed.")},
     {"key": "MAILBOXES", "label": N_("Only for these mailboxes"),
      "help": N_("Addresses separated by commas. Empty means every mailbox that may send.")},
-    {"key": "TIMEZONE", "label": N_("Your time zone"), "help": N_("For example Europe/Lisbon, so the days match yours.")},
+    {"key": "TIMEZONE", "choices": "timezone", "label": N_("Your time zone"), "help": N_("For example Europe/Lisbon, so the days match yours.")},
 ]
 SKIP_HEADERS = ("Auto-Submitted", "Precedence", "List-Id", "List-Unsubscribe", "Return-Path",
                 "X-Auto-Response-Suppress", "X-Autoreply", "X-Autorespond", "X-Spam-Flag", "X-Spam-Status",

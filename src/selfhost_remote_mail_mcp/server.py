@@ -2672,7 +2672,8 @@ def addon_setup_page(session: dict, name: str) -> HTMLResponse:
                                                                          "library": False, "in_settings": True}
     row = {**row, "testable": name in ADDON_TESTS and name in LOADED_ADDONS}
     flash, session["flash"] = session["flash"], None
-    return HTMLResponse(pages.addon_setup(session["csrf"], row, fields, flash), headers=pages.HEADERS)
+    zones = time_zones() if any(f.get("choices") == "timezone" for f in fields) else []
+    return HTMLResponse(pages.addon_setup(session["csrf"], row, fields, flash, zones), headers=pages.HEADERS)
 
 
 def settings_page(provider: "PassphraseOAuth", session: dict, uploads_on: bool = False) -> HTMLResponse:
@@ -2838,6 +2839,8 @@ def settings_action(provider: "PassphraseOAuth", kind: str, form) -> tuple[str, 
             text = str(form.get(full, "")).replace("\r\n", "\n").replace("\r", "\n")
             if f["lines"] == 1:
                 text = text.replace("\n", " ")   # one-line boxes stay one line
+            if f.get("choices") == "timezone" and text.strip() and time_zones() and text.strip() not in time_zones():
+                return "error", T_("{value} isn't a time zone: pick one from the list.", value=text.strip()[:60])
             text = "".join(ch for ch in text if ch == "\n" or ord(ch) >= 32).strip()[:2000]
             if f["secret"] and not text and not form.get(full + "__clear"):
                 continue   # an empty secret box keeps what was saved, unless "Remove it" is ticked
@@ -4565,8 +4568,18 @@ def clean_fields(raw) -> list[dict]:
         if isinstance(f, dict) and re.fullmatch(r"[A-Z][A-Z0-9_]{0,40}", str(f.get("key", ""))) and f.get("label"):
             out.append({"key": f["key"], "label": str(f["label"]), "help": str(f.get("help", "")),
                         "required": bool(f.get("required")), "lines": max(1, min(int(f.get("lines", 1) or 1), 8)),
-                        "secret": bool(f.get("secret")), "half": bool(f.get("half"))})
+                        "secret": bool(f.get("secret")), "half": bool(f.get("half")),
+                        "choices": f.get("choices") if f.get("choices") == "timezone" else None})
     return out
+
+
+def time_zones() -> list[str]:
+    """Every time zone name this computer knows (Europe/Lisbon ...), for the setup pages' time zone lists."""
+    try:
+        import zoneinfo
+        return sorted(z for z in zoneinfo.available_timezones() if "/" in z and not z.startswith(("Etc/", "SystemV/")))
+    except Exception:
+        return []
 
 
 def addon_fields(name: str) -> list[dict]:

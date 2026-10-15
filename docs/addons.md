@@ -128,7 +128,7 @@ SETTINGS = [
 ]
 ```
 
-`key` is the part after your add-on's prefix (`MY_QUOTES_CLIENT_NAME`). `required` shows **Needs setting up** until it's filled. `secret` boxes are never shown again once saved. When a required setting is missing, tell the user where to add it: `api.setup_link()` is the address of your setup page (empty on the computer version).
+`key` is the part after your add-on's prefix (`MY_QUOTES_CLIENT_NAME`). `"choices": "timezone"` shows a list of time zones instead of a text box. `required` shows **Needs setting up** until it's filled. `secret` boxes are never shown again once saved. When a required setting is missing, tell the user where to add it: `api.setup_link()` is the address of your setup page (empty on the computer version).
 
 ### 4. Change drafts
 

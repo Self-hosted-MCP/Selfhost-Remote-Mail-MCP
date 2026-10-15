@@ -9,7 +9,7 @@ from email.utils import getaddresses, parseaddr, parsedate_to_datetime
 from selfhost_remote_mail_mcp.i18n import N_
 
 SETTINGS = [
-    {"key": "TIMEZONE", "label": N_("Your time zone"), "help": N_("For example Europe/Lisbon, so due dates match your days.")},
+    {"key": "TIMEZONE", "choices": "timezone", "label": N_("Your time zone"), "help": N_("For example Europe/Lisbon, so due dates match your days.")},
 ]
 MAX_OPEN = 200
 ROBOTS = re.compile(r"^(mailer-daemon|postmaster|no-?reply|do-?not-?reply|bounces?|notifications?)\b", re.I)

@@ -493,7 +493,7 @@ def test_addon_setup_page_saves_settings_encrypted(monkeypatch):
         monkeypatch.delenv(k, raising=False)
     fields = server.addon_fields("invoices")
     assert fields[0] == {"key": "SELLER_NAME", "label": "Your name or business name", "help": "", "required": True,
-                         "lines": 1, "secret": False, "half": False}
+                         "lines": 1, "secret": False, "half": False, "choices": None}
     assert server.addon_missing("invoices") == ["Your name or business name"]
     kind, text = server.settings_action(None, "addon_setup", {"name": "invoices", "INVOICES_SELLER_NAME": " Studio\x07 ",
                                                              "INVOICES_PAYMENT": "Bank\r\nIBAN PT50"})
@@ -552,4 +552,22 @@ def test_setup_settings_survive_a_changed_key_and_secrets_can_be_removed(monkeyp
     assert server.addon_setting_value("SECRETIVE_TOKEN", "secretive")[0] == "abc"   # empty box keeps it
     act({"SECRETIVE_TOKEN": "", "SECRETIVE_TOKEN__clear": "1"})
     assert server.addon_setting_value("SECRETIVE_TOKEN", "secretive")[0] == ""
+    server.ADDON_SETTINGS_FILE.unlink()
+
+
+def test_time_zone_fields_are_a_list_and_typos_are_refused(monkeypatch):
+    zones = server.time_zones()
+    assert "Europe/Lisbon" in zones and "America/New_York" in zones
+    field = next(f for f in server.addon_fields("caldav") if f["key"] == "TIMEZONE")
+    assert field["choices"] == "timezone"
+    monkeypatch.delenv("CALDAV_TIMEZONE", raising=False)
+    kind, text = server.settings_action(None, "addon_setup", {"name": "caldav", "CALDAV_TIMEZONE": "Europe/LIisbon"})
+    assert kind == "error" and "pick one from the list" in text
+    kind, _ = server.settings_action(None, "addon_setup", {"name": "caldav", "CALDAV_TIMEZONE": "Europe/Lisbon"})
+    assert kind == "ok" and server.addon_setting_value("CALDAV_TIMEZONE", "caldav")[0] == "Europe/Lisbon"
+    from selfhost_remote_mail_mcp import pages
+    html = pages.addon_setup("t", {"name": "caldav", "about": "", "on": True, "library": True, "in_settings": False},
+                             [{**field, "full": "CALDAV_TIMEZONE", "value": "Europe/LIisbon", "where": "page",
+                               "has_value": True}], None, zones)
+    assert "<select" in html and 'value="Europe/Lisbon"' in html and "Europe/LIisbon (" in html
     server.ADDON_SETTINGS_FILE.unlink()

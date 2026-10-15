@@ -16,7 +16,7 @@ SETTINGS = [
     {"key": "PASSWORD", "label": N_("App password"), "required": True, "secret": True,
      "help": N_("Make one in your calendar provider's security settings. Not your normal password.")},
     {"key": "CALENDAR", "half": True, "label": N_("Calendar name"), "help": N_("Empty means the first one.")},
-    {"key": "TIMEZONE", "half": True, "label": N_("Your time zone"), "help": N_("For example Europe/Lisbon. Empty means UTC.")},
+    {"key": "TIMEZONE", "choices": "timezone", "half": True, "label": N_("Your time zone"), "help": N_("For example Europe/Lisbon. Empty means UTC.")},
     {"key": "WORK_HOURS", "half": True, "label": N_("Hours to offer as free"), "help": N_("Like 09-18 or 09:30-17:30. Empty means 09-18.")},
 ]
 MAX_ADDS_A_DAY = 20
