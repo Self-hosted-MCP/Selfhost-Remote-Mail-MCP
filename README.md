@@ -38,6 +38,8 @@ You: (drops invoice.pdf into the chat) Email this to Sam.
 AI:  Uploads the file to your server by itself, attaches it to a draft and shows it to you.
 ```
 
+<p align="center"><img src="docs/images/drop-a-file.png" alt="A file dropped in the chat, then the AI shows a draft to Sam with the file attached and asks before sending" width="640"></p>
+
 ## How it works, in one picture
 
 <p align="center"><img src="docs/images/how-it-works.png" alt="Your AI app asks your server, and your server reads and drafts in your mailbox at Gmail, iCloud or any other provider. No company sits in between." width="640"></p>
@@ -77,8 +79,6 @@ The server is a small program. Your AI app talks to it through **MCP** (Model Co
 
 **Drop a file in the chat, it goes in the email.** Drop a PDF or photo into your AI chat and say *"email this to Sam"*. Your AI app uploads it to your server by itself with a one-time link, attaches it and shows you the draft. You don't need the passphrase or another app. This works in AI apps that can run code, like Claude (web, desktop and phone) and coding apps such as Claude Code, Cursor and Codex. If your app can't upload it, it gives you the link to pick the file yourself. Up to 25 MB. See [docs/attachments.md](docs/attachments.md#drop-a-file-in-the-chat).
 
-<p align="center"><img src="docs/images/drop-a-file.png" alt="A file dropped in the chat, then the AI shows a draft to Sam with the file attached and asks before sending" width="640"></p>
-
 **Attach files.** From other emails, from your computer, files the AI writes (like a CSV), or photos and documents you upload from your phone on the upload page. Programs are refused, and suspect files (like spreadsheets with macros) need your OK. Photos go in HD, or smaller if you ask (the AI offers it when files are too big), and iPhone HEIC photos can become JPG after you say yes. See [docs/attachments.md](docs/attachments.md).
 
 **Create files on the go.** Ask your AI to make a calendar invite, a CSV spreadsheet, a contact card or notes, and it attaches them to your email.
@@ -100,8 +100,6 @@ The server is a small program. Your AI app talks to it through **MCP** (Model Co
 **Settings you can change by asking.** *"Change my signature"*, *"save this as a template"*, *"stop removing photo locations"*. The AI may change six harmless settings when you ask and always tells you. Everything that affects safety stays on the settings page, where only you can change it.
 
 **See who signed in.** The settings page lists the devices signed in and every sign-in of the last 7 days, wrong passphrases included. Sign out any device you don't recognise.
-
-<p align="center"><img src="docs/images/devices.png" alt="The devices list: signed-in devices with a Sign out button, and recent sign-ins including a wrong passphrase" width="640"></p>
 
 **Check your domain.** If you use your own domain (like `you@yourname.com`), one button checks the records that keep your emails out of spam (SPF, DKIM, DMARC) and says in plain words what to fix.
 
@@ -129,6 +127,8 @@ Here is how the server protects you:
 - **Encrypted by default.** Connections to your mail provider always use checked TLS. On a computer, your mail password goes in the system keychain. Passwords added on the settings page are encrypted. Login keys are stored only as fingerprints, and the send log keeps only times and counts. [Encryption at a glance](docs/privacy.md#encryption-at-a-glance).
 - **A login page that tells you who is asking.** The web version shows which app wants access and where it will send you back, and lets you tick which mailboxes it may use and whether it may send (off by default), before you type your passphrase. Checked against the [MCP security guidance](docs/safety.md#checked-against-mcp-and-email-security-guidance).
 - **A mode for each mailbox.** Full, draft only (never sends) or read only, enforced by the server itself.
+
+<p align="center"><img src="docs/images/devices.png" alt="The devices list: signed-in devices with a Sign out button, and recent sign-ins including a wrong passphrase" width="640"></p>
 
 More in [docs/safety.md](docs/safety.md) (risks and good settings) and [docs/privacy.md](docs/privacy.md) (what is stored, where, and who can see it).
 
