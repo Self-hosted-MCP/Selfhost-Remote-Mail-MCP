@@ -96,3 +96,12 @@ def test_changes_show_on_the_settings_page(monkeypatch):
     assert "Changes by AI apps" in page and "Remove location from photos turned off" in page
     assert 'href="#changes"' in page
     monkeypatch.setattr(server, "PROVIDER", None)
+
+
+def test_settings_page_switches_update_checks(monkeypatch):
+    monkeypatch.delenv("UPDATE_CHECK", raising=False)
+    act = lambda action: server.settings_action(None, "update", {"action": action})
+    assert act("on") == ("ok", "Update checks are on.") and server.update_check_on()
+    assert act("off") == ("ok", "Update checks are off.") and not server.update_check_on()
+    monkeypatch.setattr(server, "read_env", lambda: {"UPDATE_CHECK": "on"})
+    assert "Change it there" in act("off")[1]

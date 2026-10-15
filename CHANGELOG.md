@@ -2,6 +2,13 @@
 
 All notable changes to this project. Versions follow [semantic versioning](https://semver.org).
 
+## Unreleased
+
+- **Add-on pages redesigned:** each add-on has a title, a clear **All add-ons** button at the top and bottom, and the settings tabs, so it feels part of the settings page. Short fields sit side by side on wide screens; on phones the buttons line up under each add-on.
+- **Update checks can be turned on and off** with a switch under **About**.
+- Opening a tab no longer hides its heading under the tab bar.
+- **Light or dark, your choice:** a small button at the top right of every page switches between your device's setting (the default), light and dark. The choice is remembered in this browser for a year.
+
 ## 0.12.0 (2026-10-14)
 
 - **A setup page for each add-on:** the Add-ons tab has a **Set up** button that opens the add-on's own page, with its on/off button and a form for the details it needs (for invoices: your business name, address, tax number, payment details, tax rate). Saved encrypted on your server and used right away. An add-on missing something shows **Needs setting up**. The settings file and host variables still work and win.

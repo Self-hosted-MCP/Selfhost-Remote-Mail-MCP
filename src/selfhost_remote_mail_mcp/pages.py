@@ -1,12 +1,13 @@
 """The server's web pages: the login page AI apps open, and the settings page.
 
 Plain HTML and CSS, no scripts, no fonts or images from anywhere else (see HEADERS), so the pages work under a
-strict Content-Security-Policy. Light and dark follow the device. Every value put into a page goes through
+strict Content-Security-Policy. Light and dark follow the device, unless the visitor picked one (a cookie). Every value put into a page goes through
 esc() first. The logic behind the pages (sessions, CSRF, saving) lives in server.py.
 """
 
 from __future__ import annotations
 
+import contextvars
 import html
 import re
 import string
@@ -43,7 +44,13 @@ ADDON_HELP = {   # the library add-ons, in words for the settings page (others s
     "pdf_maker": N_("Turns text with headings, lists and tables into a PDF and attaches it to a draft."),
     "invoices": N_("Makes numbered quotes, proformas and invoices as PDFs, with the totals worked out."),
 }
+ADDON_TITLES = {"calendar_invite": N_("Calendar invite"), "pdf_maker": N_("PDF maker"),
+                "invoices": N_("Invoices and quotes")}
 LIBRARY_URL = f"{PROJECT_URL}/tree/main/src/selfhost_remote_mail_mcp/library"
+
+
+def addon_title(name: str) -> str:
+    return _(ADDON_TITLES[name]) if name in ADDON_TITLES else name
 
 esc = html.escape
 
@@ -59,6 +66,30 @@ ICON_ALERT = ('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke
 ICON_CHECK = ('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" '
               'stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m8 12.5 2.6 2.6L16 9.5"/></svg>')
 
+_svg = ('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" '
+        'stroke-linejoin="round" aria-hidden="true">')
+THEME_ICONS = {   # what the button shows: the look now
+    "": _svg + '<circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 1 0 16z" fill="currentColor" stroke="none"/></svg>',
+    "light": _svg + '<circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M4.6 4.6l1.4 1.4M18 18l1.4 1.4M2.5 12h2'
+             'M19.5 12h2M4.6 19.4 6 18M18 6l1.4-1.4"/></svg>',
+    "dark": _svg + '<path d="M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5z"/></svg>',
+}
+THEME_LABELS = {"": N_("Light or dark: like your device. Tap to change."), "light": N_("Light. Tap to change."),
+                "dark": N_("Dark. Tap to change.")}
+THEME = contextvars.ContextVar("theme", default="")      # "", "light" or "dark", from the visitor's cookie
+HERE_PATH = contextvars.ContextVar("here", default="/")  # the page's own address, to come back to after a tap
+
+
+def theme_button() -> str:
+    t = THEME.get()
+    label = esc(_(THEME_LABELS.get(t, THEME_LABELS[""])))
+    return (f'<form class="theme" method="post" action="/theme"><input type="hidden" name="next" '
+            f'value="{esc(HERE_PATH.get())}"><button type="submit" title="{label}" aria-label="{label}">'
+            f'{THEME_ICONS.get(t, THEME_ICONS[""])}</button></form>')
+
+
+ICON_BACK = ('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" '
+             'stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>')
 # The envelope mark, as the favicon and the icon AI apps may show next to this server.
 ICON_SVG = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="#5546ea"/>
 <g fill="none" stroke="#fff" stroke-width="4.4" stroke-linecap="round" stroke-linejoin="round">
@@ -70,11 +101,17 @@ CSS = """
 --ok:#12703f;--ok-bg:#e5f5ec;--chip:#efedff;--chip-ink:#4536d2;--warn:#8a4b00;--warn-bg:#fff3d6;
 --lime:#c8f53a;--lime-ink:#1d2600;--pink:#ffb6d5;--pink-ink:#8c2357;
 --shadow:0 18px 40px -18px rgba(30,20,80,.35),0 2px 6px rgba(30,20,80,.08)}
-@media (prefers-color-scheme:dark){:root{--brand:#6a5cff;--brand-deep:#5a4bf0;--page:#0f0e17;--card:#181725;
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]){--brand:#6a5cff;--brand-deep:#5a4bf0;--page:#0f0e17;--card:#181725;
 --ink:#efeef8;--ink-soft:#aba8c4;--line:#37344c;--line-soft:#28263a;--field:#0f0e17;--error:#ff8f80;--error-bg:#3a1c1a;
 --ok:#6fd49b;--ok-bg:#143022;--chip:#28244a;--chip-ink:#c6bfff;--warn:#ffc46b;--warn-bg:#3a2a10;
 --lime:#d4ff4f;--lime-ink:#1d2600;--pink:#ffc4de;--pink-ink:#ffc4de;
 --shadow:0 18px 40px -18px rgba(0,0,0,.7),0 2px 6px rgba(0,0,0,.4)}}
+:root[data-theme=dark]{--brand:#6a5cff;--brand-deep:#5a4bf0;--page:#0f0e17;--card:#181725;
+--ink:#efeef8;--ink-soft:#aba8c4;--line:#37344c;--line-soft:#28263a;--field:#0f0e17;--error:#ff8f80;--error-bg:#3a1c1a;
+--ok:#6fd49b;--ok-bg:#143022;--chip:#28244a;--chip-ink:#c6bfff;--warn:#ffc46b;--warn-bg:#3a2a10;
+--lime:#d4ff4f;--lime-ink:#1d2600;--pink:#ffc4de;--pink-ink:#ffc4de;
+--shadow:0 18px 40px -18px rgba(0,0,0,.7),0 2px 6px rgba(0,0,0,.4)}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
 *{box-sizing:border-box}
 body{margin:0;min-height:100vh;background:var(--page);color:var(--ink);
 font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",sans-serif;
@@ -83,7 +120,12 @@ main{width:100%;max-width:440px;background:var(--card);box-shadow:var(--shadow);
 main.wide{max-width:760px}
 @media (min-width:480px){main{border-radius:22px}}
 @media (max-width:479px){body{padding:0 0 28px;background:var(--card)}main{box-shadow:none}}
-.hero{background:var(--brand);color:var(--on-brand);padding:28px 28px 32px}
+.hero{position:relative;background:var(--brand);color:var(--on-brand);padding:28px 28px 32px}
+.theme{position:absolute;top:22px;right:22px;margin:0}
+.theme button{display:grid;place-items:center;width:40px;height:40px;padding:0;border-radius:999px;box-shadow:none;
+background:color-mix(in srgb,var(--on-brand) 14%,transparent);color:var(--on-brand-soft)}
+.theme button:hover,.theme button:focus-visible{background:color-mix(in srgb,var(--on-brand) 26%,transparent);color:var(--on-brand)}
+.theme svg{width:19px;height:19px}
 .mark{display:flex;align-items:center;gap:10px;font-weight:700;letter-spacing:-.01em;color:var(--on-brand-soft)}
 .mark::after{content:"";width:7px;height:7px;border-radius:2px;background:var(--pink);margin-left:-2px}
 .hl{background:linear-gradient(transparent 62%,var(--lime) 62%,var(--lime) 92%,transparent 92%);color:var(--on-brand);padding:0 .04em}
@@ -95,6 +137,13 @@ backdrop-filter:saturate(1.4) blur(10px);-webkit-backdrop-filter:saturate(1.4) b
 .tabs::-webkit-scrollbar{display:none}
 .tabs a{flex:none;color:var(--ink-soft);text-decoration:none;font-weight:700;font-size:.9rem;padding:7px 13px;border-radius:999px;transition:background .15s,color .15s}
 .tabs a:hover,.tabs a:focus-visible{background:var(--lime);color:var(--lime-ink);outline:none}
+.tabs a.on{background:var(--chip);color:var(--chip-ink)}
+.back{display:inline-flex;align-items:center;gap:6px;margin-top:26px;padding:8px 16px 8px 10px;border-radius:999px;
+background:color-mix(in srgb,var(--on-brand) 16%,transparent);color:var(--on-brand);font-weight:700;font-size:.95rem;
+text-decoration:none;transition:background .15s,color .15s}
+.back svg{width:18px;height:18px;flex:none}
+.back:hover,.back:focus-visible{background:var(--lime);color:var(--lime-ink);outline:none}
+.back + h1{margin-top:22px}
 section[id],h2[id]{scroll-margin-top:72px}
 .mark svg{width:30px;height:30px;flex:none}
 .mark path{stroke-dasharray:90;stroke-dashoffset:0;animation:draw .8s cubic-bezier(.16,1,.3,1) both}
@@ -122,13 +171,22 @@ button.quiet{background:transparent;color:var(--ink);border:1.5px solid var(--li
 button.quiet:hover{border-color:var(--ink-soft);background:transparent}
 button.danger{background:transparent;color:var(--error);border:1.5px solid color-mix(in srgb,var(--error) 45%,transparent);box-shadow:none;padding:9px 14px;font-size:.95rem}
 button.danger:hover{background:var(--error-bg)}
-a.button{display:inline-block;text-decoration:none;border-radius:12px}
+a.button{display:inline-flex;align-items:center;gap:6px;text-decoration:none;border-radius:12px}
+a.button svg{width:16px;height:16px;flex:none}
+.file-row b.addon-name,.addon-name{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;font-size:1.02rem}
+.addon-name .badge{margin-left:0}
+.panel{scroll-margin-top:64px}
+@media (max-width:540px){.addons .file-row{flex-direction:column;align-items:stretch}.addons .actions.tight{flex-wrap:wrap}}
+.state{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
+.state p{margin:4px 0 0}
 a.button.quiet{color:var(--ink);border:1.5px solid var(--line);font-weight:650;padding:9px 14px;font-size:.95rem}
 a.button.quiet:hover{border-color:var(--ink-soft)}
 textarea{resize:vertical;line-height:1.45}
 .badge.todo{background:var(--warn-bg);color:var(--warn)}
 .actions.tight{margin-top:0;flex-wrap:nowrap}
-form.stack{display:grid;gap:16px;margin-top:14px}
+form.stack{display:grid;gap:18px;margin-top:6px}
+form.stack .grid{margin-top:0;gap:18px}
+form.stack button.block{margin-top:6px}
 form.stack .hint{margin:6px 0 0}
 label.check{display:flex;align-items:center;gap:8px;font-weight:500;margin:8px 0 0}
 label.check input{width:auto;margin:0}
@@ -163,7 +221,8 @@ b .badge,.item-head .badge{margin-left:6px;vertical-align:1px}
 .actions form{margin:0}
 details{margin-top:12px}
 summary{cursor:pointer;font-weight:650;color:var(--brand);list-style:none;display:inline-block}
-@media (prefers-color-scheme:dark){summary{color:var(--chip-ink)}}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]) summary{color:var(--chip-ink)}}
+:root[data-theme=dark] summary{color:var(--chip-ink)}
 summary::-webkit-details-marker{display:none}
 summary::after{content:" +";font-weight:700}
 details[open] summary::after{content:" \\2013"}
@@ -186,7 +245,8 @@ code{font-size:.9em;background:var(--line-soft);padding:1px 5px;border-radius:5p
 transition:border-color .15s,background .15s}
 .drop:hover,.drop:focus-within{border-color:var(--brand);background:color-mix(in srgb,var(--brand) 5%,transparent)}
 .drop svg{width:34px;height:34px;color:var(--brand);display:block;margin:0 auto 8px}
-@media (prefers-color-scheme:dark){.drop svg{color:var(--chip-ink)}}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]) .drop svg{color:var(--chip-ink)}}
+:root[data-theme=dark] .drop svg{color:var(--chip-ink)}
 .drop b{display:block;font-size:1.05rem}
 .drop input{margin-top:14px;border:0;padding:0;background:none;font-size:.95rem;color:var(--ink-soft)}
 .drop input::file-selector-button{font:inherit;font-weight:650;margin-right:12px;padding:9px 14px;border-radius:10px;
@@ -205,7 +265,7 @@ footer a{color:inherit;text-underline-offset:3px;text-decoration-color:var(--pin
 """
 
 PAGE = string.Template("""<!doctype html>
-<html lang="$lang"><head><meta charset="utf-8">
+<html lang="$lang"$theme_attr><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="color-scheme" content="light dark">
 <meta name="robots" content="noindex,nofollow">
@@ -214,7 +274,8 @@ PAGE = string.Template("""<!doctype html>
 <style>$css</style></head>
 <body><main class="$width">
 <section class="hero">
-<div class="mark">$icon Selfhost Mail</div>
+$theme
+<div class="mark">$icon Selfhost Mail</div>$back
 <h1>$headline</h1>
 <p>$sub</p>
 </section>
@@ -224,15 +285,23 @@ $tabs<section class="body">$content</section>
 </body></html>""")
 
 
-def page(headline: str, sub: str, content: str, wide: bool = False, tabs: list[tuple[str, str]] | None = None) -> str:
+def page(headline: str, sub: str, content: str, wide: bool = False, tabs: list[tuple[str, str]] | None = None,
+         back: tuple[str, str] | None = None, active: str = "") -> str:
     """headline and sub may hold simple markup, so callers escape what they put in. tabs: (anchor, label) links
-    to the page's sections, shown under the header and kept in view while scrolling."""
-    nav = (f'<nav class="tabs" aria-label="{esc(_("Sections"))}">'
-           + "".join(f'<a href="#{a}">{esc(t)}</a>' for a, t in tabs) + "</nav>") if tabs else ""
+    to the page's sections ('#anchor'), or to another page ('/settings#apps'), shown under the header and kept in
+    view while scrolling; active marks the current one. back: (address, label) for a way back, in the header."""
+    def tab(a: str, t: str) -> str:
+        href = a if a.startswith("/") else f"#{a}"
+        current = ' class="on" aria-current="page"' if active and a.endswith(active) else ""
+        return f'<a href="{href}"{current}>{esc(t)}</a>'
+    nav = (f'<nav class="tabs" aria-label="{esc(_("Sections"))}">' + "".join(tab(a, t) for a, t in tabs) + "</nav>"
+           if tabs else "")
+    back_link = (f'<a class="back" href="{esc(back[0])}">{ICON_BACK}<span>{esc(back[1])}</span></a>' if back else "")
     title = re.sub(r"<[^>]+>", "", headline)
     return PAGE.substitute(title=f"{title} · Selfhost Mail", headline=headline, sub=sub, content=content, tabs=nav,
                            css=CSS, icon=ICON_MAIL, width="wide" if wide else "", project=PROJECT,
-                           project_url=PROJECT_URL, author=AUTHOR, lang=LANG.get(), by=esc(_("by")))
+                           project_url=PROJECT_URL, author=AUTHOR, lang=LANG.get(), by=esc(_("by")), back=back_link,
+                           theme=theme_button(), theme_attr=f' data-theme="{THEME.get()}"' if THEME.get() else "")
 
 
 def panel_css(names: list[str]) -> str:
@@ -250,51 +319,77 @@ def panel_css(names: list[str]) -> str:
 
 def addon_setup(csrf: str, addon: dict, fields: list[dict], flash: tuple[str, str] | None) -> str:
     """One add-on's own page: turn it on or off, and fill in the settings it needs. fields: dicts with full,
-    label, help, required, lines, secret, value, where ("server", "page" or ""), has_value."""
+    label, help, required, lines, secret, half, value, where ("server", "page" or ""), has_value."""
     name = addon["name"]
-    parts = [f'<p><a href="/settings#addons">← {esc(_("Back to add-ons"))}</a></p>', message(*flash) if flash else ""]
-    state = (f'<span class="badge lime">{esc(_("On"))}</span>' if addon["on"]
-             else f'<span class="badge">{esc(_("Off"))}</span>')
+    parts = [message(*flash) if flash else ""]
+    # on or off, with its button
+    if addon["on"]:
+        state = f'<span class="badge lime">{esc(_("On"))}</span>'
+        note = _("Start a new chat in your AI app to use it.")
+    else:
+        state = f'<span class="badge">{esc(_("Off"))}</span>'
+        note = _("Turn it on to let your AI app use it.")
+    if addon.get("missing"):
+        state += f' <span class="badge todo">{esc(_("Needs setting up"))}</span>'
     toggle = ""
     if addon.get("library") and not addon.get("in_settings"):
         toggle = _post("/settings/addon", csrf, {"name": name, "action": "off" if addon["on"] else "on", "back": "setup"},
-                       _("Turn off") if addon["on"] else _("Turn on"), "primary" if not addon["on"] else "quiet")
+                       _("Turn off") if addon["on"] else _("Turn on"), "quiet" if addon["on"] else "")
     elif addon.get("in_settings") and addon["on"]:
         state += f' <span class="badge">{esc(_("In server settings"))}</span>'
-    parts.append(f'<div class="list"><div class="item"><div class="file-row"><div class="grow"><b><code>{esc(name)}</code> '
-                 f'{state}</b></div>{toggle}</div></div></div>')
+    parts.append(f'<div class="list"><div class="item state"><div><b class="addon-name">{esc(addon_title(name))} {state}</b>'
+                 f'<p class="muted">{esc(note)}</p></div>{toggle}</div></div>')
+    # the form
     if fields:
-        rows = []
+        boxes, halves = [], []
+
+        def flush() -> None:
+            if halves:
+                boxes.append(f'<div class="grid two">{"".join(halves)}</div>')
+                halves.clear()
+
         for f in fields:
             fid = "f_" + f["full"].lower()
             label = esc(_(f["label"])) + ("" if f["required"] else f' <span class="hint">{esc(_("optional"))}</span>')
             hint = f'<p class="hint">{esc(_(f["help"]))}</p>' if f["help"] else ""
             if f["where"] == "server":
-                rows.append(f'<div><label>{label}</label><p class="lead"><b>{esc(f["value"]) if not f["secret"] else "••••••"}</b> '
-                            f'<span class="badge">{esc(_("In server settings"))}</span></p></div>')
-                continue
-            placeholder = esc(_("Saved. Type to replace it.")) if f["secret"] and f["has_value"] else ""
-            if f["lines"] > 1 and not f["secret"]:
-                box = (f'<textarea id="{fid}" name="{esc(f["full"])}" rows="{f["lines"]}">{esc(f["value"])}</textarea>')
+                shown = "••••••" if f["secret"] else esc(f["value"])
+                box = (f'<div><label>{label}</label><p class="lead"><b>{shown}</b> '
+                       f'<span class="badge">{esc(_("In server settings"))}</span></p></div>')
+            elif f["lines"] > 1 and not f["secret"]:
+                box = (f'<div><label for="{fid}">{label}</label><textarea id="{fid}" name="{esc(f["full"])}" '
+                       f'rows="{f["lines"]}">{esc(f["value"])}</textarea>{hint}</div>')
             else:
                 kind = "password" if f["secret"] else "text"
-                box = (f'<input id="{fid}" type="{kind}" name="{esc(f["full"])}" value="{esc(f["value"])}" '
-                       f'placeholder="{placeholder}" autocomplete="off">')
-                if f["secret"] and f["has_value"]:
-                    box += (f'<label class="check"><input type="checkbox" name="{esc(f["full"])}__clear" value="1"> '
-                            f'{esc(_("Remove it"))}</label>')
-            rows.append(f'<div><label for="{fid}">{label}</label>{box}{hint}</div>')
+                placeholder = esc(_("Saved. Type to replace it.")) if f["secret"] and f["has_value"] else ""
+                clear = (f'<label class="check"><input type="checkbox" name="{esc(f["full"])}__clear" value="1"> '
+                         f'{esc(_("Remove it"))}</label>' if f["secret"] and f["has_value"] else "")
+                box = (f'<div><label for="{fid}">{label}</label><input id="{fid}" type="{kind}" name="{esc(f["full"])}" '
+                       f'value="{esc(f["value"])}" placeholder="{placeholder}" autocomplete="off">{hint}{clear}</div>')
+            if f.get("half"):
+                halves.append(box)
+                if len(halves) == 2:
+                    flush()
+            else:
+                flush()
+                boxes.append(box)
+        flush()
         parts.append(f'<h2>{esc(_("Set up"))}</h2><p class="lead">'
                      + esc(_("Saved on your server, encrypted. Changes count right away.")) + "</p>"
                      f'<form method="post" action="/settings/addon/{esc(name)}" class="stack">{_csrf(csrf)}'
-                     f'<input type="hidden" name="name" value="{esc(name)}">{"".join(rows)}'
-                     f'<div class="actions"><button class="primary" type="submit">{esc(_("Save"))}</button></div></form>')
+                     f'<input type="hidden" name="name" value="{esc(name)}">{"".join(boxes)}'
+                     f'<button class="block" type="submit">{esc(_("Save"))}</button></form>')
     else:
-        parts.append(f'<p class="lead">{esc(_("This add-on needs no settings."))}</p>')
-    if addon.get("library"):
-        parts.append(f'<p class="hint"><a href="{LIBRARY_URL}/{esc(name)}">{esc(_("What it does and what to ask your AI app"))}</a></p>')
+        parts.append(f'<p class="lead" style="margin-top:22px">{esc(_("This add-on needs no settings."))}</p>')
+    more = (f'<a href="{LIBRARY_URL}/{esc(name)}">{esc(_("What it does and what to ask your AI app"))}</a>'
+            if addon.get("library") and not addon.get("own_file") else "<span></span>")
+    parts.append(f'<div class="bar"><span class="muted">{more}</span>'
+                 f'<a class="button quiet" href="/settings#addons">{ICON_BACK}{esc(_("All add-ons"))}</a></div>')
     about = _(ADDON_HELP[name]) if name in ADDON_HELP else addon.get("about", "")
-    return page(f'<span class="hl">{esc(name)}</span>', esc(about), "".join(parts))
+    tabs = [("/settings#mailboxes", _("Mailboxes")), ("/settings#apps", _("Apps")), ("/settings#addons", _("Add-ons")),
+            ("/settings#about", _("About"))]
+    return page(f'<span class="hl">{esc(addon_title(name))}</span>', esc(about), "".join(parts), wide=True,
+                tabs=tabs, back=("/settings#addons", _("All add-ons")), active="addons")
 
 
 def message(kind: str, text: str) -> str:
@@ -647,9 +742,10 @@ def settings(csrf: str, mailboxes: list[dict], apps: list[dict], flash: tuple[st
                 buttons.append(_post("/settings/addon", csrf, {"name": a["name"], "action": "off" if a["on"] else "on"},
                                      _("Turn off") if a["on"] else _("Turn on")))
             button = f'<div class="actions tight">{"".join(buttons)}</div>' if buttons else ""
-            rows.append(f'<div class="item"><div class="file-row"><div class="grow"><b><code>{esc(a["name"])}</code> '
-                        f'{state}</b><span class="muted">{esc(about_text)} {link}</span></div>{button}</div></div>')
-        parts.append(f'<div class="list">{"".join(rows)}</div>' if rows else
+            rows.append(f'<div class="item"><div class="file-row"><div class="grow"><b class="addon-name">'
+                        f'{esc(addon_title(a["name"]))} {state}</b><span class="muted">{esc(about_text)} {link}</span>'
+                        f'</div>{button}</div></div>')
+        parts.append(f'<div class="list addons">{"".join(rows)}</div>' if rows else
                      f'<div class="list"><p class="empty">{esc(_("No add-ons."))}</p></div>')
         parts.append(f'<p class="hint">{_("Turning one on or off works right away: start a new chat in your AI app to see the change. Add-ons can also be turned on with <code>MAIL_ADDONS</code> in the server settings.")} '
                      f'<a href="{PROJECT_URL}/blob/main/docs/addons.md">{esc(_("How add-ons work"))}</a></p>')
@@ -658,9 +754,7 @@ def settings(csrf: str, mailboxes: list[dict], apps: list[dict], flash: tuple[st
         whats_new = esc(_("What's new"))
         upd = about.get("update")
         if upd is None:
-            status = _("Update checks are off. Ask your AI app to turn them on, or set <code>UPDATE_CHECK=on</code>, to be "
-                       "told about new releases (the server then asks GitHub once a day which version is newest, and "
-                       "sends nothing else).")
+            status = ""
         elif upd["newer"]:
             status = (f'<b>{esc(_("Update available: {version}", version=upd["latest"]))}</b>. '
                       f'<a href="{esc(upd["url"])}">{whats_new}</a> · '
@@ -671,6 +765,18 @@ def settings(csrf: str, mailboxes: list[dict], apps: list[dict], flash: tuple[st
         panel("about")
         parts.append(f'<h2>{esc(_("About this server"))}</h2><p class="lead">'
                      f'{_("Version <b>{version}</b>.", version=esc(about["version"]))} {status}</p>')
+        on = upd is not None
+        upd_badge = (f'<span class="badge lime">{esc(_("On"))}</span>' if on else f'<span class="badge">{esc(_("Off"))}</span>')
+        if about.get("update_locked"):
+            upd_badge += f' <span class="badge">{esc(_("In server settings"))}</span>'
+            button = ""
+        else:
+            button = _post("/settings/update", csrf, {"action": "off" if on else "on"},
+                           _("Turn off") if on else _("Turn on"))
+        parts.append(f'<div class="list"><div class="item"><div class="file-row"><div class="grow"><b>'
+                     f'{esc(_("Update check"))} {upd_badge}</b><span class="muted">'
+                     + esc(_("Once a day the server asks GitHub which version is newest, and tells you here and in your "
+                             "AI app. It sends nothing else.")) + f'</span></div>{button}</div></div></div>')
         if about.get("addons") and addons is None:
             parts.append(f'<p class="lead">{_("Add-ons: <b>{names}</b>.", names=esc(", ".join(about["addons"])))}</p>')
         if about.get("changelog"):

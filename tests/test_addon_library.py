@@ -492,7 +492,7 @@ def test_addon_setup_page_saves_settings_encrypted(monkeypatch):
         monkeypatch.delenv(k, raising=False)
     fields = server.addon_fields("invoices")
     assert fields[0] == {"key": "SELLER_NAME", "label": "Your name or business name", "help": "", "required": True,
-                         "lines": 1, "secret": False}
+                         "lines": 1, "secret": False, "half": False}
     assert server.addon_missing("invoices") == ["Your name or business name"]
     kind, text = server.settings_action(None, "addon_setup", {"name": "invoices", "INVOICES_SELLER_NAME": " Studio\x07 ",
                                                              "INVOICES_PAYMENT": "Bank\r\nIBAN PT50"})

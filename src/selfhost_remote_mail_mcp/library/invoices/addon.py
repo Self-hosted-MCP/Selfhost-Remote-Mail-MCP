@@ -14,12 +14,12 @@ SETTINGS = [   # shown on the add-on's setup page (the server settings can set t
      "help": N_("Needed on invoices. Quotes and proformas work without it.")},
     {"key": "PAYMENT", "label": N_("How to pay you"), "lines": 3,
      "help": N_("For example: Bank transfer, IBAN PT50 ... Shown on proformas and invoices.")},
-    {"key": "TAX_RATE", "label": N_("Usual tax rate, in percent"), "help": N_("For example 23. Empty means 0.")},
-    {"key": "TAX_LABEL", "label": N_("Name of the tax"), "help": N_("For example VAT, IVA or MwSt. Empty means VAT.")},
-    {"key": "CURRENCY", "label": N_("Currency"), "help": N_("A three-letter code, for example EUR or USD. Empty means EUR.")},
-    {"key": "DUE_DAYS", "label": N_("Days to pay"), "help": N_("Empty means 30.")},
-    {"key": "VALID_DAYS", "label": N_("Days a quote stays valid"), "help": N_("Empty means 30.")},
-    {"key": "TIMEZONE", "label": N_("Your time zone"), "help": N_("For example Europe/Lisbon, so documents get your date.")},
+    {"key": "TAX_RATE", "half": True, "label": N_("Usual tax rate, in percent"), "help": N_("For example 23. Empty means 0.")},
+    {"key": "TAX_LABEL", "half": True, "label": N_("Name of the tax"), "help": N_("For example VAT, IVA or MwSt. Empty means VAT.")},
+    {"key": "CURRENCY", "half": True, "label": N_("Currency"), "help": N_("A three-letter code, for example EUR or USD. Empty means EUR.")},
+    {"key": "TIMEZONE", "half": True, "label": N_("Your time zone"), "help": N_("For example Europe/Lisbon, so documents get your date.")},
+    {"key": "DUE_DAYS", "half": True, "label": N_("Days to pay"), "help": N_("Empty means 30.")},
+    {"key": "VALID_DAYS", "half": True, "label": N_("Days a quote stays valid"), "help": N_("Empty means 30.")},
 ]
 
 KINDS = {"quote": ("Quote", "QUOTE_PREFIX", "Q"), "proforma": ("Proforma invoice", "PROFORMA_PREFIX", "PF"),

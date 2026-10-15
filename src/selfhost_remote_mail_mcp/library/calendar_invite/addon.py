@@ -7,7 +7,7 @@ from selfhost_remote_mail_mcp.i18n import N_
 
 SETTINGS = [
     {"key": "ORGANIZER", "label": N_("Your email address, shown as the organizer"),
-     "help": N_("Optional. Calendar apps show it as who invited them.")},
+     "help": N_("Calendar apps show it as who invited them.")},
 ]
 
 

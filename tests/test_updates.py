@@ -84,4 +84,4 @@ def test_about_section_shows_version_update_and_changelog(monkeypatch):
     assert "What&#x27;s new" in html or "What's new" in html
     assert "<h3>" in about["changelog"]
     off = server.pages.settings("c", [], [], None, 5, False, {"version": "0.2.0", "update": None, "changelog": ""})
-    assert "Update checks are off" in off
+    assert "Update check" in off and "action=\"/settings/update\"" in off

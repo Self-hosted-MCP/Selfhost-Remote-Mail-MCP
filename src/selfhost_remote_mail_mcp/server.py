@@ -2567,8 +2567,19 @@ def get_session(request: Request) -> dict | None:
 
 
 def use_language(request: Request) -> None:
-    """The web pages speak the browser's language (or LANGUAGE from the settings), English if there's no file for it."""
+    """The web pages speak the browser's language (or LANGUAGE from the settings), English if there's no file for it,
+    and use the light or dark look the visitor picked (a cookie; none means: like the device)."""
     i18n.LANG.set(i18n.pick(request.headers.get("accept-language", ""), read_env().get("LANGUAGE", "")))
+    theme = request.cookies.get("theme", "")
+    pages.THEME.set(theme if theme in ("light", "dark") else "")
+    here = request.url.path + (f"?{request.url.query}" if request.url.query else "")
+    pages.HERE_PATH.set(here if safe_next(here) else "/settings")
+
+
+def safe_next(path: str) -> bool:
+    """An address on this server to go back to: starts with one /, no backslashes or line breaks, not too long."""
+    return (path.startswith("/") and not path.startswith("//") and len(path) < 2000
+            and not any(c in path for c in "\\\r\n\t"))
 
 
 def same_origin(request: Request) -> bool:
@@ -2658,6 +2669,7 @@ def settings_page(provider: "PassphraseOAuth", session: dict, uploads_on: bool =
             for cid, c in provider.clients.items() if provider.logged_in(cid)]   # not the half-finished attempts
     flash, session["flash"] = session["flash"], None
     about = {"version": current_version(), "update": update_status(), "changelog": changelog_html(),
+             "update_locked": bool(cfg.get("UPDATE_CHECK")),
              "addons": list(LOADED_ADDONS)}
     log_on = device_log_on()
 
@@ -2780,6 +2792,13 @@ def settings_action(provider: "PassphraseOAuth", kind: str, form) -> tuple[str, 
             return "error", T_("This is turned off in the server settings ({setting}=off).", setting=env_key)
         set_pref(str(form.get("name")), action == "on")
         return "ok", T_("{setting}: on.", setting=T_(label)) if action == "on" else T_("{setting}: off.", setting=T_(label))
+    if kind == "update":
+        if read_env().get("UPDATE_CHECK"):
+            return "error", T_("Update checks are set in the server settings (UPDATE_CHECK). Change it there.")
+        if action not in ("on", "off"):
+            return "error", "Unknown action."
+        set_pref("update_check", action == "on")
+        return "ok", T_("Update checks are on.") if action == "on" else T_("Update checks are off.")
     if kind == "addon_setup":
         name = str(form.get("name", "")).strip()
         fields = addon_fields(name) if name in library_addons() or name in LOADED_ADDONS else []
@@ -2987,7 +3006,7 @@ def build_server(remote: bool) -> MCPServer:
             except ToolError as exc:
                 session["flash"] = ("error", str(exc))
             tab = {"mailbox": "mailboxes", "app": "apps", "device": "devices", "privacy": "privacy",
-                   "addon": "addons"}.get(kind, "")
+                   "addon": "addons", "update": "about"}.get(kind, "")
             name = str(form.get("name", ""))
             if kind == "addon_setup" or (kind == "addon" and form.get("back") == "setup"):
                 if re.fullmatch(r"[a-z][a-z0-9_]{0,40}", name):
@@ -3007,6 +3026,27 @@ def build_server(remote: bool) -> MCPServer:
         @server.custom_route("/settings/device", methods=["POST"])
         async def settings_device(request: Request) -> Response:
             return await settings_post(request, "device")
+
+        @server.custom_route("/theme", methods=["POST"])
+        async def theme_switch(request: Request) -> Response:
+            """Light or dark for this browser: device -> light -> dark -> device. Only a look, kept a year."""
+            form = await request.form()
+            target = str(form.get("next", "/settings"))
+            if not same_origin(request) or not safe_next(target):
+                target = "/settings"
+            now = request.cookies.get("theme", "")
+            nxt = {"": "light", "light": "dark"}.get(now if now in ("light", "dark") else "", "")
+            response = RedirectResponse(target, status_code=303, headers={"Cache-Control": "no-store"})
+            if nxt:
+                response.set_cookie("theme", nxt, max_age=365 * 24 * 3600, secure=secure, httponly=True,
+                                    samesite="lax", path="/")
+            else:
+                response.delete_cookie("theme", path="/")
+            return response
+
+        @server.custom_route("/settings/update", methods=["POST"])
+        async def settings_update(request: Request) -> Response:
+            return await settings_post(request, "update")
 
         @server.custom_route("/settings/addon", methods=["POST"])
         async def settings_addon(request: Request) -> Response:
@@ -3730,10 +3770,7 @@ def update_check_on(cfg: dict | None = None) -> bool:
     env = (cfg or read_env()).get("UPDATE_CHECK")
     if env:
         return is_on(env)
-    try:
-        return bool(json.loads(PREFS_FILE.read_text()).get("update_check", False))
-    except (OSError, ValueError):
-        return False
+    return bool(read_prefs().get("update_check", False))
 
 
 def safe_template_name(name: str) -> str:
@@ -4368,7 +4405,7 @@ def clean_fields(raw) -> list[dict]:
         if isinstance(f, dict) and re.fullmatch(r"[A-Z][A-Z0-9_]{0,40}", str(f.get("key", ""))) and f.get("label"):
             out.append({"key": f["key"], "label": str(f["label"]), "help": str(f.get("help", "")),
                         "required": bool(f.get("required")), "lines": max(1, min(int(f.get("lines", 1) or 1), 8)),
-                        "secret": bool(f.get("secret"))})
+                        "secret": bool(f.get("secret")), "half": bool(f.get("half"))})
     return out
 
 

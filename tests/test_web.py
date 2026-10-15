@@ -289,3 +289,23 @@ def test_login_page_and_accounts_point_to_the_settings_page(web, monkeypatch):
     assert "manage everything" in client.get(f"/login?req={req}").text and "http://localhost/settings" in client.get(f"/login?req={req}").text
     out = server.accounts()
     assert "Settings page for the user: http://localhost/settings (files to attach: http://localhost/upload)" in out
+
+
+def test_the_light_dark_switch_cycles_and_is_remembered(web):
+    client, _provider = web
+    page = client.get("/settings").text
+    assert 'action="/theme"' in page and "data-theme" not in page.split("<head>")[0]
+    post = lambda nxt="/settings": client.post("/theme", data={"next": nxt}, headers={"origin": "http://localhost"},
+                                               follow_redirects=False)
+    r = post()
+    assert r.status_code == 303 and r.headers["location"] == "/settings" and client.cookies.get("theme") == "light"
+    assert '<html lang="en" data-theme="light">' in client.get("/settings").text
+    post()
+    assert client.cookies.get("theme") == "dark"
+    post()
+    assert client.cookies.get("theme") is None   # back to like the device
+    assert post("//evil.example/x").headers["location"] == "/settings"
+    assert post("https://evil.example/").headers["location"] == "/settings"
+    r = client.post("/theme", data={"next": "/settings/upload"}, headers={"origin": "https://evil.example"},
+                    follow_redirects=False)
+    assert r.headers["location"] == "/settings"
