@@ -323,10 +323,10 @@ def test_invoice_totals_numbering_and_rules(mailbox, library_tools, monkeypatch)
     d = server.AddonAPI("t").new_draft(["sam@example.org"], "Invoice", "Here it is.")
     items = [{"description": "Logo", "quantity": "3", "unit_price": "0.10"},
              {"description": "Site", "quantity": 1, "unit_price": 1000.005}]
-    with pytest.raises(ToolError, match="INVOICES_SELLER_NAME"):
+    with pytest.raises(ToolError, match="business details aren.t set up.*INVOICES_SELLER_NAME"):
         call("make_invoice", draft_id=d, kind="quote", client_name="Acme", items=items)
     monkeypatch.setenv("INVOICES_SELLER_NAME", "Studio")
-    with pytest.raises(ToolError, match="INVOICES_SELLER_TAX_ID"):
+    with pytest.raises(ToolError, match="tax number"):
         call("make_invoice", draft_id=d, kind="invoice", client_name="Acme", items=items)
     monkeypatch.setenv("INVOICES_SELLER_TAX_ID", "PT123")
     with pytest.raises(ToolError, match="tax_note"):
@@ -400,8 +400,8 @@ def test_the_settings_page_lists_the_library(monkeypatch):
     rows = server.addon_rows()
     names = [r["name"] for r in rows]
     assert {"calendar_invite", "pdf_maker", "invoices"} <= set(names) and names[-1] == "my_own"
-    assert next(r for r in rows if r["name"] == "my_own") == {"name": "my_own", "about": "Mine: does a thing.",
-                                                              "on": True, "library": False, "in_settings": True}
+    mine = next(r for r in rows if r["name"] == "my_own")
+    assert mine["about"] == "Mine: does a thing." and mine["on"] and not mine["library"] and mine["in_settings"]
     from selfhost_remote_mail_mcp import pages
     html = pages.settings("t", [], [], None, 5, False, None, False, None, None, None, rows)
     assert 'href="#addons"' in html and "pdf_maker" in html and "Your own" in html
@@ -485,3 +485,70 @@ def test_two_turn_ons_at_once_load_once(monkeypatch):
     assert [k for k, _ in results] == ["ok", "ok"] and server.TOOL_NAMES.count("add_invite") == 1
     assert "calendar_invite" in server.LOADED_ADDONS
     server.settings_action(None, "addon", {"name": "calendar_invite", "action": "off"})
+
+
+def test_addon_setup_page_saves_settings_encrypted(monkeypatch):
+    for k in ("INVOICES_SELLER_NAME", "INVOICES_SELLER_TAX_ID", "INVOICES_PAYMENT"):
+        monkeypatch.delenv(k, raising=False)
+    fields = server.addon_fields("invoices")
+    assert fields[0] == {"key": "SELLER_NAME", "label": "Your name or business name", "help": "", "required": True,
+                         "lines": 1, "secret": False}
+    assert server.addon_missing("invoices") == ["Your name or business name"]
+    kind, text = server.settings_action(None, "addon_setup", {"name": "invoices", "INVOICES_SELLER_NAME": " Studio\x07 ",
+                                                             "INVOICES_PAYMENT": "Bank\r\nIBAN PT50"})
+    assert kind == "ok" and "invoices is set up" in text
+    assert server.addon_setting_value("INVOICES_SELLER_NAME", "invoices") == ("Studio", "page")
+    assert server.addon_setting_value("INVOICES_PAYMENT", "invoices")[0] == "Bank\nIBAN PT50"
+    assert b"Studio" not in server.ADDON_SETTINGS_FILE.read_bytes() and server.addon_missing("invoices") == []
+    api = server.AddonAPI("invoices")
+    assert api.setting("INVOICES_SELLER_NAME") == "Studio"
+    monkeypatch.setenv("INVOICES_SELLER_NAME", "From the server")   # server settings win, and aren't changed here
+    assert api.setting("INVOICES_SELLER_NAME") == "From the server"
+    server.settings_action(None, "addon_setup", {"name": "invoices", "INVOICES_SELLER_NAME": "Other"})
+    monkeypatch.delenv("INVOICES_SELLER_NAME")
+    assert api.setting("INVOICES_SELLER_NAME") == "Studio"
+    server.settings_action(None, "addon_setup", {"name": "invoices", "INVOICES_SELLER_NAME": ""})
+    assert server.addon_missing("invoices") == ["Your name or business name"]
+    assert server.settings_action(None, "addon_setup", {"name": "nope"})[0] == "error"
+    server.ADDON_SETTINGS_FILE.unlink()
+
+
+def test_addon_setup_page_html_and_the_ai_gets_the_link(monkeypatch):
+    from selfhost_remote_mail_mcp import pages
+    row = {"name": "invoices", "about": "", "on": False, "library": True, "in_settings": False}
+    fields = [{**f, "full": "INVOICES_" + f["key"], "value": "<b>x</b>" if f["key"] == "SELLER_NAME" else "",
+               "where": "", "has_value": False} for f in server.addon_fields("invoices")]
+    html = pages.addon_setup("t", row, fields, None)
+    assert "&lt;b&gt;x&lt;/b&gt;" in html and 'name="INVOICES_PAYMENT"' in html and "<textarea" in html
+    assert 'href="/settings#addons"' in html and 'value="setup"' in html
+    monkeypatch.setattr(server, "MODE", "serve")
+    out = server.settings()
+    assert "/settings/addon/invoices" in out and "needs setting up" in out
+    rows = {r["name"]: r for r in server.addon_rows()}
+    assert rows["invoices"]["fields"] and rows["invoices"]["missing"] and not rows["pdf_maker"]["fields"]
+    html = pages.settings("t", [], [], None, 5, False, None, False, None, None, None, list(rows.values()))
+    assert 'href="/settings/addon/invoices"' in html and "Needs setting up" in html
+
+
+def test_setup_settings_survive_a_changed_key_and_secrets_can_be_removed(monkeypatch):
+    monkeypatch.delenv("INVOICES_SELLER_NAME", raising=False)
+    server.save_addon_settings("invoices", {"INVOICES_SELLER_NAME": "Studio"})
+    saved = server.ADDON_SETTINGS_FILE.read_bytes()
+    server.ADDON_SETTINGS_FILE.write_bytes(b"not readable with this key")
+    with pytest.raises(ToolError, match="Nothing was overwritten"):
+        server.save_addon_settings("invoices", {"INVOICES_TAX_RATE": "23"})
+    assert server.ADDON_SETTINGS_FILE.read_bytes() == b"not readable with this key"
+    server.ADDON_SETTINGS_FILE.write_bytes(saved)
+    assert server.addon_setting_value("INVOICES_SELLER_NAME", "invoices") == ("Studio", "page")
+    assert server.addon_setting_value("INVOICES_SELLER_NAME", "other") == ("", "")   # each add-on its own values
+    fields = [{"key": "TOKEN", "label": "Token", "secret": True}, {"key": "ONE", "label": "One line"}]
+    monkeypatch.setitem(server.ADDON_INFO, "secretive", {"fields": server.clean_fields(fields)})
+    monkeypatch.setitem(server.LOADED_ADDONS, "secretive", "x")
+    act = lambda form: server.settings_action(None, "addon_setup", {"name": "secretive", **form})
+    act({"SECRETIVE_TOKEN": "abc", "SECRETIVE_ONE": "a\nb"})
+    assert server.addon_setting_value("SECRETIVE_ONE", "secretive")[0] == "a b"
+    act({"SECRETIVE_TOKEN": ""})
+    assert server.addon_setting_value("SECRETIVE_TOKEN", "secretive")[0] == "abc"   # empty box keeps it
+    act({"SECRETIVE_TOKEN": "", "SECRETIVE_TOKEN__clear": "1"})
+    assert server.addon_setting_value("SECRETIVE_TOKEN", "secretive")[0] == ""
+    server.ADDON_SETTINGS_FILE.unlink()

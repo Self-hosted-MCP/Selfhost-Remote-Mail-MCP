@@ -3,6 +3,13 @@
 import datetime as dt
 import uuid
 
+from selfhost_remote_mail_mcp.i18n import N_
+
+SETTINGS = [
+    {"key": "ORGANIZER", "label": N_("Your email address, shown as the organizer"),
+     "help": N_("Optional. Calendar apps show it as who invited them.")},
+]
+
 
 def fold(line: str) -> str:
     """Calendar files keep lines to 75 bytes; longer ones continue on the next line after a space."""
@@ -47,7 +54,7 @@ def setup(api):
             lines.append(f"DESCRIPTION:{clean(details)}")
         organizer = api.setting("CALENDAR_INVITE_ORGANIZER")   # optional: your address, shown as the organizer
         if organizer:
-            lines.append(f"ORGANIZER:mailto:{organizer}")
+            lines.append(f"ORGANIZER:mailto:{clean(organizer.split()[0])}")
         lines += ["END:VEVENT", "END:VCALENDAR"]
         ics = ("\r\n".join(fold(line) for line in lines) + "\r\n").encode()
         name = "invite.ics"

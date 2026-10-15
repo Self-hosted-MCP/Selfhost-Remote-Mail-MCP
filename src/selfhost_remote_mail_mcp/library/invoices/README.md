@@ -26,18 +26,18 @@ Your business name, address and tax number. The client's name, address and tax n
 
 ## Turn it on
 
-```bash
-selfhost-remote-mail-mcp addons enable invoices
-```
+On the settings page, open the **Add-ons** tab and press **Turn on**. Then press **Set up** and fill in your details. Or ask your AI app: it gives you the link. Other ways: [the library page](../README.md#turn-one-on-and-set-it-up).
 
-Or press **Turn on** in the **Add-ons** tab of the settings page, or add `invoices` to `MAIL_ADDONS`. More ways: [the library page](../README.md#turn-one-on). Like `pdf_maker`, it needs `fpdf2` from the add-on extras (the Docker image has it).
+It needs `fpdf2` from the add-on extras (the Docker image has it).
 
 ## Settings
+
+Fill these in on the add-on's **Set up** page. The names below are for the settings file, if you use one instead (it wins over the page).
 
 | Setting | Required | What it does |
 |---|---|---|
 | `INVOICES_SELLER_NAME` | Yes | Your name or business name |
-| `INVOICES_SELLER_ADDRESS` | No | Your address. Use `\n` between lines |
+| `INVOICES_SELLER_ADDRESS` | No | Your address. In the settings file, use `\n` between lines |
 | `INVOICES_SELLER_TAX_ID` | For invoices | Your tax number (VAT number) |
 | `INVOICES_PAYMENT` | No | How to pay, e.g. `Bank transfer\nIBAN PT50 ...`. Shown on proformas and invoices |
 | `INVOICES_CURRENCY` | No | Default `EUR` |

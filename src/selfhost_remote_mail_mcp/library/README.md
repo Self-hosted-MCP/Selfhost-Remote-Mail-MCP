@@ -18,23 +18,19 @@ Add-ons that need extra packages: the Docker image has them all. On a computer, 
 
 More are added with new versions. Ideas are welcome in the [Share an add-on](https://github.com/s17sh70x2jfl031ag/Selfhost-Remote-Mail-MCP/issues/new?template=addon.yml) form.
 
-## Turn one on
+## Turn one on and set it up
 
-**On the settings page** (the web version): open the **Add-ons** tab and press **Turn on**. It works right away; start a new chat in your AI app to use it. If the add-on needs settings (its page says which), add them too.
+Everything happens on the settings page of the web version:
 
-**On your computer:**
+1. Open the **Add-ons** tab and press **Turn on**. It works right away.
+2. If the add-on needs details (like your business name for invoices), its row says **Needs setting up**. Press **Set up**, fill in the form and press **Save**. The details are saved on your server, encrypted.
+3. Start a new chat in your AI app to use it.
 
-```bash
-selfhost-remote-mail-mcp addons enable calendar_invite
-```
+You can also just ask your AI app, for example *"I want to make invoices"*. It can't turn add-ons on or type your details itself (so an email can never trick it into changing your bank details), but it gives you the link to the right setup page.
 
-It adds the name to `MAIL_ADDONS` in your settings file and checks that it loads. Then restart your AI app.
+**Without the web version** (the server only on your computer, started by your AI app): use the command line instead. `selfhost-remote-mail-mcp addons list` shows them, `addons enable invoices` turns one on, and its details go in your settings file (each add-on's page lists the names, like `INVOICES_SELLER_NAME`).
 
-**On a hosting company** (Railway, Render and others): add the name to the `MAIL_ADDONS` variable, like `MAIL_ADDONS=calendar_invite`. Several are separated by commas. The host restarts by itself.
-
-**On your own server (Docker Compose):** add the name to `MAIL_ADDONS` in your `.env` file, then run `docker compose up -d`.
-
-To see them all: `selfhost-remote-mail-mcp addons list`. To turn one off: `selfhost-remote-mail-mcp addons disable calendar_invite`, or remove it from `MAIL_ADDONS`.
+Settings in the settings file or your host's variables still work and win over the setup page. Most people never need them.
 
 ## For AI coding agents
 

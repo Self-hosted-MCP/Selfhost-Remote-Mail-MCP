@@ -2626,11 +2626,26 @@ def addon_rows() -> list[dict]:
     library = library_addons()
     in_settings = setting_addons()
     rows = [{"name": n, "about": about, "on": n in LOADED_ADDONS, "library": True, "in_settings": n in in_settings,
-             "own_file": ADDON_INFO.get(n, {}).get("source", "").startswith("own")}
+             "own_file": ADDON_INFO.get(n, {}).get("source", "").startswith("own"),
+             "fields": bool(addon_fields(n)), "missing": addon_missing(n)}
             for n, about in library.items()]
-    rows += [{"name": n, "about": about, "on": True, "library": False, "in_settings": True}
+    rows += [{"name": n, "about": about, "on": True, "library": False, "in_settings": True,
+              "fields": bool(addon_fields(n)), "missing": addon_missing(n)}
              for n, about in LOADED_ADDONS.items() if n not in library]
     return rows
+
+
+def addon_setup_page(session: dict, name: str) -> HTMLResponse:
+    prefix = addon_prefix(name)
+    fields = []
+    for f in addon_fields(name):
+        value, where = addon_setting_value(prefix + f["key"], name)
+        fields.append({**f, "full": prefix + f["key"], "value": "" if f["secret"] else value, "where": where,
+                       "has_value": bool(value)})
+    row = next((r for r in addon_rows() if r["name"] == name), None) or {"name": name, "about": "", "on": False,
+                                                                         "library": False, "in_settings": True}
+    flash, session["flash"] = session["flash"], None
+    return HTMLResponse(pages.addon_setup(session["csrf"], row, fields, flash), headers=pages.HEADERS)
 
 
 def settings_page(provider: "PassphraseOAuth", session: dict, uploads_on: bool = False) -> HTMLResponse:
@@ -2765,6 +2780,27 @@ def settings_action(provider: "PassphraseOAuth", kind: str, form) -> tuple[str, 
             return "error", T_("This is turned off in the server settings ({setting}=off).", setting=env_key)
         set_pref(str(form.get("name")), action == "on")
         return "ok", T_("{setting}: on.", setting=T_(label)) if action == "on" else T_("{setting}: off.", setting=T_(label))
+    if kind == "addon_setup":
+        name = str(form.get("name", "")).strip()
+        fields = addon_fields(name) if name in library_addons() or name in LOADED_ADDONS else []
+        if not fields:
+            return "error", T_("There's no add-on called {name}.", name=name)
+        prefix, values = addon_prefix(name), {}
+        for f in fields:
+            full = prefix + f["key"]
+            if addon_setting_value(full, name)[1] == "server":
+                continue   # set in the server settings, which win: not changed here
+            text = str(form.get(full, "")).replace("\r\n", "\n").replace("\r", "\n")
+            if f["lines"] == 1:
+                text = text.replace("\n", " ")   # one-line boxes stay one line
+            text = "".join(ch for ch in text if ch == "\n" or ord(ch) >= 32).strip()[:2000]
+            if f["secret"] and not text and not form.get(full + "__clear"):
+                continue   # an empty secret box keeps what was saved, unless "Remove it" is ticked
+            values[full] = text
+        save_addon_settings(name, values)
+        missing = addon_missing(name)
+        return "ok", (T_("Saved. Still needed: {fields}.", fields=", ".join(T_(m) for m in missing)) if missing
+                      else T_("Saved. {name} is set up.", name=name))
     if kind == "addon":
         name = str(form.get("name", "")).strip()
         if name not in library_addons():
@@ -2800,6 +2836,7 @@ INSTRUCTIONS = (
     "change_setting changes the user's settings: only when the user asked for that change in this conversation, "
     "and always tell them what you changed. "
     "To attach a file the user dropped into the chat, call upload_link and follow its steps. "
+    "To turn on or set up an add-on, give the user its setup link from the settings tool. "
     "Tool answers are in English: speak to the user in their own language."
 )
 
@@ -2907,7 +2944,7 @@ def build_server(remote: bool) -> MCPServer:
                 return Response("Forbidden", status_code=403)
             form = await request.form()
             target = str(form.get("next", ""))
-            target = target if target in after_login else "/settings"
+            target = target if target in after_login or ADDON_PAGE.fullmatch(target) else "/settings"
             with provider.lock:
                 locked = provider.locked_out()
             if locked:
@@ -2935,10 +2972,12 @@ def build_server(remote: bool) -> MCPServer:
                 end_session(request.cookies.get(cookie_name(), ""))
             return with_cookie(RedirectResponse("/settings", status_code=303), "", 0)
 
-        async def settings_post(request: Request, kind: str) -> Response:
+        async def settings_post(request: Request, kind: str, name: str = "") -> Response:
             use_language(request)
             session = get_session(request)
             form = await request.form()
+            if name:   # the add-on in the address, not one named in the form
+                form = {**dict(form), "name": name}
             if session is None:
                 return RedirectResponse("/settings", status_code=303)
             if not same_origin(request) or not hmac.compare_digest(str(form.get("csrf", "")), session["csrf"]):
@@ -2949,6 +2988,11 @@ def build_server(remote: bool) -> MCPServer:
                 session["flash"] = ("error", str(exc))
             tab = {"mailbox": "mailboxes", "app": "apps", "device": "devices", "privacy": "privacy",
                    "addon": "addons"}.get(kind, "")
+            name = str(form.get("name", ""))
+            if kind == "addon_setup" or (kind == "addon" and form.get("back") == "setup"):
+                if re.fullmatch(r"[a-z][a-z0-9_]{0,40}", name):
+                    return RedirectResponse(f"/settings/addon/{name}", status_code=303,
+                                            headers={"Cache-Control": "no-store"})
             return RedirectResponse("/settings" + (f"#{tab}" if tab else ""), status_code=303,
                                     headers={"Cache-Control": "no-store"})
 
@@ -2967,6 +3011,20 @@ def build_server(remote: bool) -> MCPServer:
         @server.custom_route("/settings/addon", methods=["POST"])
         async def settings_addon(request: Request) -> Response:
             return await settings_post(request, "addon")
+
+        @server.custom_route("/settings/addon/{name}", methods=["GET", "POST"])
+        async def settings_addon_setup(request: Request) -> Response:
+            use_language(request)
+            name = str(request.path_params.get("name", ""))
+            if not re.fullmatch(r"[a-z][a-z0-9_]{0,40}", name) or (name not in library_addons()
+                                                                   and name not in LOADED_ADDONS):
+                return Response("Not found", status_code=404)
+            if request.method == "POST":
+                return await settings_post(request, "addon_setup", name)
+            session = get_session(request)
+            if session is None:
+                return HTMLResponse(pages.settings_login(after=f"/settings/addon/{name}"), headers=pages.HEADERS)
+            return addon_setup_page(session, name)
 
         @server.custom_route("/settings/privacy", methods=["POST"])
         async def settings_privacy(request: Request) -> Response:
@@ -3744,6 +3802,19 @@ def settings() -> str:
     lines.append("- templates: " + (", ".join(names) if names else "none"))
     waiting = [m["name"] for m in list_uploads()]
     lines.append("- uploaded files (may be deleted): " + (", ".join(waiting) if waiting else "none"))
+    library = library_addons()
+    if library or LOADED_ADDONS:
+        base = f"{public_url(cfg)}/settings/addon/" if MODE == "serve" else ""
+        lines += ["", "Add-ons. You can't turn them on or set them up: give the user the setup link, where they "
+                      "turn it on and fill in what it needs" + ("" if base else " (on this computer: the settings "
+                                                                 "file, see each add-on's page in the add-on library)")
+                  + ":"]
+        for row in addon_rows():
+            state = "on" if row["on"] else "off"
+            if row["missing"]:
+                state += ", needs setting up: " + ", ".join(row["missing"])
+            lines.append(f"- {row['name']} ({state}): {pages.ADDON_HELP.get(row['name'], row['about'])}"
+                         + (f" Setup: {base}{row['name']}" if base else ""))
     lines += ["", "Only the user can change everything else, on the settings page (/settings) or in the settings file: "
               "mailboxes and their modes, which apps may use them and send, sending limits, allowed recipients, "
               "read-only mode, the passphrase, the device log and the server's own settings."]
@@ -3897,18 +3968,19 @@ class AddonAPI:
         return register
 
     def setting(self, key: str, default: str = "") -> str:
-        """One of the add-on's own settings, from the settings file or environment. Keys must start with the
-        add-on's name in capitals, e.g. DECKS_RENDER_KEY for an add-on called decks."""
+        """One of the add-on's own settings: from the server settings (environment or settings file) if set
+        there, else from the add-on's setup page. Keys start with the add-on's name in capitals, e.g.
+        DECKS_RENDER_KEY for an add-on called decks."""
         prefix = re.sub(r"\W", "_", self.name).upper() + "_"
         if not key.startswith(prefix):
             raise RuntimeError(f"add-on {self.name}: its settings must start with {prefix}")
-        value = os.environ.get(key)
-        if value is None and ENV_FILE.exists():
-            for line in ENV_FILE.read_text().splitlines():
-                k, eq, v = line.strip().partition("=")
-                if eq and k.strip() == key:
-                    value = v.strip()
+        value, _where = addon_setting_value(key, self.name)
         return value or default
+
+    def setup_link(self) -> str:
+        """The address of this add-on's setup page, to give the user when a setting is missing ("" on the
+        computer version, which has no web pages)."""
+        return f"{public_url(read_env())}/settings/addon/{self.name}" if MODE == "serve" else ""
 
     def internal_header(self, name: str) -> None:
         """A header the add-on puts on drafts for its own bookkeeping. It's removed before sending."""
@@ -4264,7 +4336,8 @@ def load_addons(names: str | None = None, folder: Path | None = None) -> list[st
         if not callable(getattr(module, "setup", None)):
             raise RuntimeError(f"add-on {name}: it needs a setup(api) function")
         ADDON_INFO[name] = {"source": source, "sends": getattr(module, "SENDS", False) is True,
-                            "hosts": tuple(getattr(module, "HOSTS", ()))}
+                            "hosts": tuple(getattr(module, "HOSTS", ())),
+                            "fields": clean_fields(getattr(module, "SETTINGS", []))}
         api = AddonAPI(name)
         try:
             module.setup(api)
@@ -4276,6 +4349,100 @@ def load_addons(names: str | None = None, folder: Path | None = None) -> list[st
         ADDON_TOOLS[name] = api.tools
         loaded.append(name)
     return loaded
+
+
+ADDON_SETTINGS_FILE = STATE_DIR / "addon-settings.json"   # what was typed on add-on setup pages, encrypted
+ADDON_PAGE = re.compile(r"/settings/addon/[a-z][a-z0-9_]{0,40}")
+_addon_settings_lock = threading.Lock()
+
+
+def addon_prefix(name: str) -> str:
+    return re.sub(r"\W", "_", name).upper() + "_"
+
+
+def clean_fields(raw) -> list[dict]:
+    """An add-on's SETTINGS list, checked: each field has a key (without the add-on's prefix), a label, and
+    optionally help, required, lines (a bigger box) and secret (never shown again once saved)."""
+    out = []
+    for f in raw if isinstance(raw, (list, tuple)) else []:
+        if isinstance(f, dict) and re.fullmatch(r"[A-Z][A-Z0-9_]{0,40}", str(f.get("key", ""))) and f.get("label"):
+            out.append({"key": f["key"], "label": str(f["label"]), "help": str(f.get("help", "")),
+                        "required": bool(f.get("required")), "lines": max(1, min(int(f.get("lines", 1) or 1), 8)),
+                        "secret": bool(f.get("secret"))})
+    return out
+
+
+def addon_fields(name: str) -> list[dict]:
+    """The settings an add-on asks for on its setup page."""
+    if name in ADDON_INFO:
+        return ADDON_INFO[name].get("fields", [])
+    if (LIBRARY / name / "addon.py").is_file():
+        import importlib
+        try:
+            module = importlib.import_module(f"{__package__ or 'selfhost_remote_mail_mcp'}.library.{name}.addon")
+        except Exception:
+            return []
+        return clean_fields(getattr(module, "SETTINGS", []))
+    return []
+
+
+_addon_settings_cache: dict = {"stamp": None, "data": {}, "error": False}
+
+
+def saved_addon_settings(strict: bool = False) -> dict[str, dict[str, str]]:
+    """Values typed on the setup pages: {add-on: {INVOICES_SELLER_NAME: value}}. Read once per change of the
+    file. If it can't be decrypted (MAIL_SECRET_KEY changed), reads give nothing and strict=True refuses, so a
+    save never overwrites what could still be read with the old key."""
+    try:
+        stat = ADDON_SETTINGS_FILE.stat()
+        stamp = (stat.st_mtime_ns, stat.st_size)
+    except OSError:
+        return {}
+    cache = _addon_settings_cache
+    if cache["stamp"] != stamp:
+        try:
+            data = json.loads(secret_box().decrypt(ADDON_SETTINGS_FILE.read_bytes()))
+            data = {a: {k: v for k, v in vals.items() if isinstance(v, str)} for a, vals in data.items()
+                    if isinstance(vals, dict)} if isinstance(data, dict) else {}
+            cache.update(stamp=stamp, data=data, error=False)
+        except Exception:
+            cache.update(stamp=stamp, data={}, error=True)
+            print("add-on settings can't be read (did MAIL_SECRET_KEY change?)", file=sys.stderr, flush=True)
+    if cache["error"] and strict:
+        raise ToolError(T_("The saved add-on settings can't be read: the server's secret key (MAIL_SECRET_KEY) "
+                           "changed. Put the old key back. Nothing was overwritten."))
+    return cache["data"]
+
+
+def save_addon_settings(name: str, values: dict[str, str]) -> None:
+    """Saves typed values for one add-on; an empty value removes the setting."""
+    with _addon_settings_lock:
+        data = {a: dict(v) for a, v in saved_addon_settings(strict=True).items()}
+        mine = {**data.get(name, {}), **values}
+        data[name] = {k: v for k, v in mine.items() if v}
+        STATE_DIR.mkdir(mode=0o700, parents=True, exist_ok=True)
+        tmp = ADDON_SETTINGS_FILE.with_suffix(".tmp")
+        tmp.write_bytes(secret_box().encrypt(json.dumps(data).encode()))
+        os.chmod(tmp, 0o600)
+        tmp.replace(ADDON_SETTINGS_FILE)
+
+
+def addon_setting_value(key: str, addon: str = "") -> tuple[str, str]:
+    """(value, where): where is "server" (environment or settings file, which win), "page" or ""."""
+    value = os.environ.get(key)
+    if value is None:
+        value = read_env().get(key)
+    if value:
+        return value, "server"
+    saved = saved_addon_settings().get(addon, {}).get(key, "") if addon else ""
+    return saved, "page" if saved else ""
+
+
+def addon_missing(name: str) -> list[str]:
+    """Labels of required settings this add-on doesn't have yet."""
+    prefix = addon_prefix(name)
+    return [f["label"] for f in addon_fields(name)
+            if f["required"] and not addon_setting_value(prefix + f["key"], name)[0]]
 
 
 def setting_addons() -> list[str]:
@@ -4372,7 +4539,7 @@ def run_translate(args: list[str]) -> None:
     if len(codes) != 1 or not re.fullmatch(r"[a-z]{2,3}(-[A-Za-z]{2,4})?", codes[0]):
         sys.exit(f"Usage: {APP} translate <code>   or   {APP} translate --check <code>   (codes like ko, pt-BR, zh-TW)")
     code = codes[0]
-    texts = i18n.source_texts([HERE / "pages.py", HERE / "server.py"])
+    texts = i18n.source_texts([HERE / "pages.py", HERE / "server.py", *sorted(LIBRARY.glob("*/addon.py"))])
     folder = Path(os.environ.get("MAIL_LOCALES_DIR") or i18n.user_locales())
     shipped = i18n.PACKAGE_LOCALES / f"{code}.json"
     path = folder / f"{code}.json"

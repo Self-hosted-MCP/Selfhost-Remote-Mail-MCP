@@ -2,6 +2,12 @@
 
 All notable changes to this project. Versions follow [semantic versioning](https://semver.org).
 
+## 0.12.0 (2026-10-14)
+
+- **A setup page for each add-on:** the Add-ons tab has a **Set up** button that opens the add-on's own page, with its on/off button and a form for the details it needs (for invoices: your business name, address, tax number, payment details, tax rate). Saved encrypted on your server and used right away. An add-on missing something shows **Needs setting up**. The settings file and host variables still work and win.
+- **The AI gives you the link:** it can't turn add-ons on or type your details, but the `settings` tool lists every add-on with its setup link, and an add-on missing a detail answers with the link too.
+- **For add-on writers:** a `SETTINGS` list at the top of an add-on makes its setup form; `api.setup_link()` gives the page's address.
+
 ## 0.11.0 (2026-10-14)
 
 - **Settings page in tabs:** each tab (Mailboxes, Apps, Privacy, Devices, ...) now shows only its own section instead of one long page, and after saving a form you stay on its tab.

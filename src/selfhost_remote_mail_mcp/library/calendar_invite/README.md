@@ -13,13 +13,11 @@ It adds one tool, `add_invite`. The draft gets the invite as `invite.ics`. Nothi
 
 ## Turn it on
 
-```bash
-selfhost-remote-mail-mcp addons enable calendar_invite
-```
-
-Or press **Turn on** in the **Add-ons** tab of the settings page, or add `calendar_invite` to `MAIL_ADDONS`. More ways: [the library page](../README.md#turn-one-on).
+On the settings page, open the **Add-ons** tab and press **Turn on**. It works without any setup; **Set up** lets you add your address as the organizer. Or ask your AI app: it gives you the link. Other ways: [the library page](../README.md#turn-one-on-and-set-it-up).
 
 ## Settings
+
+Fill these in on the add-on's **Set up** page. The names below are for the settings file, if you use one instead (it wins over the page).
 
 | Setting | Required | What it does |
 |---|---|---|

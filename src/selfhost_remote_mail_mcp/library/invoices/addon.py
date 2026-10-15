@@ -4,7 +4,23 @@ import datetime as dt
 from decimal import ROUND_HALF_UP, Decimal, InvalidOperation
 from typing_extensions import TypedDict   # pydantic needs this one on Python 3.11
 
+from selfhost_remote_mail_mcp.i18n import N_
+
 NEEDS = ["fpdf"]
+SETTINGS = [   # shown on the add-on's setup page (the server settings can set them too: INVOICES_<key>)
+    {"key": "SELLER_NAME", "label": N_("Your name or business name"), "required": True},
+    {"key": "SELLER_ADDRESS", "label": N_("Your address"), "lines": 3},
+    {"key": "SELLER_TAX_ID", "label": N_("Your tax number (VAT number)"),
+     "help": N_("Needed on invoices. Quotes and proformas work without it.")},
+    {"key": "PAYMENT", "label": N_("How to pay you"), "lines": 3,
+     "help": N_("For example: Bank transfer, IBAN PT50 ... Shown on proformas and invoices.")},
+    {"key": "TAX_RATE", "label": N_("Usual tax rate, in percent"), "help": N_("For example 23. Empty means 0.")},
+    {"key": "TAX_LABEL", "label": N_("Name of the tax"), "help": N_("For example VAT, IVA or MwSt. Empty means VAT.")},
+    {"key": "CURRENCY", "label": N_("Currency"), "help": N_("A three-letter code, for example EUR or USD. Empty means EUR.")},
+    {"key": "DUE_DAYS", "label": N_("Days to pay"), "help": N_("Empty means 30.")},
+    {"key": "VALID_DAYS", "label": N_("Days a quote stays valid"), "help": N_("Empty means 30.")},
+    {"key": "TIMEZONE", "label": N_("Your time zone"), "help": N_("For example Europe/Lisbon, so documents get your date.")},
+]
 
 KINDS = {"quote": ("Quote", "QUOTE_PREFIX", "Q"), "proforma": ("Proforma invoice", "PROFORMA_PREFIX", "PF"),
          "invoice": ("Invoice", "INVOICE_PREFIX", "INV")}
@@ -122,11 +138,12 @@ def setup(api):
             raise api.ToolError('kind must be "quote", "proforma" or "invoice".')
         label, prefix_key, prefix_default = KINDS[kind]
         seller = s("SELLER_NAME")
+        where = (f"on the add-on's setup page: {api.setup_link()} (give the user this link)" if api.setup_link()
+                 else "in the settings file (INVOICES_SELLER_NAME and the others, see the add-on's page)")
         if not seller:
-            raise api.ToolError("Add your business name first: the setting INVOICES_SELLER_NAME (plus "
-                                "INVOICES_SELLER_ADDRESS and INVOICES_SELLER_TAX_ID) in the server's settings.")
+            raise api.ToolError(f"The user's business details aren't set up yet. They add them {where}.")
         if kind == "invoice" and not s("SELLER_TAX_ID"):
-            raise api.ToolError("An invoice needs your tax number: add the setting INVOICES_SELLER_TAX_ID.")
+            raise api.ToolError(f"An invoice needs the user's tax number. They add it {where}.")
         if not client_name.strip():
             raise api.ToolError("client_name is needed.")
         if not 1 <= len(items) <= 100:

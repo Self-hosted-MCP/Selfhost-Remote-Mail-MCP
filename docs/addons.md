@@ -36,7 +36,7 @@ Nothing new opens to the internet. Add-on tools live at the same address, behind
 
 The server comes with ready-made add-ons, all off by default. Each one has a page that says what it does, what to ask your AI app, its settings, and whether it talks to an outside service or sends email by itself: **[the add-on library](../src/selfhost_remote_mail_mcp/library/README.md)**.
 
-To turn one on in the web version, open the settings page, go to the **Add-ons** tab and press **Turn on**. It works right away, without a restart: start a new chat in your AI app to see the new tools. **Turn off** works the same way.
+To turn one on in the web version, open the settings page, go to the **Add-ons** tab and press **Turn on**. It works right away, without a restart: start a new chat in your AI app to see the new tools. **Turn off** works the same way. If it needs details (like your business name), press **Set up** and fill them in there. Your AI app can give you the link to any add-on's setup page.
 
 On your computer:
 
@@ -118,6 +118,18 @@ currency = api.setting("MY_QUOTES_CURRENCY", "EUR")     # with a default
 
 Keep secrets like API keys in settings, never in the file itself.
 
+To let people fill them in on the settings page, list them at the top of the file, outside `setup`. Each one gets a box on the add-on's **Set up** page, and `api.setting` reads what was saved there (the settings file and hosting variables still win):
+
+```python
+SETTINGS = [
+    {"key": "CLIENT_NAME", "label": "Your company name", "required": True},
+    {"key": "NOTES", "label": "Text under every quote", "lines": 3},
+    {"key": "API_KEY", "label": "Price list API key", "secret": True, "help": "From your account page."},
+]
+```
+
+`key` is the part after your add-on's prefix (`MY_QUOTES_CLIENT_NAME`). `required` shows **Needs setting up** until it's filled. `secret` boxes are never shown again once saved. When a required setting is missing, tell the user where to add it: `api.setup_link()` is the address of your setup page (empty on the computer version).
+
 ### 4. Change drafts
 
 Most add-ons attach something to a draft. The AI makes the draft with the built-in `draft` tool, then calls your tool with its ID:
@@ -165,6 +177,7 @@ def setup(api):
 | `api.add_file(msg, name, mime_type, data, clean=True)` | Attaches a file, with the same checks as every new file: programs and suspect files are refused. `clean=True` removes photo location and document authors, like for files from the AI. Use `clean=False` only for files your add-on made itself |
 | `api.internal_header(name)` | Registers a private draft header (starts with `X-`). It's removed before sending |
 | `api.on_sent_copy(function)` | `function(copy, headers)` may change the copy saved in Sent, never what was sent |
+| `api.setup_link()` | The address of the add-on's setup page, to give the user when a setting is missing |
 | `api.log(text)` | Writes a line to the server's log |
 | `api.ToolError` | Raise it to refuse with a message for the AI |
 

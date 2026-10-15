@@ -108,7 +108,8 @@ def test_the_translate_command(locales, capsys):
 def test_every_page_text_is_marked_for_translation():
     """Catches a new English sentence added to a page without _(): every text between tags on a fully drawn page
     must be translatable (or be a name, address, number or code)."""
-    texts = set(i18n.source_texts([server.HERE / "pages.py", server.HERE / "server.py"]))
+    texts = set(i18n.source_texts([server.HERE / "pages.py", server.HERE / "server.py",
+                                   *sorted(server.LIBRARY.glob("*/addon.py"))]))
     assert len(texts) > 150
     import html as htmllib
     pieces = [f.strip(" .") for t in texts for f in re.split(r"<[^>]+>", t) if f.strip(" .")]
@@ -128,7 +129,15 @@ def test_every_page_text_is_marked_for_translation():
                                {"name": "decks", "about": "", "on": True, "library": False}])
     files = pages.uploads("t", [{"code": "F-AAAAAA", "name": "a.pdf", "size_text": "1 MB", "level": "suspect",
                                  "why": "x", "used": True, "minutes_left": 30}], None, "25 MB", ".pdf")
-    html = (pages.uploads("t", [], None, "25 MB", ".pdf") + pages.settings_login() + pages.upload_link() + full + files
+    setup_fields = [{**f, "full": "INVOICES_" + f["key"], "value": "", "where": w, "has_value": w == "server"}
+                    for f, w in zip(server.addon_fields("invoices"), ["", "server"] + [""] * 20)]
+    setup_fields.append({"key": "K", "label": "Your name or business name", "help": "", "required": False,
+                         "lines": 1, "secret": True, "full": "X_K", "value": "", "where": "page", "has_value": True})
+    html = (pages.addon_setup("t", {"name": "invoices", "about": "", "on": True, "library": True, "in_settings": False},
+                              setup_fields, ("ok", "x"))
+            + pages.addon_setup("t", {"name": "pdf_maker", "about": "", "on": True, "library": True,
+                                      "in_settings": True}, [], None)
+            + pages.uploads("t", [], None, "25 MB", ".pdf") + pages.settings_login() + pages.upload_link() + full + files
             + pages.login("Claude", "claude.ai", "r", [("a@example.com", "full", ""), ("b@example.com", "read", "")])
             + pages.login(None, None, "r", []) + pages.upload_link(done={"name": "a", "level": "safe", "why": ""}))
     for chunk in re.findall(r">([^<>{}]*[a-z]{3,}[^<>{}]*)<", html):

@@ -109,9 +109,9 @@ h2::before{content:"";width:6px;height:6px;border-radius:2px;background:var(--pi
 h2:first-child{margin-top:0}
 .lead{margin:0 0 16px;color:var(--ink-soft)}
 label{display:block;font-weight:650;margin:0 0 8px}
-input,select{width:100%;font:inherit;font-size:1.02rem;padding:12px 14px;border-radius:12px;border:1.5px solid var(--line);
+input,select,textarea{width:100%;font:inherit;font-size:1.02rem;padding:12px 14px;border-radius:12px;border:1.5px solid var(--line);
 background:var(--field);color:var(--ink);transition:border-color .15s}
-input:focus,select:focus{outline:3px solid color-mix(in srgb,var(--brand) 35%,transparent);outline-offset:1px;border-color:var(--brand)}
+input:focus,select:focus,textarea:focus{outline:3px solid color-mix(in srgb,var(--brand) 35%,transparent);outline-offset:1px;border-color:var(--brand)}
 button{font:inherit;font-weight:700;font-size:1.02rem;padding:13px 18px;border:0;border-radius:12px;background:var(--brand);
 color:var(--on-brand);cursor:pointer;box-shadow:0 8px 18px -10px var(--brand);transition:background .15s,transform .1s}
 button:hover{background:var(--brand-deep)}
@@ -122,6 +122,16 @@ button.quiet{background:transparent;color:var(--ink);border:1.5px solid var(--li
 button.quiet:hover{border-color:var(--ink-soft);background:transparent}
 button.danger{background:transparent;color:var(--error);border:1.5px solid color-mix(in srgb,var(--error) 45%,transparent);box-shadow:none;padding:9px 14px;font-size:.95rem}
 button.danger:hover{background:var(--error-bg)}
+a.button{display:inline-block;text-decoration:none;border-radius:12px}
+a.button.quiet{color:var(--ink);border:1.5px solid var(--line);font-weight:650;padding:9px 14px;font-size:.95rem}
+a.button.quiet:hover{border-color:var(--ink-soft)}
+textarea{resize:vertical;line-height:1.45}
+.badge.todo{background:var(--warn-bg);color:var(--warn)}
+.actions.tight{margin-top:0;flex-wrap:nowrap}
+form.stack{display:grid;gap:16px;margin-top:14px}
+form.stack .hint{margin:6px 0 0}
+label.check{display:flex;align-items:center;gap:8px;font-weight:500;margin:8px 0 0}
+label.check input{width:auto;margin:0}
 .msg{display:flex;gap:10px;align-items:flex-start;margin:0 0 18px;padding:12px 14px;border-radius:12px;font-weight:600}
 .msg svg{width:20px;height:20px;flex:none;margin-top:2px}
 .msg.error{background:var(--error-bg);color:var(--error)}
@@ -236,6 +246,55 @@ def panel_css(names: list[str]) -> str:
     rules[-1] += ",".join([""] + [f'main:has(#{n}:target,#{n} :target) .tabs a[href="#{n}"]' for n in names])
     rules[-1] += "{background:var(--chip);color:var(--chip-ink)}}"   # without :has (old browsers): all sections show
     return "<style>" + "".join(rules) + "</style>"
+
+
+def addon_setup(csrf: str, addon: dict, fields: list[dict], flash: tuple[str, str] | None) -> str:
+    """One add-on's own page: turn it on or off, and fill in the settings it needs. fields: dicts with full,
+    label, help, required, lines, secret, value, where ("server", "page" or ""), has_value."""
+    name = addon["name"]
+    parts = [f'<p><a href="/settings#addons">← {esc(_("Back to add-ons"))}</a></p>', message(*flash) if flash else ""]
+    state = (f'<span class="badge lime">{esc(_("On"))}</span>' if addon["on"]
+             else f'<span class="badge">{esc(_("Off"))}</span>')
+    toggle = ""
+    if addon.get("library") and not addon.get("in_settings"):
+        toggle = _post("/settings/addon", csrf, {"name": name, "action": "off" if addon["on"] else "on", "back": "setup"},
+                       _("Turn off") if addon["on"] else _("Turn on"), "primary" if not addon["on"] else "quiet")
+    elif addon.get("in_settings") and addon["on"]:
+        state += f' <span class="badge">{esc(_("In server settings"))}</span>'
+    parts.append(f'<div class="list"><div class="item"><div class="file-row"><div class="grow"><b><code>{esc(name)}</code> '
+                 f'{state}</b></div>{toggle}</div></div></div>')
+    if fields:
+        rows = []
+        for f in fields:
+            fid = "f_" + f["full"].lower()
+            label = esc(_(f["label"])) + ("" if f["required"] else f' <span class="hint">{esc(_("optional"))}</span>')
+            hint = f'<p class="hint">{esc(_(f["help"]))}</p>' if f["help"] else ""
+            if f["where"] == "server":
+                rows.append(f'<div><label>{label}</label><p class="lead"><b>{esc(f["value"]) if not f["secret"] else "••••••"}</b> '
+                            f'<span class="badge">{esc(_("In server settings"))}</span></p></div>')
+                continue
+            placeholder = esc(_("Saved. Type to replace it.")) if f["secret"] and f["has_value"] else ""
+            if f["lines"] > 1 and not f["secret"]:
+                box = (f'<textarea id="{fid}" name="{esc(f["full"])}" rows="{f["lines"]}">{esc(f["value"])}</textarea>')
+            else:
+                kind = "password" if f["secret"] else "text"
+                box = (f'<input id="{fid}" type="{kind}" name="{esc(f["full"])}" value="{esc(f["value"])}" '
+                       f'placeholder="{placeholder}" autocomplete="off">')
+                if f["secret"] and f["has_value"]:
+                    box += (f'<label class="check"><input type="checkbox" name="{esc(f["full"])}__clear" value="1"> '
+                            f'{esc(_("Remove it"))}</label>')
+            rows.append(f'<div><label for="{fid}">{label}</label>{box}{hint}</div>')
+        parts.append(f'<h2>{esc(_("Set up"))}</h2><p class="lead">'
+                     + esc(_("Saved on your server, encrypted. Changes count right away.")) + "</p>"
+                     f'<form method="post" action="/settings/addon/{esc(name)}" class="stack">{_csrf(csrf)}'
+                     f'<input type="hidden" name="name" value="{esc(name)}">{"".join(rows)}'
+                     f'<div class="actions"><button class="primary" type="submit">{esc(_("Save"))}</button></div></form>')
+    else:
+        parts.append(f'<p class="lead">{esc(_("This add-on needs no settings."))}</p>')
+    if addon.get("library"):
+        parts.append(f'<p class="hint"><a href="{LIBRARY_URL}/{esc(name)}">{esc(_("What it does and what to ask your AI app"))}</a></p>')
+    about = _(ADDON_HELP[name]) if name in ADDON_HELP else addon.get("about", "")
+    return page(f'<span class="hl">{esc(name)}</span>', esc(about), "".join(parts))
 
 
 def message(kind: str, text: str) -> str:
@@ -579,9 +638,15 @@ def settings(csrf: str, mailboxes: list[dict], apps: list[dict], flash: tuple[st
                     if a["library"] and not a.get("own_file") else "")
             if a["library"] and a.get("in_settings") and a["on"]:
                 state += f' <span class="badge">{esc(_("In server settings"))}</span>'
-            button = (_post("/settings/addon", csrf, {"name": a["name"], "action": "off" if a["on"] else "on"},
-                            _("Turn off") if a["on"] else _("Turn on"))
-                      if a["library"] and not a.get("in_settings") else "")
+            if a.get("missing"):
+                state += f' <span class="badge todo">{esc(_("Needs setting up"))}</span>'
+            buttons = []
+            if a.get("fields") and re.fullmatch(r"[a-z][a-z0-9_]{0,40}", a["name"]):
+                buttons.append(f'<a class="button quiet" href="/settings/addon/{esc(a["name"])}">{esc(_("Set up"))}</a>')
+            if a["library"] and not a.get("in_settings"):
+                buttons.append(_post("/settings/addon", csrf, {"name": a["name"], "action": "off" if a["on"] else "on"},
+                                     _("Turn off") if a["on"] else _("Turn on")))
+            button = f'<div class="actions tight">{"".join(buttons)}</div>' if buttons else ""
             rows.append(f'<div class="item"><div class="file-row"><div class="grow"><b><code>{esc(a["name"])}</code> '
                         f'{state}</b><span class="muted">{esc(about_text)} {link}</span></div>{button}</div></div>')
         parts.append(f'<div class="list">{"".join(rows)}</div>' if rows else
