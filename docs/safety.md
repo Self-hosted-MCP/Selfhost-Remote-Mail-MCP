@@ -29,6 +29,8 @@ Start careful. Loosen it once you trust how your AI behaves.
 
 **Careful (good for the first week)**
 
+Give your mailbox the mode **read only** on the settings page. To turn every mailbox read only at once, put this in the settings file instead:
+
 ```
 MAIL_READ_ONLY=on
 ```

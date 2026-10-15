@@ -63,7 +63,7 @@ Railway and Render have step-by-step instructions above, but you can use any ser
 | A **persistent volume** at `/data` | Keeps logins, the send log and mailboxes added on the settings page | "Volume", "disk" or "persistent storage" |
 | **Always on** | Scheduled emails go out only while it runs | Turn off "scale to zero", "sleep" or "auto stop" |
 | **One** copy | Two copies with separate data could send a scheduled email twice | "Instances", "replicas" or "scale" = 1 |
-| Secret variables | Mail passwords, `LOGIN_PASSPHRASE`, `MAIL_SECRET_KEY` | "Secrets", "environment" or "variables" |
+| Secret variables | `LOGIN_PASSPHRASE`, `MAIL_SECRET_KEY` (and mail passwords, only if you set mailboxes as variables) | "Secrets", "environment" or "variables" |
 
 **Some options, and what their docs say** (October 2026; services change, so check)
 
@@ -84,17 +84,17 @@ Without a persistent volume the server still works: you log in again after each 
 ## Check that it works
 
 1. Open your address plus `/health` in a browser, for example `https://your-mail.up.railway.app/health`. It should show `ok`.
-2. If it doesn't, open the service's **Logs** (Railway: the **Deployments** tab, Render: the **Logs** tab). The last lines usually say what's wrong, for example a mail password the server couldn't log in with. See [troubleshooting.md](troubleshooting.md).
+2. If it doesn't, open the service's **Logs** (Railway: the **Deployments** tab, Render: the **Logs** tab). The last lines usually say what's wrong, for example a missing passphrase. See [troubleshooting.md](troubleshooting.md).
+
+## Add your mailbox
+
+On your settings page (`https://your-address/settings`), use **Add a mailbox**: your email address, your name as people should see it, and your password or app password. Server names fill in for well-known providers, and the login is tested before anything is saved. Choose its **mode**: full, draft only or read only. Trying it out? Choose **read only**, and change it later on the same page. More mailboxes, signatures and the default mailbox: [mailboxes.md](mailboxes.md).
 
 ## More mailboxes
 
 Open `https://your-address/settings`, type your passphrase, and use **Add a mailbox**. Or add `MAIL_2_...` variables ([mailboxes.md](mailboxes.md)). Each mailbox gets a mode and a name, and each AI app only the mailboxes you tick.
 
 ## Make it safer
-
-## Add your mailbox
-
-On your settings page (`https://your-address/settings`), use **Add a mailbox**: your email address, your name as people should see it, and your password or app password. Server names fill in for well-known providers, and the login is tested before anything is saved. Choose its **mode**: full, draft only or read only. Trying it out? Choose **read only**, and change it later on the same page. More mailboxes, signatures and the default mailbox: [mailboxes.md](mailboxes.md).
 
 To make it safer, set `send_email` and `schedule_send` to **Always ask** in your AI app. To only ever send to people you list, add `SEND_ALLOWED_RECIPIENTS=you@example.com,@yourcompany.com` to the Variables (Railway) or Environment (Render). More in [safety.md](safety.md).
 

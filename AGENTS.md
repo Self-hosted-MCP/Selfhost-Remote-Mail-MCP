@@ -87,7 +87,7 @@ These are the product. A change that weakens one needs a very good reason and a 
 ## How things work
 
 - **Settings:** `read_env()` merges the `.env` file with environment variables (environment wins) and only takes keys listed in `SETTINGS` (plus numbered `MAIL_<n>_*` keys). **Add every new setting to `SETTINGS`**, to `.env.example` and to `docs/settings.md`.
-- **Mailboxes:** `all_accounts()` = `settings_accounts()` (MAIL_*, MAIL_2_* ..., the older READ_ONLY_* pair) then `web_accounts()` (settings page, encrypted), first address wins, capped at `MAX_MAILBOXES`, names from `labels.json`. `Mailboxes` routes 'public' folder names: plain = the request's first mailbox, `address:Folder` = another one; `Mailboxes.account()` also accepts a mailbox's name.
+- **Mailboxes:** `all_accounts()` = `settings_accounts()` (MAIL_*, MAIL_2_* ..., the older READ_ONLY_* pair) then `web_accounts()` (settings page, encrypted), first address wins, then the default (`MAIL_DEFAULT`, else the page's Make default in `prefs.json`) is moved first, capped at `MAX_MAILBOXES`, names from `labels.json`. `Mailboxes` routes 'public' folder names: plain = the request's first mailbox, `address:Folder` = another one; `Mailboxes.account()` also accepts a mailbox's name.
 - **IDs:** `folder#uid`, attachments `folder#uid#n`. IMAP UIDs change on move, so tools that move or rewrite a message return the new ID.
 - **Rewriting a draft:** IMAP can't edit a message, so `replace_draft()` appends the new version and deletes the old one. `schedule_send`, `hold` and `draft(edit=...)` all use this.
 - **Scheduled send:** the send time is the `X-Mail-MCP-Send-At` header on the draft (ISO 8601 with offset). `scheduler_loop()` runs only in `serve` (and not when `SCHEDULED_SEND=off`), wakes just after each minute and calls `run_scheduled_once()`.
@@ -113,11 +113,11 @@ When a person asks you to set this server up for them (on their computer, a host
 
 1. Ask where it should run, and offer the choices in [docs/setup-hosting.md](docs/setup-hosting.md#any-other-hosting-company) if they don't know. Let them decide. Don't pick a paid service for them.
 2. Tell them the cost before creating anything paid, and wait for a yes.
-3. Ask which mailboxes and providers, and point them to [docs/email-providers.md](docs/email-providers.md) for app passwords. They create app passwords themselves; never ask for their normal email password.
+3. Ask which mailboxes and providers, and point them to [docs/email-providers.md](docs/email-providers.md) for app passwords. They create app passwords themselves and add each mailbox on the settings page themselves (`/settings`, **Add a mailbox**); never ask for their normal email password.
 
 **Secrets**
 
-- Mail passwords, `LOGIN_PASSPHRASE` and `MAIL_SECRET_KEY` go into the host's secret store (or `.env` with `chmod 600` on their own server, or the system keychain via `setup --terminal` on a computer). Never into the repository, a commit, a chat message, a log or a file you create elsewhere.
+- Mail passwords are typed by the person on the settings page, which stores them encrypted. `LOGIN_PASSPHRASE` (or `LOGIN_HASH`) and `MAIL_SECRET_KEY` go into the host's secret store (or `.env` with `chmod 600` on their own server; on a computer `setup` sets the passphrase). Mailboxes in the settings file or the system keychain (`setup --terminal`) still work for people who prefer them. Secrets never go into the repository, a commit, a chat message, a log or a file you create elsewhere.
 - Prefer that the person types secrets into the host's dashboard themselves. If you set them through a CLI, don't echo them back.
 - Generate `MAIL_SECRET_KEY` as a long random value (for example `openssl rand -base64 32`). Let the person choose the passphrase, 12+ characters.
 - **Help them save the passphrase** before you finish, because they'll type it on every new device. Suggest their password manager (iCloud Keychain / Apple Passwords, Google Password Manager, 1Password, Bitwarden ...) with the server's address as the website, so their phone fills it in with Face ID or a fingerprint. Walk them through it if they ask, but never store the passphrase yourself, in a file, or in your notes.

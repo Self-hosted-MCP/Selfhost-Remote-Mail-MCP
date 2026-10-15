@@ -10,13 +10,15 @@ This server logs in to your mailbox the same way any mail app does: **IMAP** to 
 
 ## What the server needs
 
-| Setting | Example | Where it goes |
-|---|---|---|
-| Your address | `you@gmail.com` | `MAIL_ADDRESS` |
-| Password or app password | `abcd efgh ijkl mnop` | `MAIL_PASSWORD` |
-| IMAP server, port 993 | `imap.gmail.com` | `IMAP_HOST` (`IMAP_PORT` if not 993) |
-| SMTP server, port 465 or 587 | `smtp.gmail.com` | `SMTP_HOST` and `SMTP_PORT` |
-| Login name, only if it isn't your address | `you` | `MAIL_USERNAME` (and `SMTP_USERNAME` if sending needs a different one) |
+You type these on the settings page, under **Add a mailbox**. The server names and ports are under **Server settings** there, and fill in by themselves for the providers marked **auto** below.
+
+| What | Example | On the settings page | In the settings file instead |
+|---|---|---|---|
+| Your address | `you@gmail.com` | Email address | `MAIL_ADDRESS` |
+| Password or app password | `abcd efgh ijkl mnop` | Password or app password | `MAIL_PASSWORD` |
+| IMAP server, port 993 | `imap.gmail.com` | IMAP server, IMAP port | `IMAP_HOST`, `IMAP_PORT` |
+| SMTP server, port 465 or 587 | `smtp.gmail.com` | SMTP server, SMTP port | `SMTP_HOST`, `SMTP_PORT` |
+| Login name, only if it isn't your address | `you` | Login name (and Login name for sending, rarely needed) | `MAIL_USERNAME`, `SMTP_USERNAME` |
 
 **Ports.** IMAP must be 993 (SSL). Every provider on this page offers it. For SMTP, 465 means SSL from the start and 587 means STARTTLS. Both work: use the one your provider lists, or the first one in the tables.
 
@@ -177,7 +179,7 @@ Microsoft and Proton support are on the [roadmap](roadmap.md).
 
 ### iCloud
 
-Apple's IMAP login name is often just the part before the @ (`you`, not `you@icloud.com`), while sending needs the full address. Try your full address first. If the login fails:
+Apple's IMAP login name is often just the part before the @ (`you`, not `you@icloud.com`), while sending needs the full address. Try your full address first. If the login fails, open **Server settings** when adding the mailbox and set **Login name** to `you` and **Login name for sending** to `you@icloud.com`. In the settings file, that's:
 
 ```
 MAIL_USERNAME=you

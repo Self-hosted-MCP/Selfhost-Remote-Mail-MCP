@@ -1,6 +1,6 @@
 # Examples
 
-Starter files to copy into your settings folder (`~/.config/selfhost-remote-mail-mcp/` on a computer, `/data` in Docker). Edit them to sound like you. The server never reads this folder itself. You can also just ask your AI: *"Change my signature to ..."* or *"Save this as a template called thank-you"*.
+Starter files. Templates go in your settings folder (`~/.config/selfhost-remote-mail-mcp/` on a computer, `/data` in Docker); signatures are pasted into a mailbox's **Signature** box on the settings page. Edit them to sound like you. The server never reads this folder itself. You can also just ask your AI: *"Change my signature to ..."* or *"Save this as a template called thank-you"*.
 
 ## Signatures
 

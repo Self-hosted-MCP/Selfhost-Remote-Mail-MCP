@@ -9,12 +9,12 @@ The settings file is `~/.config/selfhost-remote-mail-mcp/.env`, or whatever `MAI
 
 ## Your mailbox (mailbox 1)
 
-Required unless you add every mailbox on the [settings page](mailboxes.md).
+Only if you'd rather set a mailbox here than on the [settings page](mailboxes.md), where most people add them. A mailbox set here can't be changed or removed on the page.
 
 | Setting | Required | Default | What it is |
 |---|---|---|---|
-| `MAIL_ADDRESS` | Yes | | Your email address |
-| `MAIL_PASSWORD` | Yes | | Password or app password ([email-providers.md](email-providers.md)) |
+| `MAIL_ADDRESS` | For this mailbox | | Your email address |
+| `MAIL_PASSWORD` | For this mailbox | | Password or app password ([email-providers.md](email-providers.md)) |
 | `IMAP_HOST` | Yes | | Server for reading, e.g. `imap.gmail.com` |
 | `SMTP_HOST` | Yes | | Server for sending, e.g. `smtp.gmail.com` |
 | `MAIL_LABEL` | | | A short name, like `Work` |

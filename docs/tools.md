@@ -152,10 +152,10 @@ The server explains every refusal in plain words. Your AI app usually passes it 
 
 With more than one mailbox ([mailboxes.md](mailboxes.md)):
 
-- **Mailbox 1 is the default.** Its folders have plain names; other mailboxes' folders start with their address, like `you@gmail.com:INBOX`. IDs follow the same rule, so every tool knows which mailbox an email is in.
+- **The default mailbox** (picked with **Make default** on the settings page, else the first one) has plain folder names; other mailboxes' folders start with their address, like `you@gmail.com:INBOX`. IDs follow the same rule, so every tool knows which mailbox an email is in.
 - **`account`** (on `folders` and `draft`) and **`scope`** (on `search`) take a mailbox's address *or its name*: `account="Work"`, `scope="Personal"`, `scope="all"`.
 - **`emails`** takes a mailbox address alone for its Inbox: `emails(folder="you@gmail.com")`.
-- **Replies and forwards** are drafted in the email's own mailbox (or the first that may draft, if that one is read only). **New emails** go to mailbox 1 unless `account` says otherwise.
+- **Replies and forwards** are drafted in the email's own mailbox (or the first that may draft, if that one is read only). **New emails** go to the default mailbox unless `account` says otherwise.
 - **`scheduled`** lists scheduled emails from every mailbox that may send.
 - **Contacts** come from every mailbox the app may use.
 - Each mailbox's **mode** is checked on every change: read-only mailboxes refuse changes, draft-only ones refuse sending.

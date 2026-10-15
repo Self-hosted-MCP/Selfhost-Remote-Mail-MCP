@@ -66,7 +66,7 @@ Skip Caddy and run only the `Dockerfile`:
 - **Port:** 8765 (or set `PORT`).
 - **Persistent storage:** mount a volume at `/data`.
 - **Health check:** `GET /health`.
-- **Environment:** your mail settings, `LOGIN_PASSPHRASE` and `PUBLIC_URL=https://your-domain`.
+- **Environment:** `LOGIN_PASSPHRASE`, `MAIL_SECRET_KEY` and `PUBLIC_URL=https://your-domain`. Then add your mailboxes on `https://your-domain/settings`.
 
 On Coolify, if a password contains `$`, tick **Is Literal** on that variable so it isn't changed.
 
@@ -99,7 +99,7 @@ Run the mail container with `-p 127.0.0.1:8765:8765` so only nginx can reach it,
 <details>
 <summary><b>Without Docker</b></summary>
 
-Install it with uv as in [setup-computer.md](setup-computer.md) (steps 1 and 2), choose a passphrase with `selfhost-remote-mail-mcp set-passphrase` (not `setup`, which makes a service that only runs while you're logged in), run `selfhost-remote-mail-mcp serve` as a systemd service, and put any HTTPS reverse proxy (Caddy, nginx, Traefik) in front of `127.0.0.1:8765`.
+Install it with uv as in [setup-computer.md](setup-computer.md) (steps 1 and 2), choose a passphrase with `selfhost-remote-mail-mcp set-passphrase` (not `setup`, which makes a service that only runs while you're logged in), set `MAIL_SECRET_KEY` and `PUBLIC_URL` in its settings file, run `selfhost-remote-mail-mcp serve` as a systemd service, and put any HTTPS reverse proxy (Caddy, nginx, Traefik) in front of `127.0.0.1:8765`. Then add your mailbox on `https://your-domain/settings`.
 
 </details>
 

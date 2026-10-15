@@ -9,7 +9,7 @@
 <summary>"The mail server refused the login"</summary>
 
 - Most providers need an **app password**, not your normal one ([email-providers.md](email-providers.md)).
-- Check `MAIL_USERNAME`: some hosts want a login name that isn't the full address.
+- Check the login name: some hosts want one that isn't the full address. On the settings page it's under the mailbox's **Server and password** (or `MAIL_USERNAME` in the settings file).
 - Zoho, GMX, WEB.DE, mail.com, Yandex, QQ and 163: IMAP has to be turned on in the mail settings first.
 - Outlook.com and Hotmail don't work (Microsoft requires its own sign-in).
 
@@ -18,14 +18,14 @@
 <details>
 <summary>"nodename nor servname provided" or "Name or service not known"</summary>
 
-The server name is misspelled, or your network blocks it. Check `IMAP_HOST` and `SMTP_HOST`.
+The server name is misspelled, or your network blocks it. Check the IMAP and SMTP servers: on the settings page under the mailbox's **Server and password**, or `IMAP_HOST` and `SMTP_HOST` if the mailbox is in the settings file.
 
 </details>
 
 <details>
 <summary>SMTP: "wrong version number" or a timeout</summary>
 
-The SMTP port and encryption don't match. Try `SMTP_PORT=587` if you had 465, or the other way round.
+The SMTP port and encryption don't match. Try 587 if you had 465, or the other way round: on the settings page under **Server and password** (or `SMTP_PORT` in the settings file).
 
 </details>
 

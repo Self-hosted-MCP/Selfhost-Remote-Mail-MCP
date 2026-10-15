@@ -35,7 +35,7 @@ Give mailboxes short names like **Work**, **Personal** or **Archive 2019**. You 
 - test any mailbox's login (nothing is sent),
 - rename any mailbox,
 - **Make default**: pick the mailbox used for new emails and for plain folder names like `INBOX`,
-- **Mode**: change what the AI may do with a mailbox,
+- **Mode**: change what the AI may do with a mailbox (mailboxes added on this page),
 - **Signature**: each mailbox has its own, added under every email written from it. Plain text, or HTML starting with `<`. Empty means none,
 - **Remove**: it first shows what happens, then asks you to tick "Yes" before **Remove for good**. The emails stay in the mailbox,
 - edit the server settings or password of the mailboxes you added there,
@@ -48,7 +48,7 @@ The settings page has a bar at the top with its sections:
 
 | Section | What you can do there |
 |---|---|
-| **Mailboxes** | See each mailbox, test its login, check its domain, rename it, make it the default, set its mode and signature, and edit or remove ones added on this page. **Add a mailbox** is right below |
+| **Mailboxes** | See each mailbox, test its login, check its domain, rename it, make it the default and set its signature; change the mode, server settings and password of ones added on this page, or remove them. **Add a mailbox** is right below |
 | **Apps** | The AI apps that logged in: choose their mailboxes, whether they may send, or disconnect them |
 | **Add-ons** | Turn library add-ons on or off and set them up |
 | **Files** | A link to the upload page, for files to attach |
@@ -88,11 +88,11 @@ When an AI app connects, the login page lists your mailboxes with tick boxes. Un
 
 ## How the AI tells mailboxes apart
 
-- **Mailbox 1 is the default.** Its folders have plain names: `INBOX`, `Sent`.
+- **The default mailbox** (picked with **Make default**, else the first one) has plain folder names: `INBOX`, `Sent`.
 - **Other mailboxes' folders start with their address**: `you@gmail.com:INBOX`, `you@gmail.com:Sent`. Email IDs follow the same rule.
 - **Replies and forwards** are drafted in the mailbox the email came from. If that mailbox is read-only, the reply goes to the first mailbox that may draft.
-- **New emails** go to mailbox 1 unless you say which: *"from Personal"*.
-- **Searching** looks in mailbox 1 by default. *"Search all my mailboxes"* covers every mailbox the app may use.
+- **New emails** go to the default mailbox unless you say which: *"from Personal"*.
+- **Searching** looks in the default mailbox unless you say otherwise. *"Search all my mailboxes"* covers every mailbox the app may use.
 - **Emails can't move between mailboxes.** Forward them instead.
 - **Limits:** each mailbox may send 40 emails a day (`SEND_DAILY_LIMIT`), and all mailboxes together 3 a minute (`SEND_MINUTE_LIMIT`). See [safety.md](safety.md#sending-limits).
 

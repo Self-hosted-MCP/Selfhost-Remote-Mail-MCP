@@ -103,7 +103,7 @@ flowchart LR
 
 ## Several mailboxes
 
-Every request gets a small "mailboxes" object holding only the mailboxes that app may use. It logs in to a mailbox only when a tool touches one of its folders, and checks the mailbox's mode on every change. Folder names carry the mailbox: plain for mailbox 1 (`INBOX`), with the address in front for the others (`you@gmail.com:INBOX`), so an email ID always says where the email lives. Moves between mailboxes are refused. The guide is [mailboxes.md](mailboxes.md).
+Every request gets a small "mailboxes" object holding only the mailboxes that app may use. It logs in to a mailbox only when a tool touches one of its folders, and checks the mailbox's mode on every change. Folder names carry the mailbox: plain for the default mailbox (`INBOX`), with the address in front for the others (`you@gmail.com:INBOX`), so an email ID always says where the email lives. Moves between mailboxes are refused. The guide is [mailboxes.md](mailboxes.md).
 
 ## The settings page
 

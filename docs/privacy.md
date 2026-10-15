@@ -39,9 +39,9 @@ Everything that travels is encrypted. Everything secret that's stored is encrypt
 
 | What | How it's kept |
 |---|---|
-| Mail passwords, on a computer | In your **system keychain** (macOS Keychain, Windows Credential Manager, Linux Secret Service), which the operating system encrypts. `setup --terminal` offers this. Mailboxes added on the settings page are encrypted in the data folder instead (row below). If there's no keychain, in the private settings file |
-| Mail passwords, on a hosting company | In the host's secret variables, which the host encrypts |
 | Mail passwords added on the settings page | **Encrypted** (Fernet: AES with an authentication code) with `MAIL_SECRET_KEY` |
+| Mail passwords set with `setup --terminal` | In your **system keychain** (macOS Keychain, Windows Credential Manager, Linux Secret Service), which the operating system encrypts. `setup --terminal` offers this. Mailboxes added on the settings page are encrypted in the data folder instead (row below). If there's no keychain, in the private settings file |
+| Mail passwords set as hosting variables | In the host's secret variables, which the host encrypts |
 | Your passphrase | As a **one-way hash** if you use `set-passphrase` (PBKDF2, 600,000 rounds). `LOGIN_PASSPHRASE` keeps it as text, in your host's secret variables |
 | Login keys of AI apps | Only **fingerprints** (SHA-256). A copied data folder can't be used to log in |
 | Send log | Times, counts and **fingerprints** only, unless you turn on `SEND_LOG_DETAILS` |
