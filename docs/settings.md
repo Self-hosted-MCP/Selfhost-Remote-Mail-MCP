@@ -3,7 +3,7 @@
 Settings come from **environment variables** (what hosting dashboards call "Variables") and/or a **settings file**. When both have a value, the environment variable wins.
 
 > [!NOTE]
-> Most changes to the settings file count from the next request, no restart needed. Web server settings (`PORT`, `HOST`, `PUBLIC_URL`, `ALLOWED_REDIRECT_HOSTS`) need a restart. On a hosting company, changing a variable restarts the server by itself.
+> Most changes to the settings file count from the next request, no restart needed. These need a restart: `PORT`, `HOST`, `PUBLIC_URL`, `ALLOWED_REDIRECT_HOSTS`, `SETTINGS_PAGE`, `UPLOAD_PAGE`, `SCHEDULED_SEND`, `MAIL_ADDONS` and `MAIL_ADDONS_DIR`. On a hosting company, changing a variable restarts the server by itself.
 
 The settings file is `~/.config/selfhost-remote-mail-mcp/.env`, or whatever `MAIL_ENV_FILE` points to. `selfhost-remote-mail-mcp setup` writes it for you. One `KEY=value` per line, `#` for comments, no quotes needed.
 
@@ -85,8 +85,6 @@ Mailboxes 2 to 5 use the same settings with their number: `MAIL_2_...`, `MAIL_3_
 | Setting | Default | What it does |
 |---|---|---|
 | `ATTACH_MAX_MB` | `25` | Most MB of new files per email, and per upload |
-| `MAIL_ADDONS` | empty | Add-ons to turn on, by name, separated by commas. See [addons.md](addons.md) |
-| `MAIL_ADDONS_DIR` | `<config folder>/addons` | The folder add-ons are loaded from. Docker images use `/app/addons` |
 | `REMOVE_PHOTO_LOCATION` | `on` | `off` keeps the location and camera details in attached photos. Can also be turned off on the settings page |
 | `REMOVE_DOCUMENT_DETAILS` | `on` | `off` keeps the author and company in attached documents. Can also be turned off on the settings page |
 | `ATTACH_FOLDERS` | `~` | Folders the computer version may attach files from, separated by commas. Hidden files are never allowed |
@@ -96,16 +94,24 @@ Mailboxes 2 to 5 use the same settings with their number: `MAIL_2_...`, `MAIL_3_
 
 | Setting | Default | What it does |
 |---|---|---|
-| `UPDATE_CHECK` | `off` | `on`: once a day, ask GitHub which release is newest, and show "Update available" on the settings page and in the `accounts` tool. Nothing about you is sent. See [updates.md](updates.md) |
+| `UPDATE_CHECK` | `off` | `on`: once a day, ask GitHub which release is newest, and show "Update available" on the settings page and in the `accounts` tool. Nothing about you is sent. Your AI can also turn it on or off when you ask; setting it here locks it. See [updates.md](updates.md) |
+
+## Add-ons
+
+| Setting | Default | What it does |
+|---|---|---|
+| `MAIL_ADDONS` | empty | Add-ons to turn on, by name, separated by commas. See [addons.md](addons.md) |
+| `MAIL_ADDONS_DIR` | `<config folder>/addons` | The folder add-ons are loaded from. Docker images use `/app/addons` |
+| `<NAME>_...` | | An add-on's own settings start with its name in capitals, like `CALENDAR_INVITE_ORGANIZER` |
 
 ## Folders
 
 | Setting | Default | What it is |
 |---|---|---|
 | `MAIL_CONFIG_DIR` | `~/.config/selfhost-remote-mail-mcp` | Your folder: settings file, `signature.html`, `signature.md`, `templates/` |
-| `MAIL_ENV_FILE` | `<config folder>/.env` | Use a settings file somewhere else |
-| `DATA_DIR` | `<config folder>/state` | Login tokens and app choices (`oauth.json`), `sent.log`, the send lock, and mailboxes added on the settings page (`mailboxes.json`, `labels.json`, `secret.key`). Docker images use `/data` |
-| `TZ` | system | Time zone for the send log and the times you see, e.g. `Europe/London` |
+| `MAIL_ENV_FILE` | `<config folder>/.env` | Use a settings file somewhere else. This one and the two around it must be environment variables, since they say where the settings file is |
+| `DATA_DIR` | `<config folder>/state` | The server's own files: logins, send log, mailboxes added on the settings page, uploads, switches, devices and the AI change list. Every file is listed in [privacy.md](privacy.md#what-the-server-keeps). Docker images use `/data` |
+| `TZ` | system | Time zone for the send log and the times you see, e.g. `Europe/London`. Must be a real environment variable (or a hosting variable); the settings file can't set it |
 
 ## Files in your config folder
 

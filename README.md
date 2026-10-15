@@ -55,6 +55,8 @@ The server is a small program. Your AI app talks to it through **MCP** (Model Co
 | **Passphrase** | A long password you make up for the web version of this server. You type it once when you connect an AI app. |
 | **MCP** | How AI apps plug into tools like this one. |
 | **Draft** | An email saved in your Drafts folder. The AI writes drafts. Sending is a separate step. |
+| **Settings file** | A small text file with your settings, `~/.config/selfhost-remote-mail-mcp/.env` on a computer. `setup` writes it. Hosting companies use their own "Variables" page instead |
+| **Data folder** | Where the server keeps its own files (logins, send log, uploads). On a computer `~/.config/selfhost-remote-mail-mcp/state`, in Docker and on hosting companies `/data` |
 
 ## Choose how to run it
 
@@ -89,7 +91,7 @@ The server is a small program. Your AI app talks to it through **MCP** (Model Co
 
 **Several mailboxes.** Up to 5, at any providers, each with its own mode (full, draft only or read only) and a short name like *Work*. Each AI app gets only the mailboxes you tick for it. See [docs/mailboxes.md](docs/mailboxes.md).
 
-**A settings page.** In the web version, open `/settings` to add mailboxes, test logins, rename them, and choose or disconnect AI apps. It also shows your version and what's new. No terminal needed.
+**A settings page.** In the web version, open `/settings` to add mailboxes, test logins, rename them, choose or disconnect AI apps, switch privacy options, see which devices signed in and what AI apps changed. It also shows your version and what's new. No terminal needed. Section by section: [docs/mailboxes.md](docs/mailboxes.md#three-ways-to-add-mailboxes).
 
 **Privacy for your files.** Photos you attach lose their location, and documents lose the author's name, before they're sent. Both are on by default and can be turned off on the settings page. The server never loads pictures or links inside emails, so senders can't track when you read them.
 
@@ -140,7 +142,7 @@ More in [docs/safety.md](docs/safety.md) (risks and good settings) and [docs/pri
 4. Connect your AI app. For Claude Code:
 
    ```bash
-   claude mcp add mail -- selfhost-remote-mail-mcp stdio
+   claude mcp add -s user mail -- selfhost-remote-mail-mcp stdio
    ```
 
    For Claude Desktop, Codex, ChatGPT, Cursor, VS Code, Gemini CLI and the Claude website and phone app, see [docs/connect-your-ai.md](docs/connect-your-ai.md).

@@ -3,13 +3,13 @@
 Original project by s17sh70x2jfl031ag: https://github.com/s17sh70x2jfl031ag/Selfhost-Remote-Mail-MCP
 (MIT license: if you copy or fork this, keep this credit and the LICENSE file.)
 
-Reads, searches, drafts and organises one mailbox (plus an optional read-only one).
+Reads, searches, drafts and organises up to 5 mailboxes, each full, draft only or read only.
 Sending is a separate tool (send_email, schedule_send) so your AI app can ask you
 before every send.
 
 Commands (see `selfhost-remote-mail-mcp help`):
     setup           answer a few questions, test the login, write the settings file
-    check           test the IMAP and SMTP login (sends nothing)
+    check           test the logins and your domain's anti-spam records (sends nothing)
     stdio           run for one AI app on this computer (Claude Desktop, Claude Code, Codex, ...)
     serve           run as a web server with a passphrase login (phone, claude.ai, ChatGPT, ...)
     set-passphrase  choose the login passphrase for serve (only its hash is stored)
@@ -2103,11 +2103,21 @@ class PassphraseOAuth:
         if bad:
             raise RegistrationError("invalid_redirect_uri", f"Redirect not allowed: {', '.join(bad)}")
         with self.lock:
+            # every connection attempt registers first, before the passphrase: forget the ones that never logged in
+            cutoff = time.time() - 3600
+            for cid in [cid for cid, c in self.clients.items()
+                        if (c.client_id_issued_at or 0) < cutoff and not self.logged_in(cid)]:
+                del self.clients[cid]
             while len(self.clients) >= self.MAX_CLIENTS:
                 oldest = min(self.clients, key=lambda k: self.clients[k].client_id_issued_at or 0)
                 del self.clients[oldest]
             self.clients[client_info.client_id] = client_info
             self.save()
+
+    def logged_in(self, client_id: str) -> bool:
+        """The app finished a passphrase login (it has a mailbox choice or a live login token)."""
+        return client_id in self.grants or any(t.client_id == client_id for t in [*self.access.values(),
+                                                                                    *self.refresh.values()])
 
     async def authorize(self, client: OAuthClientInformationFull, params: AuthorizationParams) -> str:
         if not self.redirect_ok(params.redirect_uri):
@@ -2228,8 +2238,10 @@ class PassphraseOAuth:
 def login_page(provider: "PassphraseOAuth", req: str, error: str = "", status: int = 200) -> HTMLResponse:
     info = provider.describe(req)
     mailboxes = [(a.address, a.mode, a.label) for a in all_accounts()]
+    pages_on = is_on(read_env().get("SETTINGS_PAGE") or "on")
+    settings_url = f"{provider.public_url}/settings" if pages_on else ""
     body = pages.login(info[0] if info else None, info[1] if info else None, req, mailboxes, error,
-                       expired_text=error if not info else "")
+                       expired_text=error if not info else "", settings_url=settings_url)
     return HTMLResponse(body, status_code=status, headers=pages.HEADERS)
 
 
@@ -2473,7 +2485,8 @@ def settings_page(provider: "PassphraseOAuth", session: dict, uploads_on: bool =
     apps = [{"client_id": cid, "name": c.client_name or "An AI app",
              "host": ", ".join(sorted({urlparse(str(u)).hostname or "?" for u in (c.redirect_uris or [])})),
              "grant": provider.grants.get(cid),
-             "may_send": cid not in provider.grants or cid in provider.senders} for cid, c in provider.clients.items()]
+             "may_send": cid not in provider.grants or cid in provider.senders}
+            for cid, c in provider.clients.items() if provider.logged_in(cid)]   # not the half-finished attempts
     flash, session["flash"] = session["flash"], None
     about = {"version": current_version(), "update": update_status(), "changelog": changelog_html(),
              "addons": list(LOADED_ADDONS)}
@@ -2837,6 +2850,11 @@ def accounts() -> str:
     news = update_line()
     if news:
         lines.append(news)
+    base = getattr(PROVIDER, "public_url", "")   # web version only
+    if base and is_on(cfg.get("SETTINGS_PAGE") or "on"):
+        lines.append(f"Settings page for the user: {base}/settings"
+                     + (f" (files to attach: {base}/upload)" if is_on(cfg.get("UPLOAD_PAGE") or "on") else "")
+                     + ". If the user just connected, give them these links once.")
     if LOADED_ADDONS:
         lines.append("Add-ons: " + "; ".join(f"{n}" + (f" ({d})" if d else "") for n, d in LOADED_ADDONS.items()))
     lines.append("Signature: " + ("set up, added to every draft automatically" if any(signature()) else
@@ -3099,8 +3117,7 @@ def draft(to: list[str] | None = None, cc: list[str] | None = None, bcc: list[st
             bcc = bcc if bcc is not None else addr_list([old.get("Bcc")])
             subject = subject if subject is not None else dec(old.get("Subject"))
             headers = {"In-Reply-To": old.get("In-Reply-To"), "References": old.get("References"),
-                       SCHEDULE_HEADER: old.get(SCHEDULE_HEADER),
-                       SCHEDULE_ERROR: old.get(SCHEDULE_ERROR)}
+                       **{h: old.get(h) for h in INTERNAL_HEADERS}}   # scheduled time, add-on notes
             old_part = old.get_body(preferencelist=("plain",))
             old_text = (old_part.get_content() if old_part else body_text(old)).replace("\r\n", "\n")
             old_top, quote = split_quote(old_text)
@@ -3935,7 +3952,7 @@ def setup() -> None:
     TEMPLATES.mkdir(parents=True, exist_ok=True)
     print(f"\nSaved as mailbox {slot}. Optional extras in {CONFIG_DIR}: signature.html (or signature.md) and templates/*.md.")
     print("Add another mailbox: run setup again. Next: connect your AI app. See docs/connect-your-ai.md, "
-          f"or for Claude Code run:\n  claude mcp add mail -- {APP} stdio")
+          f"or for Claude Code run:\n  claude mcp add -s user mail -- {APP} stdio")
 
 
 # ---------------------------------------------------------------- updates (opt-in, official releases only)

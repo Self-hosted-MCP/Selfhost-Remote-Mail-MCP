@@ -15,7 +15,7 @@ flowchart LR
 |---|---|---|
 | Your mail provider (Gmail, iCloud, ...) | Your login, and the commands to read, move and send | That's how any mail app works |
 | The AI app you connect (Claude, ChatGPT, ...) | The emails, attachments and contacts the AI asks for | So it can answer you. That company's own privacy rules apply to what it receives |
-| Your internet provider's DNS, only when you press **Check domain** | Your email domain's name, to read its public records | To check SPF, DKIM and DMARC. Nothing else is sent |
+| Your internet provider's DNS, only when you press **Check domain** or run `check` | Your email domain's name, to read its public records | To check SPF, DKIM and DMARC. Nothing else is sent |
 | GitHub, only if you turn on `UPDATE_CHECK` | A plain "which release is newest?" request, once a day | To tell you about updates. No login, address or usage is sent |
 | The authors of this project | Nothing | No account, no tracking, no usage statistics |
 
@@ -66,17 +66,19 @@ Everything lives in one folder: `~/.config/selfhost-remote-mail-mcp/` on a compu
 | File | What's in it | Who can read it |
 |---|---|---|
 | `.env` | Your settings, and the mail password unless it's in your system keychain | Only your user account (the server sets it to private). On hosting companies, it's their secret variables instead |
-| `state/sent.log` (in Docker: `/data/sent.log`) | One line per email sent: the time, how many recipients, and a fingerprint of the email's ID. Not who or what about, unless you turn on `SEND_LOG_DETAILS` | Only your user account |
+| `state/sent.log` (in Docker: `/data/sent.log`) | One line per email sent: the time, how many recipients, and two fingerprints (one of the email's ID, one of the mailbox it went from). Not who or what about, unless you turn on `SEND_LOG_DETAILS` | Only your user account |
 | `state/oauth.json` (in Docker: `/data/oauth.json`) | The AI apps that connected to the web version, which mailboxes each may use, and fingerprints of their login keys. The keys themselves are never written down | Only your user account |
 | `state/send.lock` | Empty. Makes sure two sends never happen at once | |
-| `mailboxes.json` (in Docker: `/data/mailboxes.json`) | Mailboxes added on the settings page. Their passwords are **encrypted** | Only your user account. The key is `MAIL_SECRET_KEY`, or `secret.key` next to it if that isn't set |
-| `labels.json` | The names you gave mailboxes, like "Work" | Only your user account |
-| `prefs.json` | The switches on the settings page: photo location, document details, device log, update check | Only your user account |
-| `changes.json` | What AI apps changed, for 30 days: the time, the app's name and the change | Only your user account |
-| `sessions.json` | Browsers remembered on the settings page: a **fingerprint** of each sign-in, its device (like "iPhone · Safari"), network address and times | Only your user account |
-| `signins.json` | The device log: each sign-in of the **last 7 days** (time, page, device, network address, right or wrong passphrase). Turn it off on the settings page or with `DEVICE_LOG=off`, which deletes it | Only your user account |
-| `uploads/` | Files from the upload page, **encrypted**, until they're deleted (1 hour after first use, or 24 hours) | Only your user account |
-| `signature.html`, `signature.md`, `templates/` | What you put there | You |
+| `state/mailboxes.json` (in Docker: `/data/mailboxes.json`) | Mailboxes added on the settings page. Their passwords are **encrypted** | Only your user account. The key is `MAIL_SECRET_KEY`, or `secret.key` next to it if that isn't set |
+| `state/labels.json` | The names you gave mailboxes, like "Work" | Only your user account |
+| `state/prefs.json` | The switches on the settings page: photo location, document details, device log, update check | Only your user account |
+| `state/changes.json` | What AI apps changed, for 30 days: the time, the app's name and the change | Only your user account |
+| `state/sessions.json` | Browsers remembered on the settings page: a **fingerprint** of each sign-in, its device (like "iPhone · Safari"), network address and times | Only your user account |
+| `state/signins.json` | The device log: each sign-in of the **last 7 days** (time, page, device, network address, right or wrong passphrase). Turn it off on the settings page or with `DEVICE_LOG=off`, which deletes it | Only your user account |
+| `state/uploads/` | Files from the upload page, **encrypted**, until they're deleted (1 hour after first use, or 24 hours) | Only your user account |
+| `state/secret.key` | The key that unlocks `mailboxes.json` and uploads, only when `MAIL_SECRET_KEY` isn't set | Only your user account |
+| `state/update.json` | Only with the update check on: the newest version number and when it was checked | Only your user account |
+| `signature.html`, `signature.md`, `templates/` | What you put there, or what your AI saved when you asked. A replaced or removed one is kept next to it as `.old` | You |
 
 The server keeps **no copy of your emails**. Drafts and sent emails live in your mailbox, like with any mail app.
 

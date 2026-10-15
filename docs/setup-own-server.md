@@ -50,7 +50,10 @@ Everything that must survive restarts (login tokens, send log) is kept in the `m
 
 ```bash
 docker compose cp signature.html mail:/data/signature.html
+docker compose cp templates mail:/data/
 ```
+
+Or ask your AI: *"Change my signature to ..."*, *"Save this as a template called thank-you"*.
 
 ## More ways to run it
 
@@ -116,9 +119,9 @@ Two copies of this server must never use the same mailbox with *separate* `/data
 | Step | Tested |
 |---|---|
 | `docker compose up --build`: image builds, both containers start, Docker health check turns healthy | Yes (macOS with Colima) |
-| HTTPS through Caddy, then the full passphrase login and all 15 tools through it | Yes, with Caddy's local certificate for `localhost` |
+| HTTPS through Caddy, then the full passphrase login and all the tools through it | Yes, with Caddy's local certificate for `localhost` |
 | Logins kept after a restart (the `mail-data` volume) | Yes |
-| Several mailboxes, mailbox ticks on the login page, the settings page (sign-in, rename, refusing a broken mailbox, blocking forms from other sites) and the icon, inside Docker | Yes (version 0.2.0) |
-| Send permission per app, 1-hour login keys, the `__Host-` cookie, HTTPS-only pages (HSTS), the About section and changelog, inside Docker | Yes (latest 0.2.0 code) |
+| Several mailboxes, mailbox ticks on the login page, the settings page (sign-in, rename, refusing a broken mailbox, blocking forms from other sites) and the icon, inside Docker | Yes (tested with 0.2.0) |
+| Send permission per app, 1-hour login keys, the `__Host-` cookie, HTTPS-only pages (HSTS), the About section and changelog, inside Docker | Yes (tested with 0.2.0) |
 | A real public domain with a Let's Encrypt certificate | Not yet: that part is Caddy's standard behaviour |
 | The Dockerfile on Coolify | Yes, an earlier private version of this server runs on Coolify every day |

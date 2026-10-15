@@ -81,7 +81,7 @@ You add the connector on the website, and the phone app picks it up. Custom conn
 
 1. On [claude.ai](https://claude.ai), open **Settings → Connectors** (on some accounts it's under **Customize → Connectors**).
 2. Click **Add custom connector**. Name: `Mail`. URL: `https://your-address/mcp`. Leave the advanced settings empty.
-3. Click **Connect**. A page asks for your passphrase. With more than one mailbox, it also asks which ones Claude may use. Tick **Allow sending** only if Claude should send (otherwise it drafts and you send). Type your passphrase and click **Allow access**.
+3. Click **Connect**. A page asks for your passphrase. With more than one mailbox, it also asks which ones Claude may use. Tick **"Allow Claude to send email"** only if Claude should press send for you. Not ticked, Claude writes drafts and you send them from your mail app. Type your passphrase and click **Allow access**.
 4. In a chat, turn the connector on from the tools menu.
 5. Open the Claude phone app: the connector is already there.
 

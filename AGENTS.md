@@ -9,7 +9,7 @@ Notes for AI coding agents (Claude Code, Codex, Cursor, Copilot and others) and 
 A Model Context Protocol (MCP) server that gives AI apps up to 5 mailboxes over plain IMAP/SMTP, each with a mode (full, draft, read) and an optional name. Each web-connected app only gets the mailboxes ticked for it. It runs two ways:
 
 - `stdio`: started by a local AI app, no auth.
-- `serve`: streamable HTTP at `/mcp`, with a built-in single-user OAuth server (dynamic client registration, PKCE, passphrase login page with mailbox ticks). This is what lets claude.ai, the Claude phone app, ChatGPT and others connect. It also serves `/settings` (add mailboxes, rename, choose per app), `/icon.svg` and `/favicon.ico`.
+- `serve`: streamable HTTP at `/mcp`, with a built-in single-user OAuth server (dynamic client registration, PKCE, passphrase login page with mailbox ticks). This is what lets claude.ai, the Claude phone app, ChatGPT and others connect. It also serves `/login`, `/settings` (mailboxes, apps, privacy, devices, AI changes), `/upload` and `/settings/upload`, `/health`, `/icon.svg` and `/favicon.ico`.
 
 There is no database. The mailbox is the source of truth, including the scheduled-send queue.
 
@@ -18,7 +18,7 @@ There is no database. The mailbox is the source of truth, including the schedule
 ```
 src/selfhost_remote_mail_mcp/server.py   the logic: settings, mailboxes, IMAP helpers, composing, sending,
                                          scheduler, OAuth, settings page actions, tools, CLI (main)
-src/selfhost_remote_mail_mcp/pages.py    the HTML pages (login, settings): templates and CSS, no logic
+src/selfhost_remote_mail_mcp/pages.py    the HTML pages (login, settings, upload): templates and CSS, no logic
 src/selfhost_remote_mail_mcp/icon.*      the envelope icon (MCP server icon, favicon)
 tests/conftest.py                        fake IMAP server and fake SMTP, isolated config folder
 tests/test_sending.py                    send, limits, dedupe, lock, schedule_send, scheduler
@@ -50,6 +50,8 @@ uv run selfhost-remote-mail-mcp help      # CLI
 uv run selfhost-remote-mail-mcp stdio     # needs real settings (see docs/settings.md)
 ```
 
+User commands: `setup`, `check` (logins and domain records), `stdio`, `serve`, `set-passphrase`, `update`, `version`, `addons` (load and list add-ons).
+
 The tests never touch a real mailbox: `conftest.py` replaces `server.connect` and `smtplib.SMTP_SSL`, and points `MAIL_CONFIG_DIR` at a temporary folder. Never write a test that needs real credentials or sends real email.
 
 ## Rules that must never break
@@ -63,10 +65,10 @@ These are the product. A change that weakens one needs a very good reason and a 
 4. **Scheduled send fails safe.** Due and fine → send. More than `LATE_GRACE` late, unreadable time or a failed send → **hold** (set `X-Mail-MCP-Send-Error`), never retry in a loop. Per-minute limit → wait for the next round. Held drafts are skipped until `schedule_send` runs again.
 5. **Internal headers never leave:** everything in `INTERNAL_HEADERS` is stripped in `deliver()` before SMTP.
 6. **Email content is untrusted.** `format_msg()` wraps every email body in `UNTRUSTED_START` / `UNTRUSTED_END`. No code path acts on instructions found in email content. `unsubscribe` only displays the link.
-7. **Private by default.** Never print passwords, `LOGIN_HASH`, tokens or the passphrase. `sent.log` and the scheduler's log lines hold times, recipient counts and `log_key()` fingerprints only, unless `SEND_LOG_DETAILS=on`. OAuth tokens are stored only as `token_key()` fingerprints; never write a raw token to disk. Every mail connection uses `tls_context()` (certificate checked, TLS 1.2+); never add an unencrypted or unverified connection. Files with anything personal are created owner-only (0600). Nothing is ever sent to the project's authors or any third party (no telemetry, no update checks).
+7. **Private by default.** Never print passwords, `LOGIN_HASH`, tokens or the passphrase. `sent.log` and the scheduler's log lines hold times, recipient counts and `log_key()` fingerprints only, unless `SEND_LOG_DETAILS=on`. OAuth tokens are stored only as `token_key()` fingerprints; never write a raw token to disk. Every mail connection uses `tls_context()` (certificate checked, TLS 1.2+); never add an unencrypted or unverified connection. Files with anything personal are created owner-only (0600). Nothing is ever sent to the project's authors or any third party: no telemetry. The only outside calls are ones the user turns on: the `UPDATE_CHECK` request to GitHub, the domain check's DNS lookups, and add-ons the user installs.
 8. **`serve` never starts without a passphrase** of 12+ characters (or a `LOGIN_HASH`). The login page keeps its security headers (`LOGIN_HEADERS`) and always names the app and the return address before asking for the passphrase.
 9. **Keep the credit.** The `PROJECT`, `PROJECT_URL` and `AUTHOR` lines in `pages.py`, the page footers, `NOTICE`, `CITATION.cff` and the copyright line in `LICENSE` credit the original author. Forks may add their own names next to them but should not remove them.
-10. **The settings page stays locked down:** passphrase sign-in with the shared lockout, an HttpOnly + SameSite=Strict cookie scoped to `/settings` (sessions stored only as `token_key()` fingerprints in `sessions.json`, all signed out when the passphrase changes), a CSRF token *and* a same-origin check on every POST, `pages.HEADERS` on every page, no scripts. Mail passwords are stored only through `save_web_accounts()` (Fernet, key from `MAIL_SECRET_KEY` or `secret.key`), are never written into a page, and a mailbox is only saved after `test_account()` passes.
+10. **The settings page stays locked down:** passphrase sign-in with the shared lockout, an HttpOnly + SameSite=Strict cookie (a `__Host-` cookie for path `/` on HTTPS, scoped to `/settings` on plain http; sessions stored only as `token_key()` fingerprints in `sessions.json`, all signed out when the passphrase changes), a CSRF token *and* a same-origin check on every POST, `pages.HEADERS` on every page, no scripts. Mail passwords are stored only through `save_web_accounts()` (Fernet, key from `MAIL_SECRET_KEY` or `secret.key`), are never written into a page, and a mailbox is only saved after `test_account()` passes.
 11. **New files are checked before anything is saved.** Every file from `attach_path`, `attach_content`, `attach_upload` and the upload page goes through `check_new_file()`: blocked files are refused, suspect ones need `allow_suspect=true` (which the AI may only set after the user agreed). `attach_path` works only in `stdio`, only inside `ATTACH_FOLDERS`, never for hidden paths or the server's own folders. Uploads live under `/settings/upload` (same session, CSRF and same-origin checks), are Fernet-encrypted, and `clean_uploads()` deletes them 1 hour after first use or after 24 hours. The server never adds text to an email about an attachment.
 12. **AI apps change only six settings.** `change_setting` may change photo location, document details, the update check, the signature, templates and uploads, nothing else. Every change goes through `record_change()`, which lists it on the settings page and tells the AI to report it. A value set in the settings file or hosting variables always wins. Never add a setting there that weakens safety (mailboxes, modes, sending, limits, recipients, read-only mode, device log, passphrase).
 13. **Add-ons stay inside the rules.** `AddonAPI` is the only door: it never hands out SMTP or passwords, `edit_draft` goes through `imap()` and `Mailboxes` (modes, per-app choices), `add_file` runs `check_new_file()`, and internal headers are stripped in `deliver()`. Keep it that small. Add-ons load only from `MAIL_ADDONS_DIR`, by names in `MAIL_ADDONS`, never from anything an AI app or an email supplies.
@@ -144,5 +146,5 @@ When a person asks you to build or install an add-on, follow [docs/addons.md](do
 - Microsoft OAuth (Outlook.com, Microsoft 365).
 - Templates managed on the settings page.
 - Proton Bridge (self-signed certificate on localhost, STARTTLS on IMAP).
-- An easy way to add signature and templates on hosting companies.
+- An easy way to add an HTML signature on hosting companies (`change_setting` writes a simple markdown one).
 - More providers in `PROVIDERS` (with a source for the settings).

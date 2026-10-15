@@ -239,7 +239,7 @@ MODE_HINT = ('<p class="hint">Full: read, draft, sort and send. Draft only: ever
 # ---------------------------------------------------------------- login page (AI apps connecting)
 
 def login(app: str | None, host: str | None, req: str, mailboxes: list[tuple[str, str, str]], error: str = "",
-          expired_text: str = "") -> str:
+          expired_text: str = "", settings_url: str = "") -> str:
     """mailboxes: (address, mode, name) for every mailbox the server knows."""
     if app is None:
         steps = ('<ol class="steps"><li>Go back to your AI app.</li><li>Start connecting the mail server again.</li>'
@@ -258,8 +258,9 @@ def login(app: str | None, host: str | None, req: str, mailboxes: list[tuple[str
     if any(mode == "full" for _addr, mode, _name in mailboxes):
         choose += ('<fieldset><legend>Sending</legend><label class="choice"><input type="checkbox" name="allow_send" '
                    f'value="yes"><span class="addr">Allow {esc(app)} to send email</span></label>'
-                   '<p class="hint">Off: it can read, draft and sort, and you send from your mail app. On: it can send '
-                   'from mailboxes set to Full, within the daily limits. Your AI app can still ask you first.</p></fieldset>')
+                   f'<p class="hint"><b>Not ticked:</b> {esc(app)} writes drafts, and you press send yourself in your '
+                   f'mail app.<br><b>Ticked:</b> {esc(app)} can also press send for you. Tip: set sending to "ask '
+                   'first" in your AI app.</p></fieldset>')
     local = (host or "").lower() in ("localhost", "127.0.0.1", "::1")
     warn = message("error", f"{app} returns to an app on a computer (localhost). Only continue if that's your own "
                             "computer and you just started this connection there.") if local else ""
@@ -269,7 +270,9 @@ def login(app: str | None, host: str | None, req: str, mailboxes: list[tuple[str
                '<input id="passphrase" type="password" name="passphrase" autocomplete="current-password" autofocus required>'
                '<button class="block" type="submit">Allow access</button></form>'
                f'<p class="note">{ICON_SHIELD}<span>Only continue if you started this connection yourself, just now. '
-               'Otherwise close this page: nothing happens without your passphrase.</span></p>')
+               'Otherwise close this page: nothing happens without your passphrase.</span></p>'
+               + (f'<p class="note">{ICON_CHECK}<span>Afterwards, manage everything (mailboxes, apps, privacy, files) '
+                  f'at <b>{esc(settings_url)}</b>, with the same passphrase.</span></p>' if settings_url else ''))
     return page(f'{esc(app)} wants your <span class="hl">mailbox</span>', f"After you allow it, you go back to <b>{esc(host or '?')}</b>.", content)
 
 
@@ -499,7 +502,7 @@ def settings(csrf: str, mailboxes: list[dict], apps: list[dict], flash: tuple[st
     if about:
         upd = about.get("update")
         if upd is None:
-            status = ('Update checks are off. Set <code>UPDATE_CHECK=on</code> to be told about new releases '
+            status = ('Update checks are off. Ask your AI app to turn them on, or set <code>UPDATE_CHECK=on</code>, to be told about new releases '
                       '(the server then asks GitHub once a day which version is newest, and sends nothing else).')
         elif upd["newer"]:
             status = (f'<b>Update available: {esc(upd["latest"])}</b>. <a href="{esc(upd["url"])}">What\'s new</a> · '

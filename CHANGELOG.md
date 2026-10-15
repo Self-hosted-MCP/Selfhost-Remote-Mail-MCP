@@ -2,6 +2,15 @@
 
 All notable changes to this project. Versions follow [semantic versioning](https://semver.org).
 
+## 0.6.1 (2026-10-14)
+
+- **Where to find the settings:** the login page shows the settings page link, and the `accounts` tool gives the AI the settings and upload links to share once you've connected.
+- **Clearer sending choice** on the login page: not ticked, the app writes drafts and you press send; ticked, it can press send for you.
+- **Connected apps** on the settings page only lists apps that finished logging in. Unfinished connection attempts (for example a wrong passphrase) are removed after an hour.
+- Editing a draft keeps notes that add-ons put on it, like which attachments to leave out of the Sent copy.
+- `check` and `help` describe what they do today (several mailboxes, the domain check).
+- Docs: a guide to the settings page, section by section; what `check` prints; how to open the settings file; more example requests; every file the server keeps; many small corrections.
+
 ## 0.6.0 (2026-10-14)
 
 - **Add-ons:** plug in your own features as small Python files (`MAIL_ADDONS`). An add-on can add tools, change drafts and attach files through the same checks as everything else, and keep large files out of the Sent copy. It can never send email itself. Guide: [docs/addons.md](docs/addons.md).

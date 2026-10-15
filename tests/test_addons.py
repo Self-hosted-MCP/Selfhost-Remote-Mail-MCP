@@ -102,6 +102,9 @@ def setup(api):
     new = call(f"{name}_attach", draft_id=d)
     raw = list(mailbox["Drafts"].values())[-1]
     assert b"report.csv" in raw and f"X-{name}-Files".encode() in raw
+    new = server.draft(edit=new, body="Here it is, edited.").split("ID: ")[1].split()[0]   # editing keeps both
+    raw = list(mailbox["Drafts"].values())[-1]
+    assert b"report.csv" in raw and f"X-{name}-Files".encode() in raw
     server.send_email(new)
     sent = email.message_from_bytes(server.smtplib.SMTP_SSL.sent[-1].as_bytes(), policy=POLICY)
     assert [p.get_filename() for p in sent.iter_attachments()] == ["report.csv"]     # the receiver gets the file

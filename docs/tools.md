@@ -9,7 +9,7 @@ You don't call these yourself: you ask in plain words, and your AI app picks the
 
 | Tool | What it does | Changes anything? |
 |---|---|---|
-| `accounts` | Shows the mailboxes this app may use, each one's mode and special folders, and signature status | No |
+| `accounts` | Shows the mailboxes this app may use, each one's mode and special folders, signature status, the add-ons that are on, update notices and the allowed-recipients list | No |
 | `folders` | Lists folders with message and unread counts, and sizes if asked | No |
 | `emails` | Lists emails in one folder, with filters | No |
 | `search` | Searches every folder (or one), with full text for keyword searches | No |
@@ -36,14 +36,14 @@ You don't call these yourself: you ask in plain words, and your AI app picks the
 | `from:sam` `to:` `cc:` `subject:invoice` | Address or subject contains the word |
 | `after:2026/01/31` `before:2026/03/01` | Dates (yyyy/MM/dd) |
 | `newer_than:7d` `older_than:3m` | d days, w weeks, m months, y years |
-| `is:unread` `is:read` `is:pinned` `is:answered` | Flags |
+| `is:unread` `is:read` `is:pinned` (or `is:starred`) `is:answered` | Flags |
 | `has:attachment` `filename:pdf` | Attachments |
 | `budget "next week"` | Words anywhere in the email |
 | `-from:newsletter` | A minus sign excludes |
 
 *"Show my unread emails from this week that have attachments"* becomes `emails(filter="is:unread newer_than:7d has:attachment")`.
 
-**search** looks in every folder of the default mailbox except Trash and Spam (`scope="all"` for every mailbox). With keywords it returns the 20 newest matches *with* their text, which is good for questions like *"what did the landlord say about the deposit?"*. With only a filter it returns a paged list. `scope` limits it to one folder, to the read-only mailbox, or to `all` (both mailboxes).
+**search** looks in every folder of the default mailbox except Trash and Spam (`scope="all"` for every mailbox). With keywords it returns the 20 newest matches *with* their text, which is good for questions like *"what did the landlord say about the deposit?"*. With only a filter it returns a paged list. `scope` limits it to one folder, to one mailbox (its address or name), or to `all` (every mailbox this app may use).
 
 **thread** follows the reply chain across Inbox, Sent, Archive and Drafts, so you see both sides of a conversation.
 
@@ -62,7 +62,7 @@ You don't call these yourself: you ask in plain words, and your AI app picks the
 - **From another mailbox:** `account="Work"` (a name or an address). Replies already use the email's own mailbox.
 - **Template:** `template="thank-you"`, plus `placeholder=["topic=the workshop"]` for its own blanks. `{{recipient_name}}`, `{{recipient_first_name}}` and `{{my_name}}` fill themselves.
 - **Delete:** `delete=Drafts#55` moves it to Trash.
-- **Signature:** added by itself if you set one up. `no_signature=true` skips it.
+- **Signature:** added by itself if you set one up. `no_signature=true` skips it, and `mode="signatures"` shows it.
 
 ## Organising
 

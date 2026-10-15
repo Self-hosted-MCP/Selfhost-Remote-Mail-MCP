@@ -15,7 +15,7 @@ UPDATE_CHECK=on
 
 The server then asks GitHub once a day which release is newest. That request carries no information about you: no login, no address, no usage. When there's something new:
 
-- the **settings page** shows "Update available: v0.3.0" with a link to what's new,
+- the **settings page** shows "Update available: vX.Y.Z" with a link to what's new,
 - the **`accounts` tool** tells your AI app, so it can mention it to you.
 
 The settings page always shows your version and the latest changes under **About this server → What's new**, whether checks are on or not. The full history is in [CHANGELOG.md](../CHANGELOG.md).
@@ -104,8 +104,8 @@ Already using **Coolify, Dokploy** or similar? Point it at a release tag instead
 
 ## Going back
 
-- **Computer:** `uv tool install --force git+https://github.com/s17sh70x2jfl031ag/Selfhost-Remote-Mail-MCP@v0.2.0` (the version you want).
-- **Own server:** `git checkout v0.2.0 && docker compose up -d --build`.
+- **Computer:** `uv tool install --force git+https://github.com/s17sh70x2jfl031ag/Selfhost-Remote-Mail-MCP@vX.Y.Z` (the version you want, for example `v0.6.0`).
+- **Own server:** `git checkout vX.Y.Z && docker compose up -d --build` (the version you want).
 - **Hosting company:** revert the update commit in your fork; the host rebuilds.
 
 Your settings, mailboxes and logins live in the data folder, which updates never touch.

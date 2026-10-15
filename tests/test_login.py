@@ -1,6 +1,7 @@
 """The web login: tokens kept only as fingerprints, the client cap and the login page."""
 import asyncio
 import json
+import time
 
 from mcp.server.auth.provider import AuthorizationParams
 from mcp.shared.auth import OAuthClientInformationFull
@@ -45,8 +46,10 @@ def test_refresh_works_once():
 
 def test_client_list_is_capped():
     p = new_provider()
-    for i in range(p.MAX_CLIENTS + 5):
-        asyncio.run(p.register_client(client(f"c{i}")))
+    for i in range(p.MAX_CLIENTS + 5):   # all registered just now, so none is cleaned away as an old attempt
+        c = client(f"c{i}")
+        c.client_id_issued_at = int(time.time()) + i
+        asyncio.run(p.register_client(c))
     assert len(json.loads(server.OAUTH_FILE.read_text())["clients"]) == p.MAX_CLIENTS
 
 

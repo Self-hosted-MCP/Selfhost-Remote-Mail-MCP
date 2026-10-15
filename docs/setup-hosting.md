@@ -38,7 +38,7 @@ First, click **Fork** at the top of this project's GitHub page. That gives you y
 
    Ports default to 993 (IMAP) and 465 (SMTP). Add `IMAP_PORT` or `SMTP_PORT` only if your provider uses others.
 4. **Settings → Networking → Generate Domain.** If it asks which port, type **8765**. You get an address like `https://your-mail.up.railway.app`. The server picks it up by itself.
-5. **Add a volume** (right-click the service, or the command palette: *Add Volume*) with mount path **`/data`**. Without it everything still works, but you log in again after each restart and the send limits start from zero.
+5. **Add a volume** (right-click the service, or the command palette: *Add Volume*) with mount path **`/data`**. Without it everything still works, but after each restart you log in again, the send limits start from zero, and your signature, templates, uploads and settings-page changes are lost.
 6. Wait for the deploy to turn green, then open `https://your-mail.up.railway.app/health`. It should say `ok`.
 
 ## Render (about $7 a month plus $0.25 for the disk)
@@ -84,7 +84,7 @@ Railway and Render have step-by-step instructions above, but you can use any ser
 | Any VPS (Hetzner, DigitalOcean Droplet, Vultr, Akamai, IONOS, OVHcloud, Oracle Cloud free) | Yes | Yes | [Option 3](setup-own-server.md), with full control |
 | Your own Coolify, Dokploy or CapRover | Yes | Yes | [Option 3](setup-own-server.md#already-have-a-reverse-proxy-coolify-dokploy-or-similar) |
 
-Without a persistent volume the server still works: you log in again after each restart, the send limits start from zero, and mailboxes added on the settings page are lost (mailboxes in the variables stay).
+Without a persistent volume the server still works: you log in again after each restart, the send limits start from zero, and everything changed on the settings page or by asking the AI is lost: mailboxes added there, signature, templates, uploads, the privacy and update switches (mailboxes in the variables stay).
 
 ## Check that it works
 
@@ -126,7 +126,7 @@ Turn on the **Update from official releases** action in your fork, and new relea
 
 - **Time zone** for the send log and the times you see: add `TZ=Europe/London` (or [your zone](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones)).
 - **Signature:** add `MAIL_SIGNATURE=Your Name\nWhat you do · example.com` (`\n` starts a new line). It is added under every draft.
-- **Templates** are files, so they need the own-server option or a computer for now.
+- **Templates and signature:** ask your AI, for example *"Save this as a template called thank-you"* or *"Change my signature"*. They're kept on the `/data` volume.
 - **More settings:** [settings.md](settings.md).
 
 ## What we tested

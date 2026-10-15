@@ -145,7 +145,7 @@ Yes. The settings page lists the browsers signed in to it, and every sign-in of 
 - Hosting company: the **Update from official releases** action in your fork
 - Own server: `./scripts/update.sh`
 
-Each only installs official releases. Turn on `UPDATE_CHECK=on` to be told when there's one, or let it update by itself: [updates.md](updates.md).
+Each only installs official releases. Turn on `UPDATE_CHECK=on` (or ask your AI: *"Tell me when there's a new version"*) to be told when there's one, or let it update by itself: [updates.md](updates.md).
 
 </details>
 

@@ -1,7 +1,7 @@
 # Troubleshooting
 
 > [!TIP]
-> Start here: `selfhost-remote-mail-mcp check` tests the IMAP and SMTP login and sends nothing. On a hosting company, look at the service's logs.
+> Start here: `selfhost-remote-mail-mcp check` tests the logins and, for your own domain, its anti-spam records. It sends nothing. On a hosting company, look at the service's logs.
 
 ## Login and connection
 
@@ -92,6 +92,22 @@ On a hosting company without a volume or disk at `/data`, logins are forgotten o
 <summary>`serve` says "Set a login passphrase first"</summary>
 
 Set `LOGIN_PASSPHRASE` (12+ characters) or run `selfhost-remote-mail-mcp set-passphrase`.
+
+</details>
+
+## Add-ons and settings
+
+<details>
+<summary>The server stops at start-up with "add-on ..."</summary>
+
+An add-on in `MAIL_ADDONS` has a problem, and the message says which and why. Run `selfhost-remote-mail-mcp addons` to check them without starting the server, and see the table at the end of [addons.md](addons.md#when-something-goes-wrong). To start without it, remove its name from `MAIL_ADDONS`.
+
+</details>
+
+<details>
+<summary>"... can't be changed by an AI app" or "turned off in the server settings"</summary>
+
+AI apps may only change six settings when you ask ([tools.md](tools.md#settings)). Everything else is yours, on the settings page or in the settings file. "Turned off in the server settings" means the settings file or hosting variables say `off`, which always wins. Change it there.
 
 </details>
 

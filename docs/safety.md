@@ -126,7 +126,7 @@ If you or a mail app edit the draft in a way that drops the saved time, the emai
 
 ## Mailbox modes and app choices
 
-- **Each app chooses whether it may send.** On the login page, "Allow sending" is **off** by default: the app can read, draft and sort, and you send from your mail app. Tick it only for apps you want sending, and change it any time on the settings page. On your own computer (`stdio`) apps may send, since nobody else can reach them.
+- **Each app chooses whether it may send.** On the login page, "Allow ... to send email" is **not ticked** by default: the app writes drafts, and you press send yourself in your mail app. Tick it only for apps you want sending, and change it any time on the settings page. On your own computer (`stdio`) apps may send, since nobody else can reach them.
 
 - **Each mailbox has a mode**, enforced by the server itself: a **read-only** mailbox can't be moved, flagged, drafted into or sent from, and a **draft-only** mailbox can't send. This doesn't depend on the AI behaving.
 - **Each AI app only gets the mailboxes you ticked** when it connected. It can't see or name the others. Change this any time on the settings page.
@@ -138,7 +138,7 @@ The settings page (`/settings`, web version only) can add and change mailboxes, 
 
 - **Your passphrase opens it**, with the same lock after 5 wrong tries. With **Remember this device** (on by default) a browser stays signed in for 90 days; without it, until the browser closes (at most 12 hours). Changing the passphrase signs every browser out. Untick it on a computer other people use.
 - **A device log shows who signed in:** the browsers signed in now, and every sign-in of the last 7 days (wrong passphrases and AI app logins too), with device and network address. Sign out any device from there. You can turn the log off on the page, or with `DEVICE_LOG=off`.
-- **The sign-in cookie is locked down:** it can't be read by scripts, isn't sent to other websites, and only works on `/settings`.
+- **The sign-in cookie is locked down:** it can't be read by scripts and isn't sent to other websites. On HTTPS it only works for this exact address (a `__Host-` cookie); on `http://localhost` it only works on `/settings`.
 - **Every form carries a secret token** and must come from the page itself, so another website can't submit forms on your behalf.
 - **Mail passwords are stored encrypted** and never shown again. To change one, type a new one.
 - **A new mailbox is only saved if its login works.**
@@ -160,7 +160,7 @@ Add-ons run inside the server with its full power, so only turn on ones you wrot
 - **Programs and scripts are never attached**, and the server checks what's inside each file, so a program renamed to `photo.jpg` is refused. Zips are checked inside too.
 - **Suspect files** (macros, svg and html, archives that can't be checked) are only attached after you say yes.
 - **On a computer**, only files in your home folder (`ATTACH_FOLDERS`) can be attached, never hidden ones like `.ssh` or `.env`. This stops an email from tricking the AI into mailing your private files.
-- **The upload page** sits behind your passphrase, like the settings page, and deletes files 1 hour after first use.
+- **The upload page** sits behind your passphrase, like the settings page, and deletes files 1 hour after they first go into a draft, or after 24 hours if never used.
 
 Details in [attachments.md](attachments.md).
 

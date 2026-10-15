@@ -9,7 +9,9 @@ Please **don't** open a public issue for a security problem. Use GitHub's [priva
 ## In scope
 
 - Anything that lets someone without the passphrase use the server.
-- Any way to send email, or change the read-only mailbox, that bypasses the rules in [AGENTS.md](AGENTS.md#rules-that-must-never-break).
+- Any way to send email, or to get around a mailbox's mode (read only or draft only), an app's mailbox choice or send permission, or the limits of `change_setting`, that bypasses the rules in [AGENTS.md](AGENTS.md#rules-that-must-never-break).
+- Ways to reach the upload page or the settings page without the passphrase, or to attach a file from outside `ATTACH_FOLDERS`.
+- Ways for an add-on's tools to get around the add-on rules (sending email, skipping file checks or mailbox modes).
 - Leaks of passwords, tokens or email content (logs, error messages, tool output to the wrong client).
 - Ways for email content to make the server itself do something (not the AI model, which is covered by [docs/safety.md](docs/safety.md)).
 

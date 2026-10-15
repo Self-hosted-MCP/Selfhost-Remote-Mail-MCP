@@ -27,6 +27,8 @@ The AI can also see the list of waiting files, so you can ask *"Which files did 
 - **24 hours** if it's never used.
 - Or right away, when you press **Delete**.
 
+Up to 20 files can wait at once. Delete some to upload more.
+
 Files on the server are stored encrypted, with the same key as the mailbox passwords (`MAIL_SECRET_KEY`). The page only exists on the web version, behind your passphrase. `UPLOAD_PAGE=off` removes it.
 
 ## Which files are allowed

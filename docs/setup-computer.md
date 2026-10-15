@@ -65,7 +65,10 @@ It asks for:
 2. your name as people should see it,
 3. the server names, filled in for you for well-known providers,
 4. your login name, only if it isn't your email address,
-5. your password or app password (hidden while you type).
+5. a short name for the mailbox, like *Work* (Enter to skip),
+6. your password or app password (hidden while you type).
+
+From the second mailbox on, it also asks what the AI may do there: `full`, `draft` (the suggested answer) or `read`.
 
 Then it tests the login and asks: **"Keep the password in your system keychain (encrypted) instead of the settings file?"** Press Enter for yes. Your Mac, Windows or Linux computer then keeps it encrypted, and the settings file holds no password at all. (On a Mac, the first time the server reads it, macOS may ask whether it may use the keychain: choose **Always Allow**.)
 
@@ -73,9 +76,10 @@ Everything else is saved in one private folder. Nothing is sent during the test.
 
 ```
 Testing the login (nothing is sent)...
-IMAP and SMTP logins work.
+Logins work.
 
-Saved. Optional extras in /Users/you/.config/selfhost-remote-mail-mcp: signature.html (or signature.md) and templates/*.md.
+Saved as mailbox 1. Optional extras in /Users/you/.config/selfhost-remote-mail-mcp: signature.html (or signature.md) and templates/*.md.
+Add another mailbox: run setup again. Next: connect your AI app. ...
 ```
 
 If the login fails, setup tells you what went wrong and asks whether to save anyway. The usual fix is an app password; see [troubleshooting.md](troubleshooting.md).
@@ -87,7 +91,16 @@ The folder is:
 | Mac and Linux | `~/.config/selfhost-remote-mail-mcp/` |
 | Windows | `C:\Users\<you>\.config\selfhost-remote-mail-mcp\` |
 
-To test again later: `selfhost-remote-mail-mcp check`.
+To test again later: `selfhost-remote-mail-mcp check`. Besides the logins, it checks your domain's anti-spam records (if you use your own domain) and marks each line:
+
+```
+Testing you@yourname.com (full, nothing is sent)...
+  logins work.
+  OK  SPF: Set. Receivers can check which servers may send as you.
+  TIP DMARC: Set to p=none: fake emails using your name are only watched, not stopped. ...
+```
+
+`OK` is fine, `TIP` works but could be better, `FIX` needs fixing ([mailboxes.md](mailboxes.md#check-your-domain)). To see which version you have: `selfhost-remote-mail-mcp version`.
 
 ### Optional: signature and templates
 
@@ -113,7 +126,7 @@ Run `selfhost-remote-mail-mcp setup` again and choose **add**. Each extra mailbo
 
 Most common apps are below. Every app is covered in [connect-your-ai.md](connect-your-ai.md).
 
-- **Claude Code:** `claude mcp add mail -- selfhost-remote-mail-mcp stdio`
+- **Claude Code:** `claude mcp add -s user mail -- selfhost-remote-mail-mcp stdio`
 - **Codex:** `codex mcp add mail -- selfhost-remote-mail-mcp stdio`
 - **Claude Desktop:** see [connect-your-ai.md](connect-your-ai.md#claude-desktop).
 
@@ -122,7 +135,10 @@ Then ask: *"Use the mail tools: what's new in my inbox today?"* The AI should li
 ## 6. Make it safer (2 minutes)
 
 1. In your AI app's settings, set the tools `send_email` and `schedule_send` to **Always ask**. Then nothing is sent without your yes.
-2. Trying it for the first time? Add `MAIL_READ_ONLY=on` to the settings file (`~/.config/selfhost-remote-mail-mcp/.env`). The AI can then only read. Change it to `off` when you're ready.
+2. Trying it for the first time? Add `MAIL_READ_ONLY=on` to the settings file. The AI can then only read. Change it to `off` when you're ready. To open the settings file:
+   - Mac: `open -e ~/.config/selfhost-remote-mail-mcp/.env`
+   - Windows: `notepad $HOME\.config\selfhost-remote-mail-mcp\.env`
+   - Linux: `nano ~/.config/selfhost-remote-mail-mcp/.env`
 
 More options, such as only allowing certain recipients: [safety.md](safety.md#pick-a-safety-level).
 
@@ -180,7 +196,7 @@ Then start it:
 selfhost-remote-mail-mcp serve
 ```
 
-It keeps running while the window is open. To start it automatically, see [Keep it running](#keep-it-running-in-the-background) below.
+To check it works, open `https://your-address/health` in a browser: it shows `ok`. The settings page is at `http://localhost:8765/settings`. It keeps running while the window is open. To start it automatically, see [Keep it running](#keep-it-running-in-the-background) below.
 
 ### d. Add it to your AI app
 

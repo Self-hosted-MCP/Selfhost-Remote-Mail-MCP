@@ -254,3 +254,38 @@ def test_ai_app_logins_are_logged(web, monkeypatch, fresh_log):
     req = asyncio.run(provider.authorize(c, params)).split("req=")[1]
     client.post("/login", data={"req": req, "passphrase": PASS, "mailbox": ["me@example.com"]}, follow_redirects=False)
     assert server.recent_signins()[0]["where"] == "AI app login: Claude"
+
+
+def test_connected_apps_only_lists_apps_that_logged_in(web):
+    client, provider = web
+    def register(cid, issued):
+        c = OAuthClientInformationFull(client_id=cid, client_name="Claude", client_id_issued_at=issued,
+                                       redirect_uris=[AnyUrl("https://claude.ai/api/mcp/auth_callback")])
+        asyncio.run(provider.register_client(c))
+        return c
+    tried = register("tried", int(time.time()))
+    done = register("done", int(time.time()))
+    params = AuthorizationParams(state="s", scopes=["mail"], code_challenge="x" * 43,
+                                 redirect_uri=AnyUrl("https://claude.ai/api/mcp/auth_callback"),
+                                 redirect_uri_provided_explicitly=True)
+    req = asyncio.run(provider.authorize(done, params)).split("req=")[1]
+    client.post("/login", data={"req": req, "passphrase": PASS, "mailbox": ["me@example.com"]}, follow_redirects=False)
+    csrf, page = sign_in(client)
+    assert page.count("Choose mailboxes") == 1 and 'value="done"' in page and 'value="tried"' not in page
+    provider.clients["tried"].client_id_issued_at = int(time.time()) - 7200   # an attempt from 2 hours ago
+    register("later", int(time.time()))
+    assert "tried" not in provider.clients and "done" in provider.clients and "later" in provider.clients
+
+
+def test_login_page_and_accounts_point_to_the_settings_page(web, monkeypatch):
+    client, provider = web
+    c = OAuthClientInformationFull(client_id="links", client_name="Claude", client_id_issued_at=int(time.time()),
+                                   redirect_uris=[AnyUrl("https://claude.ai/api/mcp/auth_callback")])
+    asyncio.run(provider.register_client(c))
+    params = AuthorizationParams(state="s", scopes=["mail"], code_challenge="x" * 43,
+                                 redirect_uri=AnyUrl("https://claude.ai/api/mcp/auth_callback"),
+                                 redirect_uri_provided_explicitly=True)
+    req = asyncio.run(provider.authorize(c, params)).split("req=")[1]
+    assert "manage everything" in client.get(f"/login?req={req}").text and "http://localhost/settings" in client.get(f"/login?req={req}").text
+    out = server.accounts()
+    assert "Settings page for the user: http://localhost/settings (files to attach: http://localhost/upload)" in out

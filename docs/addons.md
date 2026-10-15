@@ -49,10 +49,10 @@ If an add-on has a problem, the server stops at start-up and says which add-on a
 
 Two add-ons come with the project, in [examples/addons](../examples/addons):
 
-| Add-on | What it does |
-|---|---|
-| [`hello`](../examples/addons/hello.py) | The smallest possible add-on: a `hello` tool. Copy it to start your own |
-| [`calendar_invite`](../examples/addons/calendar_invite.py) | An `add_invite` tool that attaches a calendar invite (`.ics`) to a draft. Ask: *"Draft an email to Sam about coffee on Tuesday at 3pm and attach an invite"* |
+| Add-on | What it does | Its settings |
+|---|---|---|
+| [`hello`](../examples/addons/hello.py) | The smallest possible add-on: a `hello` tool. Copy it to start your own | `HELLO_GREETING` (default `Hello`) |
+| [`calendar_invite`](../examples/addons/calendar_invite.py) | An `add_invite` tool that attaches a calendar invite (`.ics`) to a draft. Ask: *"Draft an email to Sam about coffee on Tuesday at 3pm and attach an invite"* | `CALENDAR_INVITE_ORGANIZER`: your address, shown as the organizer (optional) |
 
 To try one, copy the file into your add-ons folder and add its name to `MAIL_ADDONS`.
 
@@ -201,7 +201,7 @@ The last command loads the add-ons and lists their tools, without starting anyth
 **On a hosting company (your fork):**
 
 ```bash
-cp calendar_invite.py addons/
+cp examples/addons/calendar_invite.py addons/
 git add addons/calendar_invite.py
 git commit -m "Add the calendar_invite add-on"
 git push
@@ -212,7 +212,7 @@ Then add `MAIL_ADDONS=calendar_invite` to the host's variables. The host rebuild
 **On your own server (Docker Compose):**
 
 ```bash
-cp calendar_invite.py addons/
+cp examples/addons/calendar_invite.py addons/
 echo "MAIL_ADDONS=calendar_invite" >> .env
 docker compose up -d --build
 docker compose exec mail selfhost-remote-mail-mcp addons

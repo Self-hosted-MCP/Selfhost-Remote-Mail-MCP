@@ -34,6 +34,21 @@ You talk to your AI app in plain words. It picks the right tool. Here are ways t
 
 The AI saves a draft and shows it to you. Nothing is sent yet.
 
+## Attach files
+
+- *Attach the PDF from Sam's last email to my reply.*
+- *Put this list in a CSV and attach it.*
+- *Attach a calendar invite for Thursday 3pm.*
+- *Which files did I upload?* then *Attach the photo I just uploaded.*
+- *Attach ~/Desktop/invoice.pdf* (computer version)
+
+## Settings
+
+- *Change my signature to Alex Rivera, Studio Northwind, northwind.studio.*
+- *Save this email as a template called follow-up.*
+- *Stop removing the location from my photos.* (the AI tells you what it changed)
+- *Tell me when there's a new version.*
+
 ## Send
 
 - *Send that draft.*

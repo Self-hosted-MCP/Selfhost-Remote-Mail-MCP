@@ -37,6 +37,18 @@ Give mailboxes short names like **Work**, **Personal** or **Archive 2019**. You 
 - change or remove the mailboxes you added there,
 - choose which mailboxes each connected AI app may use, or disconnect an app.
 
+The settings page has a bar at the top with its sections:
+
+| Section | What you can do there |
+|---|---|
+| **Mailboxes** | See each mailbox, test its login, check its domain, rename it, and edit or remove ones added on this page. **Add a mailbox** is right below |
+| **Apps** | The AI apps that logged in: choose their mailboxes, whether they may send, or disconnect them |
+| **Files** | A link to the upload page, for files to attach |
+| **Privacy** | Turn photo location and document author removal on or off |
+| **Devices** | Browsers signed in to these pages (sign any out), and every sign-in of the last 7 days. The log can be turned off |
+| **AI changes** | Settings an AI app changed because you asked, in the last 30 days |
+| **About** | Your version, the add-ons that are on, update status and what's new |
+
 **2. The setup command** (on a computer). Run `selfhost-remote-mail-mcp setup` again and choose **add**. It asks for the address, a name, the mode and the password, and tests the login.
 
 **3. The settings file or hosting variables.** Mailbox 1 uses the `MAIL_*` settings. Number the others:
@@ -61,7 +73,7 @@ When an AI app connects, the login page lists your mailboxes with tick boxes. Un
 <p align="center"><img src="images/login-page.png" alt="The login page asks which mailboxes the app may use" width="300"></p>
 
 - An app never sees, or even learns the address of, a mailbox you didn't tick.
-- **Allow sending** is a separate tick, off by default. Without it the app can read, draft and sort, but not send.
+- **"Allow ... to send email"** is a separate tick, not ticked by default. Not ticked: the app writes drafts, and you press send yourself in your mail app. Ticked: it can also press send for you.
 - You can change an app's choice later on the settings page, under **Connected apps**.
 - Apps on your own computer (`stdio`) use every mailbox, since nobody else can reach them.
 - Apps that connected before you added a second mailbox keep seeing everything until you choose for them on the settings page, or they connect again.
@@ -87,13 +99,13 @@ If a mailbox uses your own domain (like `you@yourname.com`), press **Check domai
 | **DKIM** | Signs your emails, so receivers know they're really from you | Your emails land in spam more often, and fakes are harder to spot |
 | **DMARC** | Tells receivers what to do with fake emails that use your name | Anyone can pretend to be you |
 
-Green is good, yellow works but could be better, red needs fixing. Each result says what to add at your domain company in plain words. The check only reads public records and changes nothing. It asks your normal internet provider, not an outside service.
+Green is good, yellow works but could be better, red needs fixing. Each result says what to add at your domain company in plain words. The check changes nothing. It reads your domain's public records through your normal internet provider (not an outside service), and looks at the signature line of your last 20 sent emails to find your DKIM key.
 
 Addresses at Gmail, iCloud, Outlook and other big providers are skipped, because the provider sets this up for you.
 
 ## Passwords of mailboxes added on the settings page
 
-They're stored **encrypted** in `mailboxes.json` in the data folder. The key comes from the `MAIL_SECRET_KEY` setting. If that isn't set, the server makes a key file next to the data instead.
+They're stored **encrypted** in `mailboxes.json` in the data folder. The key comes from the `MAIL_SECRET_KEY` setting. If that isn't set, the server makes a key file, `secret.key`, inside the data folder instead.
 
 > [!IMPORTANT]
 > Set `MAIL_SECRET_KEY` to a long random value, kept somewhere other than the data folder (your hosting company's secret variables, for example). Then a copy of the data folder alone can't unlock the passwords. If you change the key later, mailboxes added on the page have to be added again.
