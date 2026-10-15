@@ -40,12 +40,7 @@ AI:  Uploads the file to your server by itself, attaches it to a draft and shows
 
 ## How it works, in one picture
 
-```
- Your AI app  ──►  this server  ──►  your mail provider (Gmail, iCloud, ...)
- (Claude,          (on your          reads with IMAP, sends with SMTP,
-  ChatGPT, ...)     computer or       the same way any mail app does
-                    your server)
-```
+<p align="center"><img src="docs/images/how-it-works.png" alt="Your AI app asks your server, and your server reads and drafts in your mailbox at Gmail, iCloud or any other provider. No company sits in between." width="640"></p>
 
 The server is a small program. Your AI app talks to it through **MCP** (Model Context Protocol), a standard way for AI apps to use outside tools. The server then talks to your mailbox the way a normal mail app does. The authors of this project never see your mail, your password or anything else: there is no account, no cloud service and no tracking.
 
@@ -82,6 +77,8 @@ The server is a small program. Your AI app talks to it through **MCP** (Model Co
 
 **Drop a file in the chat, it goes in the email.** Drop a PDF or photo into your AI chat and say *"email this to Sam"*. Your AI app uploads it to your server by itself with a one-time link, attaches it and shows you the draft. You don't need the passphrase or another app. This works in AI apps that can run code, like Claude (web, desktop and phone) and coding apps such as Claude Code, Cursor and Codex. If your app can't upload it, it gives you the link to pick the file yourself. Up to 25 MB. See [docs/attachments.md](docs/attachments.md#drop-a-file-in-the-chat).
 
+<p align="center"><img src="docs/images/drop-a-file.png" alt="A file dropped in the chat, then the AI shows a draft to Sam with the file attached and asks before sending" width="640"></p>
+
 **Attach files.** From other emails, from your computer, files the AI writes (like a CSV), or photos and documents you upload from your phone on the upload page. Programs are refused, and suspect files (like spreadsheets with macros) need your OK. Photos go in HD, or smaller if you ask (the AI offers it when files are too big), and iPhone HEIC photos can become JPG after you say yes. See [docs/attachments.md](docs/attachments.md).
 
 **Create files on the go.** Ask your AI to make a calendar invite, a CSV spreadsheet, a contact card or notes, and it attaches them to your email.
@@ -104,9 +101,13 @@ The server is a small program. Your AI app talks to it through **MCP** (Model Co
 
 **See who signed in.** The settings page lists the devices signed in and every sign-in of the last 7 days, wrong passphrases included. Sign out any device you don't recognise.
 
+<p align="center"><img src="docs/images/devices.png" alt="The devices list: signed-in devices with a Sign out button, and recent sign-ins including a wrong passphrase" width="640"></p>
+
 **Check your domain.** If you use your own domain (like `you@yourname.com`), one button checks the records that keep your emails out of spam (SPF, DKIM, DMARC) and says in plain words what to fix.
 
 **In your language.** The web pages come in 20 languages and follow your browser. Your AI app already talks to you in yours. An AI agent can add any other language with one command. See [docs/languages.md](docs/languages.md).
+
+<p align="center"><img src="docs/images/languages.png" alt="The login page in Japanese, Greek, Portuguese (Brazil) and Hindi" width="640"></p>
 
 **Add-ons.** Plug in your own features as small Python files, like a calendar invite or a quote PDF, without changing the server. Two examples are included, and an AI coding agent can build one for you. See [docs/addons.md](docs/addons.md).
 
