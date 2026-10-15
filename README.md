@@ -26,6 +26,7 @@
 <a href="#quick-start-option-1-about-5-minutes">Quick start</a> ·
 <a href="#choose-how-to-run-it">Ways to run it</a> ·
 <a href="docs/mailboxes.md">Several mailboxes</a> ·
+<a href="#add-ons">Add-ons</a> ·
 <a href="docs/safety.md">Safety</a> ·
 <a href="#all-the-guides">All guides</a>
 </p>
@@ -101,6 +102,8 @@ The server is a small program. Your AI app talks to it through **MCP** (Model Co
 
 **Contacts.** Finds people from your own mail history: who you write to most and when you last did.
 
+**Your calendar.** See your events, find free times, and add, change or delete events, in iCloud, Fastmail, Nextcloud and other calendars that use CalDAV. Ask *"when am I free on Thursday?"* or *"move the dentist to 4pm"*. Deleting is always double checked with you first, and no one is ever invited or emailed. It's the [Calendar add-on](src/selfhost_remote_mail_mcp/library/caldav/README.md): turn it on in the settings page.
+
 **Several mailboxes.** Up to 5, at any providers, each with its own mode (full, draft only or read only) and a short name like *Work*. Each AI app gets only the mailboxes you tick for it. See [docs/mailboxes.md](docs/mailboxes.md).
 
 **A settings page.** In the web version, open `/settings` to add mailboxes, test logins, rename them, choose or disconnect AI apps, switch privacy options, turn add-ons on, see which devices signed in and what AI apps changed. It also shows your version and what's new. No terminal needed. Section by section: [docs/mailboxes.md](docs/mailboxes.md#three-ways-to-add-mailboxes).
@@ -117,24 +120,40 @@ The server is a small program. Your AI app talks to it through **MCP** (Model Co
 
 <p align="center"><img src="docs/images/languages.png" alt="The login page in Japanese, Greek, Portuguese (Brazil) and Hindi" width="640"></p>
 
-**Add-ons.** Extra features you turn on when you want them, from the [add-on library](src/selfhost_remote_mail_mcp/library/README.md) that comes with the server (all off by default), or your own small Python files. An AI coding agent can turn one on or build one for you. See [the add-ons guide](docs/addons.md).
-
-| Add-on | What it does |
-|---|---|
-| [calendar_invite](src/selfhost_remote_mail_mcp/library/calendar_invite/README.md) | Attaches a calendar invite to a draft |
-| [pdf_maker](src/selfhost_remote_mail_mcp/library/pdf_maker/README.md) | Turns text into a PDF and attaches it |
-| [invoices](src/selfhost_remote_mail_mcp/library/invoices/README.md) | Numbered quotes, proformas and invoices as PDFs |
-| [phishing_alert](src/selfhost_remote_mail_mcp/library/phishing_alert/README.md) | Gives each email a trust level and warns about scams |
-| [follow_ups](src/selfhost_remote_mail_mcp/library/follow_ups/README.md) | Tells you which emails you sent got no reply in time |
-| [out_of_office](src/selfhost_remote_mail_mcp/library/out_of_office/README.md) | Answers new emails with your away message while you're away |
-| [caldav](src/selfhost_remote_mail_mcp/library/caldav/README.md) | Your calendar: events, free times, adding events |
-| [webhooks](src/selfhost_remote_mail_mcp/library/webhooks/README.md) | Tells your automations when new mail arrives |
-
-Turn one on with its button on the settings page (**Add-ons** tab), with `selfhost-remote-mail-mcp addons enable pdf_maker`, or by adding its name to `MAIL_ADDONS`.
+**Add-ons.** Calendar, invoices, scam warnings and more, when you want them. See [Add-ons](#add-ons) below.
 
 **Updates, if you want them.** Get told when there's a new release, or let it update itself, official releases only. See [docs/updates.md](docs/updates.md).
 
 All 17 tools, with examples: [docs/tools.md](docs/tools.md).
+
+## Add-ons
+
+<p align="center"><img src="docs/images/addons.png" alt="The add-ons list: Calendar, Invoices and Phishing alert turned on, Webhooks with a Turn on button" width="640"></p>
+
+Extra features that come with the server. **All of them are off** until you turn them on, so the server stays small and only does what you chose.
+
+| Add-on | What it does |
+|---|---|
+| 📅 [Calendar](src/selfhost_remote_mail_mcp/library/caldav/README.md) | See, add, change and delete events, and find free times (iCloud, Fastmail, Nextcloud and other CalDAV calendars) |
+| 🧾 [Invoices](src/selfhost_remote_mail_mcp/library/invoices/README.md) | Numbered quotes, proformas and invoices as PDFs, with totals |
+| 🛡️ [Phishing alert](src/selfhost_remote_mail_mcp/library/phishing_alert/README.md) | Gives each email a trust level and warns about scams |
+| ⏰ [Follow-ups](src/selfhost_remote_mail_mcp/library/follow_ups/README.md) | Tells you which emails you sent got no reply in time |
+| 🏝️ [Out of office](src/selfhost_remote_mail_mcp/library/out_of_office/README.md) | Answers new emails with your away message while you're away (the only one that sends by itself) |
+| 📎 [Calendar invite](src/selfhost_remote_mail_mcp/library/calendar_invite/README.md) | Attaches a calendar invite to a draft |
+| 📄 [PDF maker](src/selfhost_remote_mail_mcp/library/pdf_maker/README.md) | Turns text into a PDF and attaches it |
+| 🔗 [Webhooks](src/selfhost_remote_mail_mcp/library/webhooks/README.md) | Tells your automations (n8n, Make, Zapier) when new mail arrives |
+
+**Turn one on in a minute:**
+
+1. Open the settings page, **Add-ons** tab, and press **Turn on**.
+2. If it needs details (like your calendar login), press **Set up**, fill them in and press **Test connection** where there is one.
+3. Start a new chat in your AI app.
+
+No web version? Use `selfhost-remote-mail-mcp addons enable caldav`, or add the name to `MAIL_ADDONS`.
+
+**Make your own.** An add-on is one small Python file. Ask an AI coding agent like Claude Code or Codex to build one for you: [AGENTS.md](AGENTS.md#add-ons-for-a-user) gives it the steps, and the [add-ons guide](docs/addons.md) explains the rules every add-on follows. Built something useful? Share it with the [Share an add-on](https://github.com/s17sh70x2jfl031ag/Selfhost-Remote-Mail-MCP/issues/new?template=addon.yml) form.
+
+All the details: [the add-on library](src/selfhost_remote_mail_mcp/library/README.md).
 
 ## Safety and privacy
 
@@ -213,7 +232,7 @@ More in [docs/safety.md](docs/safety.md) (risks and good settings) and [docs/pri
 
 - **Outlook.com, Hotmail and Live accounts**, and Microsoft 365 accounts that need Microsoft's own sign-in. Microsoft stopped accepting passwords from mail apps.
 - **Proton Mail** through Proton Bridge. Bridge uses a certificate this server doesn't accept yet.
-- **Calendars.**
+- **Google, Microsoft 365 and Outlook.com calendars.** The Calendar add-on needs CalDAV, which they don't offer to outside apps.
 
 ## Help and feedback
 
