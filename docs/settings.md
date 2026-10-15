@@ -97,6 +97,13 @@ Mailboxes 2 to 5 use the same settings with their number: `MAIL_2_...`, `MAIL_3_
 |---|---|---|
 | `UPDATE_CHECK` | `off` | `on`: once a day, ask GitHub which release is newest, and show "Update available" on the settings page and in the `accounts` tool. Nothing about you is sent. Your AI can also turn it on or off when you ask; setting it here locks it. See [updates.md](updates.md) |
 
+## Language
+
+| Setting | Default | What it does |
+|---|---|---|
+| `LANGUAGE` | empty | Show the web pages in one language, like `de`. Empty: follow each browser. See [languages.md](languages.md) |
+| `MAIL_LOCALES_DIR` | `<config folder>/locales` | Where your own translation files are. Must be an environment variable |
+
 ## Add-ons
 
 | Setting | Default | What it does |

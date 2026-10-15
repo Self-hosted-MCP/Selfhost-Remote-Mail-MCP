@@ -11,6 +11,8 @@ import html
 import re
 import string
 
+from .i18n import LANG, LANGUAGES, N_, _
+
 PROJECT = "Selfhost-Remote-Mail-MCP"
 PROJECT_URL = "https://github.com/s17sh70x2jfl031ag/Selfhost-Remote-Mail-MCP"
 AUTHOR = "s17sh70x2jfl031ag"
@@ -25,9 +27,17 @@ HEADERS = {
     "X-Content-Type-Options": "nosniff",
 }
 
-MODE_LABELS = {"full": "Full", "draft": "Draft only", "read": "Read only"}
-MODE_HELP = {"full": "read, draft, sort and send", "draft": "read, draft and sort, never send",
-             "read": "read and search only"}
+MODE_LABELS = {"full": N_("Full"), "draft": N_("Draft only"), "read": N_("Read only")}
+MODE_HELP = {"full": N_("read, draft, sort and send"), "draft": N_("read, draft and sort, never send"),
+             "read": N_("read and search only")}
+PRIVACY_HELP = {
+    "remove_photo_location": N_("Photos from phones often hold the exact place they were taken, and the camera. Works "
+                                "for jpg, png and webp; the photo itself isn't changed."),
+    "remove_document_details": N_("Word, Excel, PowerPoint, OpenDocument and PDF files often hold the author's name "
+                                  "and company. Signed or locked PDFs are left alone."),
+    "upload_links": N_("Lets an AI app upload a file you dropped into the chat, with a one-time link (one file, 10 "
+                       "minutes). Off: you upload files yourself on the upload page."),
+}
 
 esc = html.escape
 
@@ -179,7 +189,7 @@ footer a{color:inherit;text-underline-offset:3px;text-decoration-color:var(--pin
 """
 
 PAGE = string.Template("""<!doctype html>
-<html lang="en"><head><meta charset="utf-8">
+<html lang="$lang"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="color-scheme" content="light dark">
 <meta name="robots" content="noindex,nofollow">
@@ -194,19 +204,19 @@ PAGE = string.Template("""<!doctype html>
 </section>
 $tabs<section class="body">$content</section>
 </main>
-<footer><a href="$project_url">$project</a> by $author</footer>
+<footer><a href="$project_url">$project</a> $by $author</footer>
 </body></html>""")
 
 
 def page(headline: str, sub: str, content: str, wide: bool = False, tabs: list[tuple[str, str]] | None = None) -> str:
     """headline and sub may hold simple markup, so callers escape what they put in. tabs: (anchor, label) links
     to the page's sections, shown under the header and kept in view while scrolling."""
-    nav = ('<nav class="tabs" aria-label="Sections">' + "".join(f'<a href="#{a}">{esc(t)}</a>' for a, t in tabs)
-           + "</nav>") if tabs else ""
+    nav = (f'<nav class="tabs" aria-label="{esc(_("Sections"))}">'
+           + "".join(f'<a href="#{a}">{esc(t)}</a>' for a, t in tabs) + "</nav>") if tabs else ""
     title = re.sub(r"<[^>]+>", "", headline)
     return PAGE.substitute(title=f"{title} · Selfhost Mail", headline=headline, sub=sub, content=content, tabs=nav,
                            css=CSS, icon=ICON_MAIL, width="wide" if wide else "", project=PROJECT,
-                           project_url=PROJECT_URL, author=AUTHOR)
+                           project_url=PROJECT_URL, author=AUTHOR, lang=LANG.get(), by=esc(_("by")))
 
 
 def message(kind: str, text: str) -> str:
@@ -224,16 +234,17 @@ def who(address: str, name: str = "") -> str:
 
 
 def badge(mode: str) -> str:
-    return f'<span class="badge {mode}">{MODE_LABELS.get(mode, mode)}</span>'
+    return f'<span class="badge {mode}">{esc(_(MODE_LABELS.get(mode, mode)))}</span>'
 
 
 def mode_options(selected: str) -> str:
-    return "".join(f'<option value="{m}"{" selected" if m == selected else ""}>{MODE_LABELS[m]}</option>'
+    return "".join(f'<option value="{m}"{" selected" if m == selected else ""}>{esc(_(MODE_LABELS[m]))}</option>'
                    for m in MODE_LABELS)
 
 
-MODE_HINT = ('<p class="hint">Full: read, draft, sort and send. Draft only: everything but sending. '
-             'Read only: read and search.</p>')
+def mode_hint() -> str:
+    return '<p class="hint">' + esc(_("Full: read, draft, sort and send. Draft only: everything but sending. "
+                                      "Read only: read and search.")) + "</p>"
 
 
 # ---------------------------------------------------------------- login page (AI apps connecting)
@@ -242,38 +253,44 @@ def login(app: str | None, host: str | None, req: str, mailboxes: list[tuple[str
           expired_text: str = "", settings_url: str = "") -> str:
     """mailboxes: (address, mode, name) for every mailbox the server knows."""
     if app is None:
-        steps = ('<ol class="steps"><li>Go back to your AI app.</li><li>Start connecting the mail server again.</li>'
-                 '<li>A fresh login page opens. It stays valid for 10 minutes.</li></ol>')
-        return page("This login link has expired", esc(expired_text or "Login links last 10 minutes."), steps)
+        steps = ('<ol class="steps">' + "".join(f"<li>{esc(s)}</li>" for s in (
+            _("Go back to your AI app."), _("Start connecting the mail server again."),
+            _("A fresh login page opens. It stays valid for 10 minutes."))) + "</ol>")
+        return page(esc(_("This login link has expired")), esc(expired_text or _("Login links last 10 minutes.")), steps)
+    a = esc(app)
     if len(mailboxes) > 1:
         boxes = "".join(
             f'<label class="choice"><input type="checkbox" name="mailbox" value="{esc(addr)}" checked>'
             f'<span class="addr">{who(addr, name)}</span>{badge(mode)}</label>' for addr, mode, name in mailboxes)
-        choose = (f'<fieldset><legend>Which mailboxes may {esc(app)} use?</legend>{boxes}'
-                  '<p class="hint">Each mailbox keeps its own limits: a read-only one stays read-only.</p></fieldset>')
+        choose = (f'<fieldset><legend>{_("Which mailboxes may {app} use?", app=a)}</legend>{boxes}'
+                  f'<p class="hint">{esc(_("Each mailbox keeps its own limits: a read-only one stays read-only."))}</p></fieldset>')
     elif mailboxes:
         choose = f'<input type="hidden" name="mailbox" value="{esc(mailboxes[0][0])}">'
     else:
-        choose = message("error", "No mailbox is set up on this server yet. Add one first.")
+        choose = message("error", _("No mailbox is set up on this server yet. Add one first."))
     if any(mode == "full" for _addr, mode, _name in mailboxes):
-        choose += ('<fieldset><legend>Sending</legend><label class="choice"><input type="checkbox" name="allow_send" '
-                   f'value="yes"><span class="addr">Allow {esc(app)} to send email</span></label>'
-                   f'<p class="hint"><b>Not ticked:</b> {esc(app)} writes drafts, and you press send yourself in your '
-                   f'mail app.<br><b>Ticked:</b> {esc(app)} can also press send for you. Tip: set sending to "ask '
-                   'first" in your AI app.</p></fieldset>')
+        choose += (f'<fieldset><legend>{esc(_("Sending"))}</legend><label class="choice"><input type="checkbox" '
+                   f'name="allow_send" value="yes"><span class="addr">{_("Allow {app} to send email", app=a)}</span></label>'
+                   '<p class="hint">'
+                   + _("<b>Not ticked:</b> {app} writes drafts, and you press send yourself in your mail app.", app=a)
+                   + "<br>" + _('<b>Ticked:</b> {app} can also press send for you. Tip: set sending to "ask first" '
+                                'in your AI app.', app=a) + "</p></fieldset>")
     local = (host or "").lower() in ("localhost", "127.0.0.1", "::1")
-    warn = message("error", f"{app} returns to an app on a computer (localhost). Only continue if that's your own "
-                            "computer and you just started this connection there.") if local else ""
+    warn = message("error", _("{app} returns to an app on a computer (localhost). Only continue if that's your own "
+                              "computer and you just started this connection there.", app=app)) if local else ""
     content = (f'{message("error", error) if error else ""}{warn}<form method="post" action="/login">'
                f'<input type="hidden" name="req" value="{esc(req)}">{choose}'
-               '<label for="passphrase">Passphrase</label>'
+               f'<label for="passphrase">{esc(_("Passphrase"))}</label>'
                '<input id="passphrase" type="password" name="passphrase" autocomplete="current-password" autofocus required>'
-               '<button class="block" type="submit">Allow access</button></form>'
-               f'<p class="note">{ICON_SHIELD}<span>Only continue if you started this connection yourself, just now. '
-               'Otherwise close this page: nothing happens without your passphrase.</span></p>'
-               + (f'<p class="note">{ICON_CHECK}<span>Afterwards, manage everything (mailboxes, apps, privacy, files) '
-                  f'at <b>{esc(settings_url)}</b>, with the same passphrase.</span></p>' if settings_url else ''))
-    return page(f'{esc(app)} wants your <span class="hl">mailbox</span>', f"After you allow it, you go back to <b>{esc(host or '?')}</b>.", content)
+               f'<button class="block" type="submit">{esc(_("Allow access"))}</button></form>'
+               f'<p class="note">{ICON_SHIELD}<span>'
+               + esc(_("Only continue if you started this connection yourself, just now. Otherwise close this page: "
+                       "nothing happens without your passphrase.")) + "</span></p>"
+               + (f'<p class="note">{ICON_CHECK}<span>'
+                  + _("Afterwards, manage everything (mailboxes, apps, privacy, files) at <b>{url}</b>, with the same "
+                      "passphrase.", url=esc(settings_url)) + "</span></p>" if settings_url else ""))
+    return page(_('{app} wants your <span class="hl">mailbox</span>', app=a),
+                _("After you allow it, you go back to <b>{host}</b>.", host=esc(host or "?")), content)
 
 
 # ---------------------------------------------------------------- settings page
@@ -287,17 +304,19 @@ def settings_login(error: str = "", after: str = "/settings") -> str:
     files = after == "/settings/upload"
     content = (f'{message("error", error) if error else ""}<form method="post" action="/settings/login">'
                f'<input type="hidden" name="next" value="{esc(after)}">'
-               '<label for="passphrase">Passphrase</label>'
+               f'<label for="passphrase">{esc(_("Passphrase"))}</label>'
                '<input id="passphrase" type="password" name="passphrase" autocomplete="current-password" autofocus required>'
                '<label class="confirm remember"><input type="checkbox" name="remember" value="yes" checked>'
-               'Remember this device for 90 days</label>'
-               f'<button class="block" type="submit">{"Open files" if files else "Open settings"}</button></form>'
-               f'<p class="note">{ICON_SHIELD}<span>Same passphrase as when you connect an AI app. Let your phone or '
-               'browser save it, so next time it fills in by itself. Untick "Remember" on a shared computer. Five '
-               'wrong tries lock this page for 15 minutes.</span></p>')
+               f'{esc(_("Remember this device for 90 days"))}</label>'
+               f'<button class="block" type="submit">{esc(_("Open files") if files else _("Open settings"))}</button></form>'
+               f'<p class="note">{ICON_SHIELD}<span>'
+               + esc(_('Same passphrase as when you connect an AI app. Let your phone or browser save it, so next time '
+                       'it fills in by itself. Untick "Remember" on a shared computer. Five wrong tries lock this page '
+                       'for 15 minutes.')) + "</span></p>")
     if files:
-        return page("Files for your emails", "Upload a photo or document, then ask your AI app to attach it.", content)
-    return page("Settings", "Your mailboxes and the AI apps that may use them.", content)
+        return page(esc(_("Files for your emails")), esc(_("Upload a photo or document, then ask your AI app to attach it.")),
+                    content)
+    return page(esc(_("Settings")), esc(_("Your mailboxes and the AI apps that may use them.")), content)
 
 
 def _csrf(token: str) -> str:
@@ -305,19 +324,21 @@ def _csrf(token: str) -> str:
 
 
 def _post(action: str, csrf: str, fields: dict[str, str], label: str, cls: str = "quiet", extra: str = "") -> str:
+    """label is escaped here."""
     hidden = "".join(f'<input type="hidden" name="{esc(k)}" value="{esc(v)}">' for k, v in fields.items())
-    return f'<form method="post" action="{action}">{_csrf(csrf)}{hidden}{extra}<button class="{cls}" type="submit">{label}</button></form>'
+    return (f'<form method="post" action="{action}">{_csrf(csrf)}{hidden}{extra}'
+            f'<button class="{cls}" type="submit">{esc(label)}</button></form>')
 
 
 def _host_fields(prefix: str, imap_host: str = "", imap_port: str = "993", smtp_host: str = "", smtp_port: str = "465",
                  username: str = "", smtp_username: str = "") -> str:
     return (f'<div class="grid two">'
-            f'<div><label for="{prefix}ih">IMAP server</label><input id="{prefix}ih" name="imap_host" value="{esc(imap_host)}" placeholder="imap.example.com"></div>'
-            f'<div><label for="{prefix}ip">IMAP port</label><input id="{prefix}ip" name="imap_port" value="{esc(imap_port)}" inputmode="numeric"></div>'
-            f'<div><label for="{prefix}sh">SMTP server</label><input id="{prefix}sh" name="smtp_host" value="{esc(smtp_host)}" placeholder="smtp.example.com"></div>'
-            f'<div><label for="{prefix}sp">SMTP port</label><input id="{prefix}sp" name="smtp_port" value="{esc(smtp_port)}" inputmode="numeric"></div>'
-            f'<div><label for="{prefix}un">Login name <span class="hint">if not the address</span></label><input id="{prefix}un" name="username" value="{esc(username)}" autocomplete="off"></div>'
-            f'<div><label for="{prefix}su">Login name for sending <span class="hint">rarely needed</span></label><input id="{prefix}su" name="smtp_username" value="{esc(smtp_username)}" autocomplete="off"></div>'
+            f'<div><label for="{prefix}ih">{esc(_("IMAP server"))}</label><input id="{prefix}ih" name="imap_host" value="{esc(imap_host)}" placeholder="imap.example.com"></div>'
+            f'<div><label for="{prefix}ip">{esc(_("IMAP port"))}</label><input id="{prefix}ip" name="imap_port" value="{esc(imap_port)}" inputmode="numeric"></div>'
+            f'<div><label for="{prefix}sh">{esc(_("SMTP server"))}</label><input id="{prefix}sh" name="smtp_host" value="{esc(smtp_host)}" placeholder="smtp.example.com"></div>'
+            f'<div><label for="{prefix}sp">{esc(_("SMTP port"))}</label><input id="{prefix}sp" name="smtp_port" value="{esc(smtp_port)}" inputmode="numeric"></div>'
+            f'<div><label for="{prefix}un">{esc(_("Login name"))} <span class="hint">{esc(_("if not the address"))}</span></label><input id="{prefix}un" name="username" value="{esc(username)}" autocomplete="off"></div>'
+            f'<div><label for="{prefix}su">{esc(_("Login name for sending"))} <span class="hint">{esc(_("rarely needed"))}</span></label><input id="{prefix}su" name="smtp_username" value="{esc(smtp_username)}" autocomplete="off"></div>'
             '</div>')
 
 
@@ -330,73 +351,79 @@ def settings(csrf: str, mailboxes: list[dict], apps: list[dict], flash: tuple[st
         icons = {"good": ("ok", ICON_CHECK), "warn": ("tip", ICON_ALERT), "bad": ("error", ICON_ALERT)}
         rows = "".join(f'<p class="msg {icons[level][0]}">{icons[level][1]}<span><b>{esc(name)}</b> {esc(text)}</span></p>'
                        for name, level, text in flash[1]["rows"])
-        parts = [f'<h2>Domain check: {esc(flash[1]["address"].split("@")[1])}</h2><p class="lead">What other mail '
-                 f'servers see when you send. Green is good.</p>{rows}']
+        parts = [f'<h2>{esc(_("Domain check: {domain}", domain=flash[1]["address"].split("@")[1]))}</h2>'
+                 f'<p class="lead">{esc(_("What other mail servers see when you send. Green is good."))}</p>{rows}']
     else:
         parts = [message(*flash) if flash else ""]
     if server_read_only:
-        parts.append(message("error", "Read-only mode is on (MAIL_READ_ONLY=on): nothing can be changed or sent, "
-                                      "whatever each mailbox's mode says."))
+        parts.append(message("error", _("Read-only mode is on (MAIL_READ_ONLY=on): nothing can be changed or sent, "
+                                        "whatever each mailbox's mode says.")))
 
     # mailboxes
-    parts.append('<h2 id="mailboxes">Mailboxes</h2><p class="lead">The first one is the default. Each mailbox keeps its own mode.</p>')
+    parts.append(f'<h2 id="mailboxes">{esc(_("Mailboxes"))}</h2>'
+                 f'<p class="lead">{esc(_("The first one is the default. Each mailbox keeps its own mode."))}</p>')
     if mailboxes:
         rows = []
         for i, m in enumerate(mailboxes):
             addr, web = m["address"], m["source"] == "web"
-            where = "Added on this page" if web else "From the settings file. Change it there."
+            where = _("Added on this page") if web else _("From the settings file. Change it there.")
             row = [f'<div class="item"><div class="item-head">{who(addr, m["label"]) if m["label"] else f"<b>{esc(addr)}</b>"}'
-                   f'{badge(m["mode"])}{"<span class=badge>Default</span>" if i == 0 else ""}</div>'
-                   f'<div class="muted">{where} · {esc(MODE_HELP[m["mode"]])}</div><div class="actions">',
-                   _post("/settings/mailbox", csrf, {"action": "test", "address": addr}, "Test login"),
-                   _post("/settings/mailbox", csrf, {"action": "domain", "address": addr}, "Check domain")]
+                   f'{badge(m["mode"])}{"<span class=badge>" + esc(_("Default")) + "</span>" if i == 0 else ""}</div>'
+                   f'<div class="muted">{esc(where)} · {esc(_(MODE_HELP[m["mode"]]))}</div><div class="actions">',
+                   _post("/settings/mailbox", csrf, {"action": "test", "address": addr}, _("Test login")),
+                   _post("/settings/mailbox", csrf, {"action": "domain", "address": addr}, _("Check domain"))]
             row.append("</div>")
-            row.append(f'<details><summary>Rename</summary><form method="post" action="/settings/mailbox">{_csrf(csrf)}'
+            row.append(f'<details><summary>{esc(_("Rename"))}</summary><form method="post" action="/settings/mailbox">{_csrf(csrf)}'
                        f'<input type="hidden" name="action" value="rename"><input type="hidden" name="address" value="{esc(addr)}">'
-                       f'<div class="grid"><div><label for="r{i}">Name for this mailbox <span class="hint">like Work or Personal. '
-                       f'Leave empty to remove the name</span></label><input id="r{i}" name="label" value="{esc(m["label"])}" maxlength="40"></div></div>'
-                       '<div class="actions"><button type="submit">Save name</button></div></form></details>')
+                       f'<div class="grid"><div><label for="r{i}">{esc(_("Name for this mailbox"))} <span class="hint">'
+                       f'{esc(_("like Work or Personal. Leave empty to remove the name"))}</span></label>'
+                       f'<input id="r{i}" name="label" value="{esc(m["label"])}" maxlength="40"></div></div>'
+                       f'<div class="actions"><button type="submit">{esc(_("Save name"))}</button></div></form></details>')
             if web:
-                edit = (f'<details><summary>Edit</summary><form method="post" action="/settings/mailbox">{_csrf(csrf)}'
+                edit = (f'<details><summary>{esc(_("Edit"))}</summary><form method="post" action="/settings/mailbox">{_csrf(csrf)}'
                         f'<input type="hidden" name="action" value="update"><input type="hidden" name="address" value="{esc(addr)}">'
-                        f'<div class="grid two"><div><label for="n{i}">Name on outgoing mail</label><input id="n{i}" name="name" value="{esc(m["name"])}"></div>'
-                        f'<div><label for="m{i}">Mode</label><select id="m{i}" name="mode">{mode_options(m["mode"])}</select>{MODE_HINT}</div></div>'
-                        f'<div class="grid"><div><label for="p{i}">New password <span class="hint">leave empty to keep the current one</span></label>'
+                        f'<div class="grid two"><div><label for="n{i}">{esc(_("Name on outgoing mail"))}</label><input id="n{i}" name="name" value="{esc(m["name"])}"></div>'
+                        f'<div><label for="m{i}">{esc(_("Mode"))}</label><select id="m{i}" name="mode">{mode_options(m["mode"])}</select>{mode_hint()}</div></div>'
+                        f'<div class="grid"><div><label for="p{i}">{esc(_("New password"))} <span class="hint">'
+                        f'{esc(_("leave empty to keep the current one"))}</span></label>'
                         f'<input id="p{i}" type="password" name="password" autocomplete="new-password"></div></div>'
                         + _host_fields(f"e{i}", m["imap_host"], str(m["imap_port"]), m["smtp_host"], str(m["smtp_port"]),
                                        m["username"], m["smtp_username"])
-                        + '<div class="actions"><button type="submit">Save changes</button></div></form>'
-                        + _post("/settings/mailbox", csrf, {"action": "delete", "address": addr}, "Remove mailbox", "danger",
+                        + f'<div class="actions"><button type="submit">{esc(_("Save changes"))}</button></div></form>'
+                        + _post("/settings/mailbox", csrf, {"action": "delete", "address": addr}, _("Remove mailbox"), "danger",
                                 '<label class="confirm"><input type="checkbox" name="confirm" value="yes" required>'
-                                'Yes, remove it from this server. Its emails stay in the mailbox.</label>')
+                                + esc(_("Yes, remove it from this server. Its emails stay in the mailbox.")) + "</label>")
                         + "</details>")
                 row.append(edit)
             row.append("</div>")
             rows.append("".join(row))
         parts.append(f'<div class="list">{"".join(rows)}</div>')
     else:
-        parts.append('<div class="list"><p class="empty">No mailbox yet. Add the first one below.</p></div>')
+        parts.append(f'<div class="list"><p class="empty">{esc(_("No mailbox yet. Add the first one below."))}</p></div>')
 
     # add a mailbox
     if len(mailboxes) < max_boxes:
         parts.append(
-            '<h2 id="add">Add a mailbox</h2><p class="lead">For Gmail, iCloud, Yahoo, Fastmail and other known providers the '
-            'server names fill themselves in. Most of them need an app password.</p>'
+            f'<h2 id="add">{esc(_("Add a mailbox"))}</h2><p class="lead">'
+            + esc(_("For Gmail, iCloud, Yahoo, Fastmail and other known providers the server names fill themselves in. "
+                    "Most of them need an app password.")) + "</p>"
             f'<form method="post" action="/settings/mailbox">{_csrf(csrf)}<input type="hidden" name="action" value="add">'
             '<div class="grid two">'
-            '<div><label for="aa">Email address</label><input id="aa" type="email" name="address" required autocomplete="off"></div>'
-            '<div><label for="al">Name for this mailbox <span class="hint">like Work</span></label><input id="al" name="label" maxlength="40" autocomplete="off"></div>'
-            '<div><label for="an">Name on outgoing mail</label><input id="an" name="name" autocomplete="off"></div>'
-            '<div><label for="ap">Password or app password</label><input id="ap" type="password" name="password" required autocomplete="new-password"></div>'
-            f'<div><label for="am">Mode</label><select id="am" name="mode">{mode_options("draft")}</select>{MODE_HINT}</div>'
-            '</div><details><summary>Server settings</summary><p class="hint">Only needed for providers that aren\'t '
-            'filled in by themselves. See docs/email-providers.md.</p>' + _host_fields("a") + '</details>'
-            '<div class="actions"><button type="submit">Test and add</button></div></form>')
+            f'<div><label for="aa">{esc(_("Email address"))}</label><input id="aa" type="email" name="address" required autocomplete="off"></div>'
+            f'<div><label for="al">{esc(_("Name for this mailbox"))} <span class="hint">{esc(_("like Work"))}</span></label><input id="al" name="label" maxlength="40" autocomplete="off"></div>'
+            f'<div><label for="an">{esc(_("Name on outgoing mail"))}</label><input id="an" name="name" autocomplete="off"></div>'
+            f'<div><label for="ap">{esc(_("Password or app password"))}</label><input id="ap" type="password" name="password" required autocomplete="new-password"></div>'
+            f'<div><label for="am">{esc(_("Mode"))}</label><select id="am" name="mode">{mode_options("draft")}</select>{mode_hint()}</div>'
+            f'</div><details><summary>{esc(_("Server settings"))}</summary><p class="hint">'
+            + esc(_("Only needed for providers that aren't filled in by themselves. See docs/email-providers.md."))
+            + "</p>" + _host_fields("a") + "</details>"
+            f'<div class="actions"><button type="submit">{esc(_("Test and add"))}</button></div></form>')
     else:
-        parts.append(f'<p class="lead">This server holds up to {max_boxes} mailboxes (MAX_MAILBOXES).</p>')
+        parts.append(f'<p class="lead">{esc(_("This server holds up to {count} mailboxes (MAX_MAILBOXES).", count=max_boxes))}</p>')
 
     # apps
-    parts.append('<h2 id="apps">Connected apps</h2><p class="lead">AI apps that logged in, and the mailboxes each one may use.</p>')
+    parts.append(f'<h2 id="apps">{esc(_("Connected apps"))}</h2>'
+                 f'<p class="lead">{esc(_("AI apps that logged in, and the mailboxes each one may use."))}</p>')
     if apps:
         rows = []
         for i, a in enumerate(apps):
@@ -405,187 +432,205 @@ def settings(csrf: str, mailboxes: list[dict], apps: list[dict], flash: tuple[st
                 f'<label class="choice"><input type="checkbox" name="mailbox" value="{esc(m["address"])}"'
                 f'{" checked" if grant is None or m["address"] in grant else ""}><span class="addr">{who(m["address"], m["label"])}</span>'
                 f'{badge(m["mode"])}</label>' for m in mailboxes)
+            which = (_("Every mailbox (connected before mailboxes could be chosen)") if grant is None
+                     else ", ".join(grant) or _("No mailbox"))
             rows.append(
-                f'<div class="item"><div class="item-head"><b>{esc(a["name"])}</b><span class="muted">returns to {esc(a["host"])}</span></div>'
-                f'<div class="muted">{"Every mailbox (connected before mailboxes could be chosen)" if grant is None else esc(", ".join(grant) or "No mailbox")}'
-                f' · {"may send" if a["may_send"] else "may not send"}</div>'
-                f'<details><summary>Choose mailboxes</summary><form method="post" action="/settings/app">{_csrf(csrf)}'
+                f'<div class="item"><div class="item-head"><b>{esc(a["name"])}</b>'
+                f'<span class="muted">{esc(_("returns to {host}", host=a["host"]))}</span></div>'
+                f'<div class="muted">{esc(which)} · {esc(_("may send") if a["may_send"] else _("may not send"))}</div>'
+                f'<details><summary>{esc(_("Choose mailboxes"))}</summary><form method="post" action="/settings/app">{_csrf(csrf)}'
                 f'<input type="hidden" name="action" value="grant"><input type="hidden" name="client_id" value="{esc(a["client_id"])}">'
                 f'<fieldset style="margin-top:12px">{ticks}</fieldset>'
                 f'<label class="choice"><input type="checkbox" name="allow_send" value="yes"{" checked" if a["may_send"] else ""}>'
-                '<span class="addr">May send email</span></label>'
-                '<div class="actions"><button type="submit">Save</button></div></form></details>'
+                f'<span class="addr">{esc(_("May send email"))}</span></label>'
+                f'<div class="actions"><button type="submit">{esc(_("Save"))}</button></div></form></details>'
                 '<div class="actions">'
-                + _post("/settings/app", csrf, {"action": "disconnect", "client_id": a["client_id"]}, "Disconnect", "danger")
+                + _post("/settings/app", csrf, {"action": "disconnect", "client_id": a["client_id"]}, _("Disconnect"), "danger")
                 + "</div></div>")
         parts.append(f'<div class="list">{"".join(rows)}</div>')
     else:
-        parts.append('<div class="list"><p class="empty">No app has connected yet.</p></div>')
+        parts.append(f'<div class="list"><p class="empty">{esc(_("No app has connected yet."))}</p></div>')
 
     if uploads_on:
-        parts.append('<h2 id="files">Files for your emails</h2><p class="lead">Upload a photo, PDF or document on '
-                     '<a href="/settings/upload">the upload page</a>, then ask your AI app to attach it.</p>')
+        parts.append(f'<h2 id="files">{esc(_("Files for your emails"))}</h2><p class="lead">'
+                     + _('Upload a photo, PDF or document on <a href="/settings/upload">the upload page</a>, then ask '
+                         'your AI app to attach it.') + "</p>")
 
     if privacy is not None:
-        parts.append('<h2 id="privacy">Privacy</h2><p class="lead">For files you attach from your computer, the AI or the upload '
-                     'page. Files forwarded from other emails are left as they are.</p>')
-        help_text = {"remove_photo_location": "Photos from phones often hold the exact place they were taken, and "
-                                              "the camera. Works for jpg, png and webp; the photo itself isn't changed.",
-                     "remove_document_details": "Word, Excel, PowerPoint, OpenDocument and PDF files often hold the "
-                                                "author's name and company. Signed or locked PDFs are left alone.",
-                     "upload_links": "Lets an AI app upload a file you dropped into the chat, with a one-time link "
-                                     "(one file, 10 minutes). Off: you upload files yourself on the upload page."}
+        parts.append(f'<h2 id="privacy">{esc(_("Privacy"))}</h2><p class="lead">'
+                     + esc(_("For files you attach from your computer, the AI or the upload page. Files forwarded from "
+                             "other emails are left as they are.")) + "</p>")
         rows = []
         for p in privacy:
-            state = '<span class="badge lime">On</span>' if p["on"] else '<span class="badge read">Off</span>'
+            state = (f'<span class="badge lime">{esc(_("On"))}</span>' if p["on"]
+                     else f'<span class="badge read">{esc(_("Off"))}</span>')
             if p["forced_off"]:
-                button = '<span class="muted">Off in the server settings</span>'
+                button = f'<span class="muted">{esc(_("Off in the server settings"))}</span>'
             else:
                 button = _post("/settings/privacy", csrf, {"name": p["name"], "action": "off" if p["on"] else "on"},
-                               "Turn off" if p["on"] else "Turn on")
-            rows.append(f'<div class="item"><div class="file-row"><div class="grow"><b>{esc(p["label"])} {state}</b>'
-                        f'<span class="muted">{esc(help_text.get(p["name"], ""))}</span></div>{button}</div></div>')
-        rows.append('<div class="item"><div class="file-row"><div class="grow"><b>No tracking <span class="badge lime">Always</span></b>'
-                    '<span class="muted">The server never loads pictures or links inside emails, so senders can\'t '
-                    'see when or where you read them.</span></div></div></div>')
+                               _("Turn off") if p["on"] else _("Turn on"))
+            rows.append(f'<div class="item"><div class="file-row"><div class="grow"><b>{esc(_(p["label"]))} {state}</b>'
+                        f'<span class="muted">{esc(_(PRIVACY_HELP.get(p["name"], "")) if PRIVACY_HELP.get(p["name"]) else "")}</span></div>{button}</div></div>')
+        rows.append(f'<div class="item"><div class="file-row"><div class="grow"><b>{esc(_("No tracking"))} '
+                    f'<span class="badge lime">{esc(_("Always"))}</span></b><span class="muted">'
+                    + esc(_("The server never loads pictures or links inside emails, so senders can't see when or where "
+                            "you read them.")) + "</span></div></div></div>")
         parts.append(f'<div class="list">{"".join(rows)}</div>')
 
     if devices is not None:
-        parts.append('<h2 id="devices">Devices</h2><p class="lead">Browsers signed in to these pages. Sign out any you don\'t '
-                     'recognise, then change your passphrase.</p>')
+        parts.append(f'<h2 id="devices">{esc(_("Devices"))}</h2><p class="lead">'
+                     + esc(_("Browsers signed in to these pages. Sign out any you don't recognise, then change your "
+                             "passphrase.")) + "</p>")
         rows = []
         for d in devices["list"]:
-            name = esc(d["device"]) if d["device"] else "A device"
-            facts = [f"Signed in {esc(d['since'])}" if d["since"] else "",
-                     f"last seen {esc(d['seen'])}" if d["seen"] and not d["current"] else "",
-                     f"from {esc(d['ip'])}" if d["ip"] else "",
-                     "remembered for 90 days" if d["remember"] else "until the browser closes"]
+            name = esc(d["device"]) if d["device"] else esc(_("A device"))
+            facts = [_("Signed in {when}", when=d["since"]) if d["since"] else "",
+                     _("last seen {when}", when=d["seen"]) if d["seen"] and not d["current"] else "",
+                     _("from {address}", address=d["ip"]) if d["ip"] else "",
+                     _("remembered for 90 days") if d["remember"] else _("until the browser closes")]
             rows.append(
                 f'<div class="item"><div class="file-row"><div class="grow"><b>{name}'
-                + (' <span class="badge lime">This device</span>' if d["current"] else "")
-                + f'</b><span class="muted">{" · ".join(f for f in facts if f)}</span></div>'
-                + _post("/settings/device", csrf, {"action": "signout", "id": d["id"]}, "Sign out", "danger")
+                + (f' <span class="badge lime">{esc(_("This device"))}</span>' if d["current"] else "")
+                + f'</b><span class="muted">{esc(" · ".join(f for f in facts if f))}</span></div>'
+                + _post("/settings/device", csrf, {"action": "signout", "id": d["id"]}, _("Sign out"), "danger")
                 + "</div></div>")
         parts.append(f'<div class="list">{"".join(rows)}</div>')
         if devices["on"]:
-            parts.append('<h2 id="signins">Sign-ins, last 7 days</h2><p class="lead">Every passphrase try on these pages and '
-                         'on AI app logins. A failed one you didn\'t make means someone is guessing.</p>')
+            parts.append(f'<h2 id="signins">{esc(_("Sign-ins, last 7 days"))}</h2><p class="lead">'
+                         + esc(_("Every passphrase try on these pages and on AI app logins. A failed one you didn't make "
+                                 "means someone is guessing.")) + "</p>")
             if devices["signins"]:
                 events = "".join(
-                    f'<div class="item"><div class="item-head"><b>{"Signed in" if e["ok"] else "Wrong passphrase"}</b>'
+                    f'<div class="item"><div class="item-head"><b>{esc(_("Signed in") if e["ok"] else _("Wrong passphrase"))}</b>'
                     f'<span class="badge{"" if e["ok"] else " fail"}">{esc(e["where"])}</span></div>'
-                    f'<div class="muted">{esc(e["time"])} · {esc(e["device"])} · from {esc(e["ip"])}</div></div>'
+                    f'<div class="muted">{esc(e["time"])} · {esc(e["device"])} · {esc(_("from {address}", address=e["ip"]))}</div></div>'
                     for e in devices["signins"][:50])
                 parts.append(f'<div class="list">{events}</div>')
             else:
-                parts.append('<div class="list"><p class="empty">No sign-ins in the last 7 days.</p></div>')
+                parts.append(f'<div class="list"><p class="empty">{esc(_("No sign-ins in the last 7 days."))}</p></div>')
             parts.append('<div class="actions">' + _post("/settings/device", csrf, {"action": "log_off"},
-                                                         "Turn off the device log") + '</div>'
-                         '<p class="hint">Turning it off deletes this history and stops saving devices and network '
-                         'addresses. Sign-ins keep working.</p>')
+                                                         _("Turn off the device log")) + "</div>"
+                         f'<p class="hint">{esc(_("Turning it off deletes this history and stops saving devices and network addresses. Sign-ins keep working."))}</p>')
         elif devices.get("forced_off"):
-            parts.append('<p class="lead">The device log is off (<code>DEVICE_LOG=off</code> in the server settings).</p>')
+            parts.append(f'<p class="lead">{_("The device log is off (<code>DEVICE_LOG=off</code> in the server settings).")}</p>')
         else:
-            parts.append('<p class="lead" style="margin-top:16px">The device log is off: no sign-in history or device '
-                         'details are kept.</p><div class="actions">'
-                         + _post("/settings/device", csrf, {"action": "log_on"}, "Turn on the device log") + "</div>")
+            parts.append(f'<p class="lead" style="margin-top:16px">{esc(_("The device log is off: no sign-in history or device details are kept."))}</p>'
+                         '<div class="actions">' + _post("/settings/device", csrf, {"action": "log_on"},
+                                                         _("Turn on the device log")) + "</div>")
 
     if changes is not None:
-        parts.append('<h2 id="changes">Changes by AI apps</h2><p class="lead">Settings an AI app changed because you '
-                     'asked it to, in the last 30 days. AI apps can only change photo location, document details, '
-                     'the update check, your signature, templates and uploaded files.</p>')
+        parts.append(f'<h2 id="changes">{esc(_("Changes by AI apps"))}</h2><p class="lead">'
+                     + esc(_("Settings an AI app changed because you asked it to, in the last 30 days. AI apps can only "
+                             "change photo location, document details, the update check, your signature, templates and "
+                             "uploaded files.")) + "</p>")
         if changes:
             rows = "".join(f'<div class="item"><div class="item-head"><b>{esc(c["what"].splitlines()[0])}</b></div>'
                            f'<div class="muted">{esc(c["time"])} · {esc(c["app"])}</div></div>' for c in changes[:50])
             parts.append(f'<div class="list">{rows}</div>')
         else:
-            parts.append('<div class="list"><p class="empty">No changes by AI apps.</p></div>')
+            parts.append(f'<div class="list"><p class="empty">{esc(_("No changes by AI apps."))}</p></div>')
 
     if about:
+        whats_new = esc(_("What's new"))
         upd = about.get("update")
         if upd is None:
-            status = ('Update checks are off. Ask your AI app to turn them on, or set <code>UPDATE_CHECK=on</code>, to be told about new releases '
-                      '(the server then asks GitHub once a day which version is newest, and sends nothing else).')
+            status = _("Update checks are off. Ask your AI app to turn them on, or set <code>UPDATE_CHECK=on</code>, to be "
+                       "told about new releases (the server then asks GitHub once a day which version is newest, and "
+                       "sends nothing else).")
         elif upd["newer"]:
-            status = (f'<b>Update available: {esc(upd["latest"])}</b>. <a href="{esc(upd["url"])}">What\'s new</a> · '
-                      f'<a href="{PROJECT_URL}/blob/main/docs/updates.md">How to update</a>')
+            status = (f'<b>{esc(_("Update available: {version}", version=upd["latest"]))}</b>. '
+                      f'<a href="{esc(upd["url"])}">{whats_new}</a> · '
+                      f'<a href="{PROJECT_URL}/blob/main/docs/updates.md">{esc(_("How to update"))}</a>')
         else:
-            status = "Up to date." + (f' Newest release: {esc(upd["latest"])}.' if upd["latest"] else "")
-        parts.append(f'<h2 id="about">About this server</h2><p class="lead">Version <b>{esc(about["version"])}</b>. {status}</p>')
+            status = esc(_("Up to date.")) + (" " + esc(_("Newest release: {version}.", version=upd["latest"]))
+                                              if upd["latest"] else "")
+        parts.append(f'<h2 id="about">{esc(_("About this server"))}</h2><p class="lead">'
+                     f'{_("Version <b>{version}</b>.", version=esc(about["version"]))} {status}</p>')
         if about.get("addons"):
-            parts.append(f'<p class="lead">Add-ons: <b>{esc(", ".join(about["addons"]))}</b>.</p>')
+            parts.append(f'<p class="lead">{_("Add-ons: <b>{names}</b>.", names=esc(", ".join(about["addons"])))}</p>')
         if about.get("changelog"):
-            parts.append(f'<details><summary>What\'s new</summary><div class="changelog">{about["changelog"]}</div></details>')
-    parts.append('<div class="bar"><span class="muted">Changes count right away. Apps never see mail passwords.</span>'
-                 + _post("/settings/logout", csrf, {}, "Sign out") + "</div>")
-    tabs = [("mailboxes", "Mailboxes"), ("apps", "Apps"), ("files", "Files") if uploads_on else None,
-            ("privacy", "Privacy") if privacy is not None else None, ("devices", "Devices") if devices is not None else None,
-            ("changes", "AI changes") if changes is not None else None,
-            ("about", "About") if about else None]
-    return page('Selfhost Mail <span class="hl">MCP</span>', "Mailboxes, modes, and which AI apps may use them.",
+            parts.append(f'<details><summary>{whats_new}</summary>'
+                         f'<div class="changelog">{about["changelog"]}</div></details>')
+        parts.append(f'<p class="hint">{esc(_("Page language: {language}. It follows your browser; LANGUAGE in the settings can fix it.", language=LANGUAGES.get(LANG.get(), LANG.get())))}</p>')
+    parts.append(f'<div class="bar"><span class="muted">{esc(_("Changes count right away. Apps never see mail passwords."))}</span>'
+                 + _post("/settings/logout", csrf, {}, _("Sign out")) + "</div>")
+    tabs = [("mailboxes", _("Mailboxes")), ("apps", _("Apps")), ("files", _("Files")) if uploads_on else None,
+            ("privacy", _("Privacy")) if privacy is not None else None,
+            ("devices", _("Devices")) if devices is not None else None,
+            ("changes", _("AI changes")) if changes is not None else None,
+            ("about", _("About")) if about else None]
+    return page('Selfhost Mail <span class="hl">MCP</span>', esc(_("Mailboxes, modes, and which AI apps may use them.")),
                 "".join(parts), wide=True, tabs=[t for t in tabs if t])
 
 
 # ---------------------------------------------------------------- upload page
 
+def _drop(max_size: str, accept: str = "") -> str:
+    return (f'<label class="drop">{ICON_UPLOAD}<b>{esc(_("Choose a file"))}</b>'
+            f'<span class="muted">{esc(_("Photos, PDFs, documents, audio, video or zip. Up to {size}.", size=max_size))}</span>'
+            + (f'<input type="file" name="file" accept="{esc(accept)}" required></label>' if accept
+               else '<input type="file" name="file" required></label>')
+            + f'<button class="block" type="submit">{esc(_("Upload"))}</button>')
+
+
 def uploads(csrf: str, files: list[dict], flash: tuple[str, str] | None, max_size: str, accept: str) -> str:
     """files: dicts with code, name, size_text, level, why, used, minutes_left (newest first)."""
     parts = [message(*flash) if flash else ""]
-    parts.append(
-        f'<form method="post" action="/settings/upload" enctype="multipart/form-data">{_csrf(csrf)}'
-        f'<label class="drop">{ICON_UPLOAD}<b>Choose a file</b>'
-        f'<span class="muted">Photos, PDFs, documents, audio, video or zip. Up to {esc(max_size)}.</span>'
-        f'<input type="file" name="file" accept="{esc(accept)}" required></label>'
-        '<button class="block" type="submit">Upload</button></form>')
-    parts.append('<h2 style="margin-top:34px">Waiting to be attached</h2>')
+    parts.append(f'<form method="post" action="/settings/upload" enctype="multipart/form-data">{_csrf(csrf)}'
+                 + _drop(max_size, accept) + "</form>")
+    parts.append(f'<h2 style="margin-top:34px">{esc(_("Waiting to be attached"))}</h2>')
     if files:
         rows = []
         for f in files:
             mins = f["minutes_left"]
-            left = f"{mins} min" if mins < 60 else f"{round(mins / 60)} h"
-            status = (f"In a draft · deleted in {left}" if f["used"] else f"Not used yet · deleted in {left}")
-            warn = (f'<p class="warn">{ICON_ALERT}<span>Check this: {esc(f["why"])}. Your AI app will ask you '
-                    'before attaching it.</span></p>') if f["level"] == "suspect" else ""
+            left = _("{count} min", count=mins) if mins < 60 else _("{count} h", count=round(mins / 60))
+            status = (_("In a draft · deleted in {time}", time=left) if f["used"]
+                      else _("Not used yet · deleted in {time}", time=left))
+            warn = (f'<p class="warn">{ICON_ALERT}<span>'
+                    + esc(_("Check this: {reason}. Your AI app will ask you before attaching it.", reason=f["why"]))
+                    + "</span></p>") if f["level"] == "suspect" else ""
             rows.append(
                 f'<div class="item"><div class="file-row">'
-                f'<div class="grow"><b>{esc(f["name"])}</b><span class="muted">{esc(f["size_text"])} · {status} · '
-                f'code {esc(f["code"])}</span></div>'
-                + _post("/settings/upload", csrf, {"action": "delete", "code": f["code"]}, "Delete", "danger")
+                f'<div class="grow"><b>{esc(f["name"])}</b><span class="muted">{esc(f["size_text"])} · {esc(status)} · '
+                f'{esc(_("code {code}", code=f["code"]))}</span></div>'
+                + _post("/settings/upload", csrf, {"action": "delete", "code": f["code"]}, _("Delete"), "danger")
                 + f'</div>{warn}</div>')
         parts.append(f'<div class="list">{"".join(rows)}</div>')
-        parts.append(f'<p class="say">Then tell your AI app: <q>Attach the file I just uploaded to the email to Sam.</q> '
-                     f'Or use its name: <q>Attach {esc(files[0]["name"])}.</q></p>')
+        parts.append('<p class="say">' + _("Then tell your AI app: <q>Attach the file I just uploaded to the email to "
+                                           "Sam.</q> Or use its name: <q>Attach {name}.</q>", name=esc(files[0]["name"]))
+                     + "</p>")
     else:
-        parts.append('<div class="list"><p class="empty">Nothing here. Uploaded files show up here with their code.</p></div>')
-    parts.append(f'<p class="note">{ICON_SHIELD}<span>Files are stored encrypted. Each one is deleted 1 hour after it '
-                 'first goes into a draft, or after 24 hours if it\'s never used. Your emails keep their own copy. '
-                 'Programs and scripts are always refused.</span></p>')
-    parts.append('<div class="bar"><a href="/settings">Back to settings</a>' + _post("/settings/logout", csrf, {}, "Sign out")
-                 + "</div>")
-    return page('Files for your <span class="hl">emails</span>', "Upload a file, then ask your AI app to attach it.",
+        parts.append(f'<div class="list"><p class="empty">{esc(_("Nothing here. Uploaded files show up here with their code."))}</p></div>')
+    parts.append(f'<p class="note">{ICON_SHIELD}<span>'
+                 + esc(_("Files are stored encrypted. Each one is deleted 1 hour after it first goes into a draft, or "
+                         "after 24 hours if it's never used. Your emails keep their own copy. Programs and scripts are "
+                         "always refused.")) + "</span></p>")
+    parts.append(f'<div class="bar"><a href="/settings">{esc(_("Back to settings"))}</a>'
+                 + _post("/settings/logout", csrf, {}, _("Sign out")) + "</div>")
+    return page(_('Files for your <span class="hl">emails</span>'), esc(_("Upload a file, then ask your AI app to attach it.")),
                 "".join(parts), wide=True)
 
 
 # ---------------------------------------------------------------- one-time upload link (no passphrase: the link is the key)
 
-def upload_link(error: str = "", done: dict | None = None, max_size: str = "25 MB") -> str:
+def upload_link(error: str = "", done: dict | None = None, max_size: str = "25 MB", expired: bool = False) -> str:
     """done: the stored file's details (name, level, why) after a successful upload."""
     if done:
-        warn = (f'<p class="warn">{ICON_ALERT}<span>Check this: {esc(done["why"])}. Your AI app will ask you before '
-                'attaching it.</span></p>') if done.get("level") == "suspect" else ""
-        content = (message("ok", f"{done['name']} is uploaded.") + warn
-                   + '<p class="lead">Go back to your chat and tell your AI app it\'s done. This link is now used up.</p>')
-        return page('File <span class="hl">uploaded</span>', "It's waiting for your AI app to attach it.", content)
-    if error and "expired" in error:
-        steps = ('<ol class="steps"><li>Go back to your chat.</li><li>Ask your AI app for a new upload link.</li>'
-                 '<li>Open it within 10 minutes.</li></ol>')
-        return page("This link has expired", esc(error), steps)
+        warn = (f'<p class="warn">{ICON_ALERT}<span>'
+                + esc(_("Check this: {reason}. Your AI app will ask you before attaching it.", reason=done["why"]))
+                + "</span></p>") if done.get("level") == "suspect" else ""
+        content = (message("ok", _("{name} is uploaded.", name=done["name"])) + warn
+                   + f'<p class="lead">{esc(_("Go back to your chat and tell your AI app it is done. This link is now used up."))}</p>')
+        return page(_('File <span class="hl">uploaded</span>'), esc(_("It's waiting for your AI app to attach it.")), content)
+    if expired:
+        steps = ('<ol class="steps">' + "".join(f"<li>{esc(s)}</li>" for s in (
+            _("Go back to your chat."), _("Ask your AI app for a new upload link."), _("Open it within 10 minutes.")))
+                 + "</ol>")
+        return page(esc(_("This link has expired")), esc(error), steps)
     content = (f'{message("error", error) if error else ""}'
-               '<form method="post" enctype="multipart/form-data">'
-               f'<label class="drop">{ICON_UPLOAD}<b>Choose a file</b>'
-               f'<span class="muted">Photos, PDFs, documents, audio, video or zip. Up to {esc(max_size)}.</span>'
-               '<input type="file" name="file" required></label>'
-               '<button class="block" type="submit">Upload</button></form>'
-               f'<p class="note">{ICON_SHIELD}<span>Your AI app made this link for one file. It works once and expires '
-               '10 minutes after it was made. Nothing is sent until you say so in your chat.</span></p>')
-    return page('Add a file for your <span class="hl">email</span>', "Pick the file, then go back to your chat.", content)
+               '<form method="post" enctype="multipart/form-data">' + _drop(max_size) + "</form>"
+               f'<p class="note">{ICON_SHIELD}<span>'
+               + esc(_("Your AI app made this link for one file. It works once and expires 10 minutes after it was "
+                       "made. Nothing is sent until you say so in your chat.")) + "</span></p>")
+    return page(_('Add a file for your <span class="hl">email</span>'), esc(_("Pick the file, then go back to your chat.")),
+                content)

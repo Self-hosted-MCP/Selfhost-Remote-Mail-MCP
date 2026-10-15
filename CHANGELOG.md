@@ -2,6 +2,12 @@
 
 All notable changes to this project. Versions follow [semantic versioning](https://semver.org).
 
+## 0.9.0 (2026-10-14)
+
+- **The pages in 20 languages:** English, Spanish, Portuguese (Brazil), French, German, Italian, Dutch, Polish, Swedish, Turkish, Russian, Ukrainian, Japanese, Chinese (Simplified and Traditional), Korean, Hindi, Indonesian, Vietnamese and Greek. They follow the browser; `LANGUAGE` can fix one. Missing texts fall back to English.
+- **Add any language with an AI agent:** `selfhost-remote-mail-mcp translate <code>` makes the file to fill in, `translate --check <code>` checks it. Your own files win over the shipped ones.
+- The AI is told to speak to the user in their own language (tool answers stay in English).
+
 ## 0.8.1 (2026-10-14)
 
 - Docs: dropping a file in the chat is described for any AI app that can run code, with Claude as one example.

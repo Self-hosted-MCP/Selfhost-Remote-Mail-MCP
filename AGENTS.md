@@ -32,6 +32,9 @@ tests/test_privacy.py                    photo location and document author remo
 tests/test_domain.py                     the domain check (DNS answers faked)
 tests/test_settings_tool.py              settings / change_setting: the six allowed settings, the change list
 tests/test_addons.py                     add-ons: loading, the api, checks that still apply, the examples
+tests/test_languages.py                  page languages: picking, fallback, translate command, unmarked texts
+src/selfhost_remote_mail_mcp/i18n.py     page languages: _(), picking a language, the translate command's helpers
+src/selfhost_remote_mail_mcp/locales/    one JSON file per language: English text -> translation
 examples/addons/                         example add-ons (hello, calendar_invite)
 addons/                                  where a Docker-based copy keeps its own add-ons
 tests/test_examples.py                   every file in examples/ loads and fills in
@@ -50,7 +53,7 @@ uv run selfhost-remote-mail-mcp help      # CLI
 uv run selfhost-remote-mail-mcp stdio     # needs real settings (see docs/settings.md)
 ```
 
-User commands: `setup`, `check` (logins and domain records), `stdio`, `serve`, `set-passphrase`, `update`, `version`, `addons` (load and list add-ons).
+User commands: `setup`, `check` (logins and domain records), `stdio`, `serve`, `set-passphrase`, `update`, `version`, `addons` (load and list add-ons), `translate <code>` (make or check a page translation).
 
 The tests never touch a real mailbox: `conftest.py` replaces `server.connect` and `smtplib.SMTP_SSL`, and points `MAIL_CONFIG_DIR` at a temporary folder. Never write a test that needs real credentials or sends real email.
 
@@ -72,6 +75,7 @@ These are the product. A change that weakens one needs a very good reason and a 
 11. **New files are checked before anything is saved.** Every file from `attach_path`, `attach_content`, `attach_upload` and the upload page goes through `check_new_file()`: blocked files are refused, suspect ones need `allow_suspect=true` (which the AI may only set after the user agreed). `attach_path` works only in `stdio`, only inside `ATTACH_FOLDERS`, never for hidden paths or the server's own folders. Uploads live under `/settings/upload` (same session, CSRF and same-origin checks), are Fernet-encrypted, and `clean_uploads()` deletes them 1 hour after first use or after 24 hours. The server never adds text to an email about an attachment. Photos only change when asked: `prepare_photos()` resizes with `photos="smaller"`, and a HEIC photo is never converted (or sent) until the user chose `heic="jpg"` or `"keep"`. Upload links (`upload_link`, `/upload/{token}`) work once, for 10 minutes, keep only a `token_key()` fingerprint in memory, and store through `save_upload()`, never around it.
 12. **AI apps change only six settings.** `change_setting` may change photo location, document details, the update check, the signature, templates and uploads, nothing else. Every change goes through `record_change()`, which lists it on the settings page and tells the AI to report it. A value set in the settings file or hosting variables always wins. Never add a setting there that weakens safety (mailboxes, modes, sending, limits, recipients, read-only mode, device log, passphrase).
 13. **Add-ons stay inside the rules.** `AddonAPI` is the only door: it never hands out SMTP or passwords, `edit_draft` goes through `imap()` and `Mailboxes` (modes, per-app choices), `add_file` runs `check_new_file()`, and internal headers are stripped in `deliver()`. Keep it that small. Add-ons load only from `MAIL_ADDONS_DIR`, by names in `MAIL_ADDONS`, never from anything an AI app or an email supplies.
+14. **Every text a person reads on a page is translatable.** Write it in English inside `_("...")` in `pages.py` (or `T_("...")` in `server.py`, which also uses `_` as a throwaway name), with `{placeholders}` for values, never an f-string inside. Values are escaped before they go in. `tests/test_languages.py` fails on page text that isn't marked. Tool answers stay in English. After adding texts, run `selfhost-remote-mail-mcp translate <code>` for each shipped language and translate the new entries.
 
 ## How things work
 

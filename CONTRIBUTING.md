@@ -36,6 +36,10 @@ Each form asks for what's needed to help you, such as how you run the server and
 
 Every update path (the `update` command, the fork action, `scripts/update.sh`) only follows published releases, so nothing reaches users until step 2.
 
+## Translations
+
+The web pages' texts are in `src/selfhost_remote_mail_mcp/locales/<code>.json`, one file per language. To add or fix a language, follow [docs/languages.md](docs/languages.md) and run `selfhost-remote-mail-mcp translate --check <code>` before opening a pull request. Natural, everyday wording beats word-for-word.
+
 ## Writing docs
 
 The docs are for people who have never used a terminal. Use short sentences and everyday words, explain any technical word the first time, and show what the reader should see when a step works. No em dashes.
