@@ -1,4 +1,4 @@
-https://github.com/user-attachments/assets/e8d81327-da12-430e-a15a-bb2f73d9908a
+https://github.com/user-attachments/assets/db89f629-66b8-4f5f-8ecd-3bbc2a51d134
 
 <p align="center"><img src="docs/images/icon.png" alt="" width="88"></p>
 
