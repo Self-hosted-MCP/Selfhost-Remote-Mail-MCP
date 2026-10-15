@@ -56,13 +56,25 @@ docker compose cp templates mail:/data/
 
 Or ask your AI: *"Change my signature to ..."*, *"Save this as a template called thank-you"*.
 
+## Ready-made image, no build
+
+Every release is published as a Docker image for amd64 and arm64 servers: `ghcr.io/s17sh70x2jfl031ag/selfhost-remote-mail-mcp`. Tags: `latest`, the version (`0.18.1`) and the minor version (`0.18`).
+
+To use it with the setup above, open `docker-compose.yml` and replace `build: .` with:
+
+```yaml
+    image: ghcr.io/s17sh70x2jfl031ag/selfhost-remote-mail-mcp:latest
+```
+
+Starting then takes seconds instead of a build. To update: `docker compose pull && docker compose up -d`. Keep `build: .` if you put your own add-ons in the `addons/` folder, since those are built into your copy.
+
 ## More ways to run it
 
 ### Already have a reverse proxy, Coolify, Dokploy or similar?
 
-Skip Caddy and run only the `Dockerfile`:
+Skip Caddy and run only the server:
 
-- **Build:** Dockerfile in the repository root.
+- **Image:** the ready-made `ghcr.io/s17sh70x2jfl031ag/selfhost-remote-mail-mcp:latest` (or a version, like `:0.18.1`), for amd64 and arm64 servers. Or build the Dockerfile in the repository root.
 - **Port:** 8765 (or set `PORT`).
 - **Persistent storage:** mount a volume at `/data`.
 - **Health check:** `GET /health`.

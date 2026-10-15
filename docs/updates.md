@@ -94,7 +94,7 @@ How it stays safe:
 
 ### On your own server (Docker Compose)
 
-`scripts/update.sh` moves your copy to the newest release and runs `docker compose up -d --build`. It refuses to run if you changed any of the project's files (your `.env` doesn't count). To run it weekly, add to `crontab -e`:
+`scripts/update.sh` moves your copy to the newest release and runs `docker compose up -d --build`. Using the ready-made image instead ([how](setup-own-server.md#ready-made-image-no-build))? Then updating is `docker compose pull && docker compose up -d`. It refuses to run if you changed any of the project's files (your `.env` doesn't count). To run it weekly, add to `crontab -e`:
 
 ```
 0 4 * * 1 /path/to/Selfhost-Remote-Mail-MCP/scripts/update.sh >> /var/log/mail-mcp-update.log 2>&1
@@ -105,7 +105,7 @@ Already using **Coolify, Dokploy** or similar? Point it at a release tag instead
 ## Going back
 
 - **Computer:** `uv tool install --force git+https://github.com/s17sh70x2jfl031ag/Selfhost-Remote-Mail-MCP@vX.Y.Z` (the version you want, for example `v0.6.0`), then `selfhost-remote-mail-mcp service restart`.
-- **Own server:** `git checkout vX.Y.Z && docker compose up -d --build` (the version you want).
+- **Own server:** `git checkout vX.Y.Z && docker compose up -d --build` (the version you want). With the ready-made image: set `image: ghcr.io/s17sh70x2jfl031ag/selfhost-remote-mail-mcp:X.Y.Z`, then `docker compose up -d`.
 - **Hosting company:** revert the update commit in your fork; the host rebuilds.
 
 Your settings, mailboxes and logins live in the data folder, which updates never touch.
