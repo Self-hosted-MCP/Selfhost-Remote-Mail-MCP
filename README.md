@@ -226,7 +226,7 @@ You're welcome to use, fork, change and build on it under the [GNU Affero Genera
 - If you share a changed version, or run one that other people use over the internet, offer them its source code under the same license. Set `SOURCE_URL` to where it is, and the pages link to it.
 - Keep the credit in the page footers (*"Selfhost-Remote-Mail-MCP by s17sh70x2jfl031ag"*), and mark your version as changed.
 
-GitHub's "Cite this repository" button uses [CITATION.cff](CITATION.cff). Versions up to 0.12.0 were released under the MIT license and stay available under it.
+GitHub's "Cite this repository" button uses [CITATION.cff](CITATION.cff).
 
 ## License
 

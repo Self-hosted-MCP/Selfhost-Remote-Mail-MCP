@@ -4,7 +4,7 @@ All notable changes to this project. Versions follow [semantic versioning](https
 
 ## Unreleased
 
-- **New license: AGPL-3.0.** From this version the project is under the GNU Affero General Public License v3.0 (AGPL-3.0-only) with a few additional terms in `NOTICE`: keep the author credit in the page footers, mark changed versions as changed, and don't use the project's names for your own product. Anyone who shares a changed version, or runs one for other people over the internet, must offer its source code. Versions up to 0.12.0 stay under the MIT license.
+- **New license: AGPL-3.0.** From this version the project is under the GNU Affero General Public License v3.0 (AGPL-3.0-only) with a few additional terms in `NOTICE`: keep the author credit in the page footers, mark changed versions as changed, and don't use the project's names for your own product. Anyone who shares a changed version, or runs one for other people over the internet, must offer its source code.
 - **`SOURCE_URL`:** for changed versions, the address of their source code. The page footers and the settings page link to it.
 - **About shows more:** the license with links to the source code and the license text, who made the project (with the author's GitHub picture, loaded by your browser only when you open About), and buttons to report a problem, ask a question or suggest an idea, report a provider, share an add-on or report a security problem privately.
 
