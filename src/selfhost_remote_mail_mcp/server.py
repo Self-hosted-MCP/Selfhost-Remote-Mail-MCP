@@ -39,6 +39,7 @@ import hashlib
 import hmac
 import html as htmllib
 import io
+import ipaddress
 import json
 import mimetypes
 import os
@@ -4334,20 +4335,36 @@ class AddonAPI:
 
     # -- outside services
     def http(self, method: str, url: str, *, json_body=None, data: bytes | None = None,
-             headers: dict[str, str] | None = None, timeout: int = 20) -> tuple[int, dict, bytes]:
-        """A web request to a host listed in the add-on's HOSTS or in one of its own *_URL settings. https only
-        (plain http only to this computer or a .local name). Redirects aren't followed. Returns (status, headers, body)."""
-        parts = urlparse(url)
-        host = (parts.hostname or "").lower()
+             headers: dict[str, str] | None = None, timeout: int = 20,
+             max_bytes: int = 10_000_000) -> tuple[int, dict, bytes]:
+        """A web request to a host listed in the add-on's HOSTS or in one of its own *_URL settings (server settings
+        or its setup page). https only; plain http only to this computer or the local network (localhost, a .local
+        or one-word name like a Docker service, a private address). Redirects aren't followed. Returns (status,
+        headers, body); a host that can't be reached raises ToolError."""
+        try:
+            parts = urlparse(url)
+            host = (parts.hostname or "").lower()
+        except ValueError:
+            raise ToolError(f"add-on {self.name}: that isn't a web address.") from None
         allowed = {h.lower() for h in ADDON_INFO.get(self.name, {}).get("hosts", ())}
-        prefix = re.sub(r"\W", "_", self.name).upper() + "_"
-        for key, value in {**read_env(), **os.environ}.items():
-            if key.startswith(prefix) and key.endswith("_URL") and value:
-                allowed.add((urlparse(value).hostname or "").lower())
+        prefix = addon_prefix(self.name)
+        keys = {k for k in {**read_env(), **os.environ} if k.startswith(prefix) and k.endswith("_URL")}
+        keys |= {k for k in saved_addon_settings().get(self.name, {}) if k.endswith("_URL")}
+        keys |= {prefix + f["key"] for f in ADDON_INFO.get(self.name, {}).get("fields", []) if f["key"].endswith("URL")}
+        for key in keys:
+            value = addon_setting_value(key, self.name)[0]
+            if value:
+                try:
+                    allowed.add((urlparse(value).hostname or "").lower())
+                except ValueError:
+                    pass
         if host not in allowed:
-            raise ToolError(f"add-on {self.name} may not reach {host or url!r}: add it to HOSTS or a *_URL setting.")
-        local = host in ("localhost", "127.0.0.1", "::1") or host.endswith(".local")
-        if parts.scheme != "https" and not (parts.scheme == "http" and local):
+            raise ToolError(f"add-on {self.name} may not reach {host or 'that address'}: add it to HOSTS or a *_URL setting.")
+        try:
+            private = not ipaddress.ip_address(host).is_global
+        except ValueError:
+            private = host == "localhost" or host.endswith(".local") or "." not in host
+        if parts.scheme != "https" and not (parts.scheme == "http" and private):
             raise ToolError(f"add-on {self.name}: only https addresses are allowed.")
         body = data
         send_headers = {"User-Agent": f"{APP}-addon", **(headers or {})}
@@ -4358,9 +4375,11 @@ class AddonAPI:
         opener = urllib.request.build_opener(_NoRedirect)
         try:
             with opener.open(req, timeout=timeout) as resp:
-                return resp.status, dict(resp.headers), resp.read(10_000_001)[:10_000_000]
+                return resp.status, dict(resp.headers), resp.read(max_bytes)
         except urllib.error.HTTPError as exc:
-            return exc.code, dict(exc.headers or {}), exc.read(1_000_000) if exc.fp else b""
+            return exc.code, dict(exc.headers or {}), exc.read(min(max_bytes, 1_000_000)) if exc.fp else b""
+        except (urllib.error.URLError, OSError) as exc:   # no answer: down, wrong address, timeout
+            raise ToolError(f"add-on {self.name}: {host} couldn't be reached ({type(exc).__name__}).") from None
 
     # -- sending, for add-ons whose whole job is sending (SENDS = True), from background jobs only
     def send(self, draft_id: str, account: str | None = None) -> str:

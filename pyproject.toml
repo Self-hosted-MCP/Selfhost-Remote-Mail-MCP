@@ -1,6 +1,6 @@
 [project]
 name = "selfhost-remote-mail-mcp"
-version = "0.14.1"
+version = "0.15.0"
 description = "Your own email in Claude, ChatGPT, Codex and other AI apps, on computer and phone. Self-hosted IMAP/SMTP MCP server."
 readme = "README.md"
 license = "AGPL-3.0-only"
@@ -23,6 +23,7 @@ keywords = ["mcp", "email", "imap", "smtp", "claude", "self-hosted"]
 addons = [   # Python packages some library add-ons need (each add-on's README says which)
     "fpdf2>=2.8.3",   # pdf_maker, invoices
     "tzdata",         # invoices: time zones on systems without them (Windows, slim images)
+    "caldav>=3.4,<4", # caldav (calendar)
 ]
 
 [project.scripts]

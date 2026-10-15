@@ -2,6 +2,14 @@
 
 All notable changes to this project. Versions follow [semantic versioning](https://semver.org).
 
+## 0.15.0 (2026-10-14)
+
+- **Two new library add-ons** (off until you turn them on):
+  - `caldav` (Calendar): your AI app sees your events, finds free times in your working hours and adds events, for CalDAV calendars (iCloud, Fastmail, Nextcloud, mailbox.org, Posteo, Zoho). It never invites anyone by itself. Not for Google Calendar or Microsoft 365.
+  - `webhooks`: when new mail arrives, posts the sender, subject and date (never the email itself) to your address, signed the Standard Webhooks way, with retries for up to 3 days. For Zapier, Make, n8n or your own app.
+- **For add-on writers:** `api.http` now also reaches addresses saved on the setup page, plain http to your own network (like a Docker service), and says clearly when a host can't be reached.
+- The add-on extras now include `caldav`.
+
 ## 0.14.1 (2026-10-14)
 
 - **phishing_alert catches real scams it missed:** tested on real phishing from a Spam folder, v0.14.0 let three through. Now it also lowers trust when:

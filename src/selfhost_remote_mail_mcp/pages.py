@@ -48,10 +48,13 @@ ADDON_HELP = {   # the library add-ons, in words for the settings page (others s
     "phishing_alert": N_("Gives each email a trust level and warns your AI app about likely scams."),
     "follow_ups": N_("Tells you which emails you sent got no reply in time."),
     "out_of_office": N_("While you're away, answers new emails with your message, once per person. Sends by itself."),
+    "caldav": N_("Your calendar: see events, find free times and add events (iCloud, Fastmail, Nextcloud and others)."),
+    "webhooks": N_("Tells a web address of yours when new mail arrives: sender, subject and date, never the email itself."),
 }
 ADDON_TITLES = {"calendar_invite": N_("Calendar invite"), "pdf_maker": N_("PDF maker"),
                 "invoices": N_("Invoices and quotes"), "phishing_alert": N_("Phishing alert"),
-                "follow_ups": N_("Follow-up reminders"), "out_of_office": N_("Out of office")}
+                "follow_ups": N_("Follow-up reminders"), "out_of_office": N_("Out of office"),
+                "caldav": N_("Calendar"), "webhooks": N_("Webhooks")}
 LIBRARY_URL = f"{PROJECT_URL}/tree/main/src/selfhost_remote_mail_mcp/library"
 
 

@@ -127,6 +127,8 @@ The server is a small program. Your AI app talks to it through **MCP** (Model Co
 | [phishing_alert](src/selfhost_remote_mail_mcp/library/phishing_alert/README.md) | Gives each email a trust level and warns about scams |
 | [follow_ups](src/selfhost_remote_mail_mcp/library/follow_ups/README.md) | Tells you which emails you sent got no reply in time |
 | [out_of_office](src/selfhost_remote_mail_mcp/library/out_of_office/README.md) | Answers new emails with your away message while you're away |
+| [caldav](src/selfhost_remote_mail_mcp/library/caldav/README.md) | Your calendar: events, free times, adding events |
+| [webhooks](src/selfhost_remote_mail_mcp/library/webhooks/README.md) | Tells your automations when new mail arrives |
 
 Turn one on with its button on the settings page (**Add-ons** tab), with `selfhost-remote-mail-mcp addons enable pdf_maker`, or by adding its name to `MAIL_ADDONS`.
 

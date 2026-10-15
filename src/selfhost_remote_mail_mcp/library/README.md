@@ -16,6 +16,8 @@ Ready-made add-ons that come with the server. **All of them are off** until you 
 | [phishing_alert](phishing_alert/README.md) | Gives each email a trust level and warns about scams | No | Nothing | No |
 | [follow_ups](follow_ups/README.md) | Tells you which emails you sent got no reply in time | No | Nothing | No |
 | [out_of_office](out_of_office/README.md) | Answers new emails with your away message, once per person | **Yes** | Nothing | No |
+| [caldav](caldav/README.md) | Reads your calendar, finds free times, adds events (iCloud, Fastmail, Nextcloud…) | No | Your calendar server | `caldav` |
+| [webhooks](webhooks/README.md) | Tells a web address of yours when new mail arrives (sender, subject, date) | No | The address you choose | No |
 
 Add-ons that need extra packages: the Docker image has them all. On a computer, install them once with `uv tool install --force "selfhost-remote-mail-mcp[addons] @ git+https://github.com/s17sh70x2jfl031ag/Selfhost-Remote-Mail-MCP"`. Updates keep them.
 
