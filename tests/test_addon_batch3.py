@@ -70,7 +70,9 @@ def cal(monkeypatch):
              FakeEvent(summary="Holiday (free)", dtstart=day, dtend=day + dt.timedelta(days=1), transp="TRANSPARENT"),
              FakeEvent(summary="Cancelled thing", dtstart=dt.datetime.combine(day, dt.time(16), tz),
                        dtend=dt.datetime.combine(day, dt.time(17), tz), status="CANCELLED")]
-    calendars = [FakeCalendar("Work", items), FakeCalendar("Home", [])]
+    home = [FakeEvent(summary="Piano", dtstart=dt.datetime.combine(day, dt.time(17), tz),
+                      dtend=dt.datetime.combine(day, dt.time(18), tz))]
+    calendars = [FakeCalendar("Work", items), FakeCalendar("Home", home)]
 
     class Client:
         def __init__(self, url, username, password, timeout):
@@ -89,17 +91,25 @@ def cal(monkeypatch):
 def test_events_free_times_and_adding(cal, monkeypatch):
     day, calendars = cal
     out = tool("calendar_events", start_date=day.isoformat(), days=1)
-    assert "10:00-11:00 · Call with Sam · Zoom" in out and "Lunch" in out and "Cancelled" not in out
+    assert "10:00-11:00 · Call with Sam · Zoom · [Work]" in out and "Lunch" in out and "Cancelled" not in out
+    assert "17:00-18:00 · Piano · [Home]" in out   # empty means every calendar
     assert out.endswith("(times in UTC)")
     free = tool("calendar_free", start_date=day.isoformat(), days=1, minutes=30)
-    assert free.startswith(f"{day:%a %d %b}: 09:00-10:00, 11:00-13:00, 14:00-18:00")   # the free holiday doesn't block
+    assert free.startswith(f"{day:%a %d %b}: 09:00-10:00, 11:00-13:00, 14:00-17:00")   # the free holiday doesn't block
     out = tool("add_event", title="Dentist, at 3", start=f"{day.isoformat()}T15:00:00+00:00", minutes=45)
-    assert out.startswith("Added:") and "No one was invited" in out
+    assert out.startswith("Added to Work:") and "No one was invited" in out
     ical = calendars[0].added[-1]
     assert "SUMMARY:Dentist\\, at 3" in ical and "DTEND:" in ical and "ATTENDEE" not in ical and "ORGANIZER" not in ical
-    monkeypatch.setenv("CALDAV_CALENDAR", "Home")
-    tool("add_event", title="Gym", start=f"{day.isoformat()}T18:00:00+00:00")
+    monkeypatch.setenv("CALDAV_ADD_TO", "home")
+    assert tool("add_event", title="Gym", start=f"{day.isoformat()}T18:00:00+00:00").startswith("Added to Home:")
     assert calendars[1].added
+    monkeypatch.setenv("CALDAV_ADD_TO", "")
+    monkeypatch.setenv("CALDAV_CALENDAR", "Home")   # only some calendars: no labels, new events go to the first named
+    out = tool("calendar_events", start_date=day.isoformat(), days=1)
+    assert "Piano" in out and "Lunch" not in out and "[Home]" not in out
+    assert tool("add_event", title="Run", start=f"{day.isoformat()}T07:00:00+00:00").startswith("Added to Home:")
+    monkeypatch.setenv("CALDAV_CALENDAR", "Work, Home")
+    assert "Piano" in tool("calendar_events", start_date=day.isoformat(), days=1)
 
 
 def test_calendar_errors_are_one_clear_line(cal, monkeypatch):
@@ -113,7 +123,14 @@ def test_calendar_errors_are_one_clear_line(cal, monkeypatch):
     monkeypatch.setenv("CALDAV_CALENDAR", "Nope")
     with pytest.raises(server.ToolError, match="no calendar called"):
         tool("calendar_events")
+    monkeypatch.setenv("CALDAV_CALENDAR", "Work, Nope")
+    with pytest.raises(server.ToolError, match="no calendar called 'Nope'"):
+        tool("calendar_events")
     monkeypatch.setenv("CALDAV_CALENDAR", "")
+    monkeypatch.setenv("CALDAV_ADD_TO", "Nope")
+    with pytest.raises(server.ToolError, match="for new events"):
+        tool("add_event", title="x", start=f"{day.isoformat()}T10:00:00+00:00")
+    monkeypatch.setenv("CALDAV_ADD_TO", "")
     monkeypatch.setenv("CALDAV_WORK_HOURS", "18-09")
     with pytest.raises(server.ToolError, match="before the end"):
         tool("calendar_free", start_date=day.isoformat())
@@ -277,7 +294,7 @@ def test_webhook_400_is_retried_and_status_and_a_long_pause_resets(mailbox, hook
 
 def test_the_test_connection_button(cal, hook, monkeypatch):
     kind, text = server.settings_action(None, "addon_setup", {"name": "caldav", "action": "test"})
-    assert kind == "ok" and text.startswith('Connected. Using the calendar "Work"')
+    assert kind == "ok" and text.startswith("Connected. Reading 2 calendar(s): Work, Home. New events go to Work.")
     monkeypatch.setenv("CALDAV_PASSWORD", "wrong")
     kind, text = server.settings_action(None, "addon_setup", {"name": "caldav", "action": "test"})
     assert kind == "error" and "login failed" in text

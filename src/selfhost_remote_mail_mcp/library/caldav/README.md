@@ -32,7 +32,7 @@ Calendars that use **CalDAV** with an app password:
 
 1. On the settings page, open the **Add-ons** tab and press **Set up** next to **Calendar**.
 2. Enter the server address, your login and an **app password**, and your time zone. Press **Save**.
-3. Press **Turn on**, then **Test connection**: it says which calendar it uses and how many events are coming up.
+3. Press **Turn on**, then **Test connection**: it lists the calendars it reads, where new events go, and how many events are coming up.
 4. Start a new chat in your AI app.
 
 It needs the Python package `caldav` from the add-on extras; the Docker image has it.
@@ -46,13 +46,14 @@ Fill these in on the add-on's **Set up** page. The names below are for the setti
 | `CALDAV_URL` | Yes | The calendar server's address (above) |
 | `CALDAV_USERNAME` | Yes | Your login, usually your email address |
 | `CALDAV_PASSWORD` | Yes | An app password, not your normal password |
-| `CALDAV_CALENDAR` | No | The calendar's name. Empty: the first one (check it isn't a holidays calendar) |
+| `CALDAV_CALENDAR` | No | The calendars to read, names separated by commas. Empty: all of them |
+| `CALDAV_ADD_TO` | No | The calendar new events go to. Empty: the first one read (check it isn't a holidays calendar) |
 | `CALDAV_TIMEZONE` | No | Your time zone, like `Europe/Lisbon`. Empty: UTC |
 | `CALDAV_WORK_HOURS` | No | The hours offered as free, like `09-18` (default) or `09:30-17:30` |
 
 ## Good to know
 
-- Free times look at one calendar, on weekdays, inside your working hours. Events marked "free" don't block time.
+- Free times look at every calendar it reads, on weekdays, inside your working hours. Events marked "free" don't block time.
 - Your AI app only adds events when you ask, at most 20 a day, within the next year, each marked "Added by your mail assistant".
 - Your calendar's events go to your AI app when it asks, like your emails do.
 

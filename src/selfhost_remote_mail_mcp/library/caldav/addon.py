@@ -15,7 +15,9 @@ SETTINGS = [
     {"key": "USERNAME", "label": N_("Login name"), "required": True, "help": N_("Usually your email address.")},
     {"key": "PASSWORD", "label": N_("App password"), "required": True, "secret": True,
      "help": N_("Make one in your calendar provider's security settings. Not your normal password.")},
-    {"key": "CALENDAR", "half": True, "label": N_("Calendar name"), "help": N_("Empty means the first one.")},
+    {"key": "CALENDAR", "label": N_("Calendars to read"),
+     "help": N_("Names separated by commas. Empty means all your calendars.")},
+    {"key": "ADD_TO", "half": True, "label": N_("Calendar for new events"), "help": N_("Its name. Empty means the first one.")},
     {"key": "TIMEZONE", "choices": "timezone", "half": True, "label": N_("Your time zone"), "help": N_("For example Europe/Lisbon. Empty means UTC.")},
     {"key": "WORK_HOURS", "half": True, "label": N_("Hours to offer as free"), "help": N_("Like 09-18 or 09:30-17:30. Empty means 09-18.")},
 ]
@@ -40,8 +42,8 @@ def setup(api):
         link = api.setup_link()
         return f"Check the calendar settings: {link}" if link else "Check the CALDAV_ settings."
 
-    def calendar():
-        """The chosen calendar, or a clear error. A new connection each time keeps things simple."""
+    def calendars_all():
+        """Every calendar on the account (a new connection each time keeps things simple), or a clear error."""
         import caldav
         from caldav.lib import error
         url, user, password = s("URL").strip(), s("USERNAME").strip(), s("PASSWORD")
@@ -72,17 +74,37 @@ def setup(api):
             raise api.ToolError(f"The calendar server couldn't be reached ({type(exc).__name__}). " + where()) from None
         if not calendars:
             raise api.ToolError("No calendars were found on that account. " + where())
-        wanted = s("CALENDAR").strip().lower()
-        if not wanted:
-            return calendars[0]
-        for cal in calendars:
-            try:
-                name = (cal.get_display_name() or "").strip().lower()
-            except Exception:
-                name = ""
-            if name == wanted:
-                return cal
-        raise api.ToolError(f"There's no calendar called {s('CALENDAR')!r}. " + where())
+        return calendars
+
+    def name_of(cal) -> str:
+        try:
+            return (cal.get_display_name() or "").strip()
+        except Exception:
+            return ""
+
+    def reading():
+        """The calendars to read: the ones named in CALDAV_CALENDAR, or all of them."""
+        found = calendars_all()
+        typed = [w.strip() for w in s("CALENDAR").split(",") if w.strip()]
+        if not typed:
+            return found
+        chosen = [c for c in found if name_of(c).lower() in {w.lower() for w in typed}]
+        missing = [w for w in typed if w.lower() not in {name_of(c).lower() for c in chosen}]
+        if missing:
+            raise api.ToolError(f"There's no calendar called {missing[0]!r}. " + where())
+        return chosen
+
+    def adding():
+        """The calendar new events go to: CALDAV_ADD_TO, else the first one read."""
+        target = s("ADD_TO").strip().lower()
+        found = calendars_all()
+        if target:
+            for c in found:
+                if name_of(c).lower() == target:
+                    return c
+            raise api.ToolError(f"There's no calendar called {s('ADD_TO')!r} for new events. " + where())
+        wanted = [w.strip().lower() for w in s("CALENDAR").split(",") if w.strip()]
+        return next((c for c in found if name_of(c).lower() in wanted), found[0]) if wanted else found[0]
 
     def day_from(text: str, tz) -> dt.date:
         if not text.strip():
@@ -100,15 +122,17 @@ def setup(api):
         return dt.datetime.combine(value, dt.time(0), tz)
 
     def events(start: dt.date, days: int, tz) -> list[dict]:
-        cal = calendar()
         begin = dt.datetime.combine(start, dt.time(0), tz)
         finish = dt.datetime.combine(start + dt.timedelta(days=days), dt.time(0), tz)
-        try:
-            found = cal.search(start=begin, end=finish, event=True, expand=True)
-        except Exception as exc:
-            raise api.ToolError(f"The calendar couldn't be read ({type(exc).__name__}). " + where()) from None
+        found = []
+        for cal in reading():
+            try:
+                found += [(name_of(cal), item) for item in cal.search(start=begin, end=finish, event=True, expand=True)]
+            except Exception as exc:
+                raise api.ToolError(f"The calendar {name_of(cal)!r} couldn't be read ({type(exc).__name__}). "
+                                    + where()) from None
         out = []
-        for item in found[:500]:
+        for cal_name, item in found[:1000]:
             comp = getattr(item, "icalendar_component", None)
             if comp is None or str(comp.get("STATUS", "")).upper() == "CANCELLED":
                 continue
@@ -126,7 +150,7 @@ def setup(api):
             title = re.sub(r"\s+", " ", str(comp.get("SUMMARY", "(no title)")))[:80]
             place = re.sub(r"\s+", " ", str(comp.get("LOCATION", "") or ""))[:60]
             out.append({"start": as_dt(raw_start, tz), "end": as_dt(raw_end, tz), "all_day": all_day,
-                        "title": title, "place": place,
+                        "title": title, "place": place, "calendar": cal_name[:40],
                         "free": str(comp.get("TRANSP", "")).upper() == "TRANSPARENT"})
         return sorted(out, key=lambda e: e["start"])
 
@@ -152,14 +176,13 @@ def setup(api):
         return f"{e['start']:%a %d %b %H:%M}-{e['end']:%H:%M}" if same else f"{e['start']:%a %d %b %H:%M} to {e['end']:%a %d %b %H:%M}"
 
     def test() -> str:
-        cal = calendar()
         tz = zone()
-        try:
-            name = cal.get_display_name() or "(no name)"
-        except Exception:
-            name = "(no name)"
+        names = [name_of(c) or "(no name)" for c in reading()]
+        target = name_of(adding()) or "(no name)"
         found = events(dt.datetime.now(tz).date(), 7, tz)
-        return f"Connected. Using the calendar \"{name[:60]}\": {len(found)} event(s) in the next 7 days."
+        shown = ", ".join(n[:30] for n in names[:8]) + ("…" if len(names) > 8 else "")
+        return (f"Connected. Reading {len(names)} calendar(s): {shown}. New events go to {target[:40]}. "
+                f"{len(found)} event(s) in the next 7 days.")
 
     api.on_test(test)
 
@@ -172,12 +195,14 @@ def setup(api):
         found = events(day_from(start_date, tz), days, tz)
         if not found:
             return "No events." + zone_note(tz)
-        lines = [f"{when(e)} · {e['title']}" + (f" · {e['place']}" if e["place"] else "") for e in found[:100]]
+        several = len({e["calendar"] for e in found}) > 1
+        lines = [f"{when(e)} · {e['title']}" + (f" · {e['place']}" if e["place"] else "")
+                 + (f" · [{e['calendar']}]" if several and e["calendar"] else "") for e in found[:100]]
         return "\n".join(lines) + zone_note(tz)
 
     @api.tool(api.READ)
     def calendar_free(start_date: str = "", days: int = 5, minutes: int = 30) -> str:
-        """Free times in the user's working hours on weekdays, from start_date (default today) for `days` days
+        """Free times in the user's working hours on weekdays (all calendars read count as busy), from start_date (default today) for `days` days
         (1 to 14), each at least `minutes` long (15 to 480). One line per day. Changes nothing."""
         tz = zone()
         days, minutes = max(1, min(days, 14)), max(15, min(minutes, 480))
@@ -246,7 +271,8 @@ def setup(api):
         from selfhost_remote_mail_mcp.library.calendar_invite.addon import fold
         ical = "\r\n".join(fold(line) for line in lines) + "\r\n"
         try:
-            calendar().add_event(ical)
+            target = adding()
+            target.add_event(ical)
         except Exception as exc:
             with api.store() as data:   # not added: give the count back
                 data.setdefault("adds", {})[today] = max(0, data.get("adds", {}).get(today, 1) - 1)
@@ -254,4 +280,4 @@ def setup(api):
                 raise
             raise api.ToolError(f"The event couldn't be added ({type(exc).__name__}). " + where()) from None
         e = {"start": begin.astimezone(tz), "end": (begin + dt.timedelta(minutes=minutes)).astimezone(tz), "all_day": False}
-        return f"Added: {when(e)} · {title.strip()[:80]}{zone_note(tz)}. No one was invited."
+        return f"Added to {name_of(target)[:40] or 'your calendar'}: {when(e)} · {title.strip()[:80]}{zone_note(tz)}. No one was invited."
