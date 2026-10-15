@@ -2,6 +2,10 @@
 
 All notable changes to this project. Versions follow [semantic versioning](https://semver.org).
 
+## 0.16.1 (2026-10-15)
+
+- **Update check after an update:** the settings page could name a newest release older than the server itself, from a check saved before the update. The server now checks again right after it was updated.
+
 ## 0.16.0 (2026-10-15)
 
 - **Calendar: change and delete events.** Your AI app can now see, add, change and delete events. Deleting is always double checked: it shows you the event and asks first. Repeating events can't be changed here, and events with guests can't be changed or deleted here, so no one gets an unexpected email.

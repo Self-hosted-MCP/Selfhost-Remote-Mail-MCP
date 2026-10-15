@@ -42,6 +42,18 @@ def test_check_finds_a_newer_release_and_caches_it(monkeypatch):
     assert "Update available: v0.3.0" in server.accounts()
 
 
+def test_an_updated_server_checks_again(monkeypatch):
+    monkeypatch.setenv("UPDATE_CHECK", "on")
+    calls = []
+    monkeypatch.setattr(server, "fetch_latest_release", lambda: calls.append(1) or release("v0.1.0")())
+    assert not server.update_status()["newer"]
+    monkeypatch.setattr(server, "current_version", lambda: "0.3.0")   # updated: the saved check is older than this
+    monkeypatch.setattr(server, "fetch_latest_release", lambda: calls.append(1) or release("v0.3.0")())
+    assert server.update_status()["latest"] == "v0.3.0" and len(calls) == 2
+    server.update_status()
+    assert len(calls) == 2                                         # then once a day again
+
+
 def test_a_failed_check_is_quiet(monkeypatch):
     monkeypatch.setenv("UPDATE_CHECK", "on")
     def down():

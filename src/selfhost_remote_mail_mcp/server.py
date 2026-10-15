@@ -5151,19 +5151,20 @@ def fetch_latest_release() -> dict:
 
 
 def update_status(force: bool = False) -> dict | None:
-    """None when UPDATE_CHECK is off. Otherwise {current, latest, url, newer}, checked at most once a day.
+    """None when UPDATE_CHECK is off. Otherwise {current, latest, url, newer}, checked at most once a day and
+    again right after the server was updated (an older check would name a release older than this one).
     A failed check is remembered as 'no news', so a GitHub hiccup never slows the tools down."""
     if not update_check_on():
         return None
+    current = current_version()
     cached = json.loads(UPDATE_FILE.read_text()) if UPDATE_FILE.exists() else {}
-    if force or time.time() - cached.get("checked", 0) > CHECK_EVERY:
+    if force or time.time() - cached.get("checked", 0) > CHECK_EVERY or cached.get("for") != current:
         try:
-            cached = {**fetch_latest_release(), "checked": time.time()}
+            cached = {**fetch_latest_release(), "checked": time.time(), "for": current}
         except Exception as exc:
             print(f"update check failed: {type(exc).__name__}", file=sys.stderr)
-            cached = {**cached, "checked": time.time()}
+            cached = {**cached, "checked": time.time(), "for": current}
         private_write(UPDATE_FILE, json.dumps(cached))
-    current = current_version()
     latest = cached.get("tag", "")
     return {"current": current, "latest": latest, "url": cached.get("url", ""),
             "newer": bool(latest) and version_tuple(latest) > version_tuple(current)}
