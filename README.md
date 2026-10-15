@@ -80,7 +80,7 @@ The server is a small program. Your AI app talks to it through **MCP** (Model Co
 
 **Write.** Make drafts: new emails, replies, reply-to-all and forwards. Your signature and saved templates are added for you. Drafts go to your normal Drafts folder, so you can also finish them in your usual mail app.
 
-**Drop a file in the chat, it goes in the email.** Drop a PDF or photo into your AI chat and say *"email this to Sam"*. Your AI app uploads it to your server by itself with a one-time link, attaches it and shows you the draft. You don't need the passphrase or another app. This works in AI apps that can run code, like Claude (web, desktop and phone) and coding apps such as Claude Code, Cursor and Codex. If your app can't upload it, it gives you the link to pick the file yourself. Up to 25 MB. See [docs/attachments.md](docs/attachments.md#drop-a-file-in-the-chat).
+**Drop a file in the chat, it goes in the email.** Drop a PDF or photo into your AI chat and say *"email this to Sam"*. Your AI app uploads it to your server by itself with a one-time link, attaches it and shows you the draft. You don't need the passphrase or another app. This works in AI apps that can run code, like Claude (web, desktop and phone), coding apps such as Claude Code, Cursor and Codex, and agents such as OpenClaw and Hermes Agent. If your app can't upload it, it gives you the link to pick the file yourself. Up to 25 MB. See [docs/attachments.md](docs/attachments.md#drop-a-file-in-the-chat).
 
 **Attach files.** From other emails, from your computer, files the AI writes (like a CSV), or photos and documents you upload from your phone on the upload page. Programs are refused, and suspect files (like spreadsheets with macros) need your OK. Photos go in HD, or smaller if you ask (the AI offers it when files are too big), and iPhone HEIC photos can become JPG after you say yes. See [docs/attachments.md](docs/attachments.md).
 
@@ -96,7 +96,7 @@ The server is a small program. Your AI app talks to it through **MCP** (Model Co
 
 **Several mailboxes.** Up to 5, at any providers, each with its own mode (full, draft only or read only) and a short name like *Work*. Each AI app gets only the mailboxes you tick for it. See [docs/mailboxes.md](docs/mailboxes.md).
 
-**A settings page.** In the web version, open `/settings` to add mailboxes, test logins, rename them, choose or disconnect AI apps, switch privacy options, see which devices signed in and what AI apps changed. It also shows your version and what's new. No terminal needed. Section by section: [docs/mailboxes.md](docs/mailboxes.md#three-ways-to-add-mailboxes).
+**A settings page.** In the web version, open `/settings` to add mailboxes, test logins, rename them, choose or disconnect AI apps, switch privacy options, turn add-ons on, see which devices signed in and what AI apps changed. It also shows your version and what's new. No terminal needed. Section by section: [docs/mailboxes.md](docs/mailboxes.md#three-ways-to-add-mailboxes).
 
 **Privacy for your files.** Photos you attach lose their location, and documents lose the author's name, before they're sent. Both are on by default and can be turned off on the settings page. The server never loads pictures or links inside emails, so senders can't track when you read them.
 
@@ -118,7 +118,7 @@ The server is a small program. Your AI app talks to it through **MCP** (Model Co
 | [pdf_maker](src/selfhost_remote_mail_mcp/library/pdf_maker/README.md) | Turns text into a PDF and attaches it |
 | [invoices](src/selfhost_remote_mail_mcp/library/invoices/README.md) | Numbered quotes, proformas and invoices as PDFs |
 
-Turn one on: `selfhost-remote-mail-mcp addons enable pdf_maker`, or add its name to `MAIL_ADDONS`.
+Turn one on with its button on the settings page (**Add-ons** tab), with `selfhost-remote-mail-mcp addons enable pdf_maker`, or by adding its name to `MAIL_ADDONS`.
 
 **Updates, if you want them.** Get told when there's a new release, or let it update itself, official releases only. See [docs/updates.md](docs/updates.md).
 

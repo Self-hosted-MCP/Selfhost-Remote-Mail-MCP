@@ -38,6 +38,12 @@ PRIVACY_HELP = {
     "upload_links": N_("Lets an AI app upload a file you dropped into the chat, with a one-time link (one file, 10 "
                        "minutes). Off: you upload files yourself on the upload page."),
 }
+ADDON_HELP = {   # the library add-ons, in words for the settings page (others show their own description)
+    "calendar_invite": N_("Attaches a calendar invite to a draft, so the receiver adds the meeting in one tap."),
+    "pdf_maker": N_("Turns text with headings, lists and tables into a PDF and attaches it to a draft."),
+    "invoices": N_("Makes numbered quotes, proformas and invoices as PDFs, with the totals worked out."),
+}
+LIBRARY_URL = f"{PROJECT_URL}/tree/main/src/selfhost_remote_mail_mcp/library"
 
 esc = html.escape
 
@@ -219,6 +225,19 @@ def page(headline: str, sub: str, content: str, wide: bool = False, tabs: list[t
                            project_url=PROJECT_URL, author=AUTHOR, lang=LANG.get(), by=esc(_("by")))
 
 
+def panel_css(names: list[str]) -> str:
+    """Shows one tab's section at a time: the one in the address (#apps), else the first. The tab of the section
+    shown is highlighted. Links to a heading inside a section (#signins) show that section."""
+    if not names:
+        return ""
+    rules = ["@supports selector(:has(a)){.panel{display:none}.panel:target,.panel:has(:target){display:block}",
+             ".panels:not(:has(:target))>.panel:first-child{display:block}",
+             f'main:not(:has(.panels :target)) .tabs a[href="#{names[0]}"]']
+    rules[-1] += ",".join([""] + [f'main:has(#{n}:target,#{n} :target) .tabs a[href="#{n}"]' for n in names])
+    rules[-1] += "{background:var(--chip);color:var(--chip-ink)}}"   # without :has (old browsers): all sections show
+    return "<style>" + "".join(rules) + "</style>"
+
+
 def message(kind: str, text: str) -> str:
     """kind: 'error' or 'ok'. text is escaped here."""
     icon = ICON_ALERT if kind == "error" else ICON_CHECK
@@ -344,7 +363,8 @@ def _host_fields(prefix: str, imap_host: str = "", imap_port: str = "993", smtp_
 
 def settings(csrf: str, mailboxes: list[dict], apps: list[dict], flash: tuple[str, str] | None, max_boxes: int,
              server_read_only: bool, about: dict | None = None, uploads_on: bool = False,
-             devices: dict | None = None, privacy: list[dict] | None = None, changes: list[dict] | None = None) -> str:
+             devices: dict | None = None, privacy: list[dict] | None = None, changes: list[dict] | None = None,
+             addons: list[dict] | None = None) -> str:
     """mailboxes: dicts with address, mode, source, name, imap_host, imap_port, smtp_host, smtp_port, username,
     smtp_username. apps: dicts with client_id, name, host, grant (list or None)."""
     if flash and flash[0] == "domain":
@@ -359,8 +379,16 @@ def settings(csrf: str, mailboxes: list[dict], apps: list[dict], flash: tuple[st
         parts.append(message("error", _("Read-only mode is on (MAIL_READ_ONLY=on): nothing can be changed or sent, "
                                         "whatever each mailbox's mode says.")))
 
+    # Each tab is its own page: only the section whose tab was picked shows (CSS :target, no scripts).
+    shown: list[str] = []
+
+    def panel(name: str) -> None:
+        parts.append(("</div>" if shown else '<div class="panels">') + f'<div class="panel" id="{name}">')
+        shown.append(name)
+
     # mailboxes
-    parts.append(f'<h2 id="mailboxes">{esc(_("Mailboxes"))}</h2>'
+    panel("mailboxes")
+    parts.append(f'<h2>{esc(_("Mailboxes"))}</h2>'
                  f'<p class="lead">{esc(_("The first one is the default. Each mailbox keeps its own mode."))}</p>')
     if mailboxes:
         rows = []
@@ -422,7 +450,8 @@ def settings(csrf: str, mailboxes: list[dict], apps: list[dict], flash: tuple[st
         parts.append(f'<p class="lead">{esc(_("This server holds up to {count} mailboxes (MAX_MAILBOXES).", count=max_boxes))}</p>')
 
     # apps
-    parts.append(f'<h2 id="apps">{esc(_("Connected apps"))}</h2>'
+    panel("apps")
+    parts.append(f'<h2>{esc(_("Connected apps"))}</h2>'
                  f'<p class="lead">{esc(_("AI apps that logged in, and the mailboxes each one may use."))}</p>')
     if apps:
         rows = []
@@ -452,12 +481,14 @@ def settings(csrf: str, mailboxes: list[dict], apps: list[dict], flash: tuple[st
         parts.append(f'<div class="list"><p class="empty">{esc(_("No app has connected yet."))}</p></div>')
 
     if uploads_on:
-        parts.append(f'<h2 id="files">{esc(_("Files for your emails"))}</h2><p class="lead">'
+        panel("files")
+        parts.append(f'<h2>{esc(_("Files for your emails"))}</h2><p class="lead">'
                      + _('Upload a photo, PDF or document on <a href="/settings/upload">the upload page</a>, then ask '
                          'your AI app to attach it.') + "</p>")
 
     if privacy is not None:
-        parts.append(f'<h2 id="privacy">{esc(_("Privacy"))}</h2><p class="lead">'
+        panel("privacy")
+        parts.append(f'<h2>{esc(_("Privacy"))}</h2><p class="lead">'
                      + esc(_("For files you attach from your computer, the AI or the upload page. Files forwarded from "
                              "other emails are left as they are.")) + "</p>")
         rows = []
@@ -478,7 +509,8 @@ def settings(csrf: str, mailboxes: list[dict], apps: list[dict], flash: tuple[st
         parts.append(f'<div class="list">{"".join(rows)}</div>')
 
     if devices is not None:
-        parts.append(f'<h2 id="devices">{esc(_("Devices"))}</h2><p class="lead">'
+        panel("devices")
+        parts.append(f'<h2>{esc(_("Devices"))}</h2><p class="lead">'
                      + esc(_("Browsers signed in to these pages. Sign out any you don't recognise, then change your "
                              "passphrase.")) + "</p>")
         rows = []
@@ -519,7 +551,8 @@ def settings(csrf: str, mailboxes: list[dict], apps: list[dict], flash: tuple[st
                                                          _("Turn on the device log")) + "</div>")
 
     if changes is not None:
-        parts.append(f'<h2 id="changes">{esc(_("Changes by AI apps"))}</h2><p class="lead">'
+        panel("changes")
+        parts.append(f'<h2>{esc(_("Changes by AI apps"))}</h2><p class="lead">'
                      + esc(_("Settings an AI app changed because you asked it to, in the last 30 days. AI apps can only "
                              "change photo location, document details, the update check, your signature, templates and "
                              "uploaded files.")) + "</p>")
@@ -529,6 +562,32 @@ def settings(csrf: str, mailboxes: list[dict], apps: list[dict], flash: tuple[st
             parts.append(f'<div class="list">{rows}</div>')
         else:
             parts.append(f'<div class="list"><p class="empty">{esc(_("No changes by AI apps."))}</p></div>')
+
+    if addons is not None:
+        panel("addons")
+        parts.append(f'<h2>{esc(_("Add-ons"))}</h2><p class="lead">'
+                     + esc(_("Extra features that come with the server, all off until you turn them on. Each one has a "
+                             "page that says what to ask your AI app and which settings it needs.")) + "</p>")
+        rows = []
+        for a in addons:
+            state = (f'<span class="badge lime">{esc(_("On"))}</span>' if a["on"]
+                     else f'<span class="badge">{esc(_("Off"))}</span>')
+            if not a["library"] or a.get("own_file"):
+                state += f' <span class="badge">{esc(_("Your own"))}</span>'
+            about_text = _(ADDON_HELP[a["name"]]) if a["name"] in ADDON_HELP else a["about"]
+            link = (f'<a href="{LIBRARY_URL}/{esc(a["name"])}">{esc(_("Details"))}</a>'
+                    if a["library"] and not a.get("own_file") else "")
+            if a["library"] and a.get("in_settings") and a["on"]:
+                state += f' <span class="badge">{esc(_("In server settings"))}</span>'
+            button = (_post("/settings/addon", csrf, {"name": a["name"], "action": "off" if a["on"] else "on"},
+                            _("Turn off") if a["on"] else _("Turn on"))
+                      if a["library"] and not a.get("in_settings") else "")
+            rows.append(f'<div class="item"><div class="file-row"><div class="grow"><b><code>{esc(a["name"])}</code> '
+                        f'{state}</b><span class="muted">{esc(about_text)} {link}</span></div>{button}</div></div>')
+        parts.append(f'<div class="list">{"".join(rows)}</div>' if rows else
+                     f'<div class="list"><p class="empty">{esc(_("No add-ons."))}</p></div>')
+        parts.append(f'<p class="hint">{_("Turning one on or off works right away: start a new chat in your AI app to see the change. Add-ons can also be turned on with <code>MAIL_ADDONS</code> in the server settings.")} '
+                     f'<a href="{PROJECT_URL}/blob/main/docs/addons.md">{esc(_("How add-ons work"))}</a></p>')
 
     if about:
         whats_new = esc(_("What's new"))
@@ -544,20 +603,24 @@ def settings(csrf: str, mailboxes: list[dict], apps: list[dict], flash: tuple[st
         else:
             status = esc(_("Up to date.")) + (" " + esc(_("Newest release: {version}.", version=upd["latest"]))
                                               if upd["latest"] else "")
-        parts.append(f'<h2 id="about">{esc(_("About this server"))}</h2><p class="lead">'
+        panel("about")
+        parts.append(f'<h2>{esc(_("About this server"))}</h2><p class="lead">'
                      f'{_("Version <b>{version}</b>.", version=esc(about["version"]))} {status}</p>')
-        if about.get("addons"):
+        if about.get("addons") and addons is None:
             parts.append(f'<p class="lead">{_("Add-ons: <b>{names}</b>.", names=esc(", ".join(about["addons"])))}</p>')
         if about.get("changelog"):
             parts.append(f'<details><summary>{whats_new}</summary>'
                          f'<div class="changelog">{about["changelog"]}</div></details>')
         parts.append(f'<p class="hint">{esc(_("Page language: {language}. It follows your browser; LANGUAGE in the settings can fix it.", language=LANGUAGES.get(LANG.get(), LANG.get())))}</p>')
+    parts.append("</div></div>" if shown else "")
+    parts.append(panel_css(shown))
     parts.append(f'<div class="bar"><span class="muted">{esc(_("Changes count right away. Apps never see mail passwords."))}</span>'
                  + _post("/settings/logout", csrf, {}, _("Sign out")) + "</div>")
     tabs = [("mailboxes", _("Mailboxes")), ("apps", _("Apps")), ("files", _("Files")) if uploads_on else None,
             ("privacy", _("Privacy")) if privacy is not None else None,
             ("devices", _("Devices")) if devices is not None else None,
             ("changes", _("AI changes")) if changes is not None else None,
+            ("addons", _("Add-ons")) if addons is not None else None,
             ("about", _("About")) if about else None]
     return page('Selfhost Mail <span class="hl">MCP</span>', esc(_("Mailboxes, modes, and which AI apps may use them.")),
                 "".join(parts), wide=True, tabs=[t for t in tabs if t])

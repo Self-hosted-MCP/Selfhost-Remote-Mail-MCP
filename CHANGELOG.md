@@ -2,6 +2,12 @@
 
 All notable changes to this project. Versions follow [semantic versioning](https://semver.org).
 
+## 0.11.0 (2026-10-14)
+
+- **Settings page in tabs:** each tab (Mailboxes, Apps, Privacy, Devices, ...) now shows only its own section instead of one long page, and after saving a form you stay on its tab.
+- **Add-ons tab:** lists every library add-on, on or off, with what it does and a link to its page. Library add-ons turn on and off with one button, right away, without a restart. Add-ons turned on in `MAIL_ADDONS` are marked as such.
+- **Docs:** how to connect OpenClaw and Hermes Agent.
+
 ## 0.10.0 (2026-10-14)
 
 - **The add-on library:** ready-made add-ons that come with the server, all off until you turn them on. `selfhost-remote-mail-mcp addons list` shows them, `addons enable <name>` and `addons disable <name>` turn one on or off. Each has its own page. The first three:

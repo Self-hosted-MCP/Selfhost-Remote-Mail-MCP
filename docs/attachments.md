@@ -38,6 +38,7 @@ The AI needs a code tool that can reach your server. If yours isn't on, the AI t
 | **Claude** phone app | Tap your name in the sidebar → **Capabilities** → **Code execution and file creation**. The rest follows your account's settings from the web |
 | **Claude** Team or Enterprise | An owner sets it in **Organization settings → Capabilities**. If network access is "package managers only", ask them to add your server's address (like `mail.yourdomain.com`) as an allowed domain |
 | **Claude Code, Cursor, VS Code, Gemini CLI** | Nothing. They run the upload from your computer; approve the command if they ask |
+| **OpenClaw, Hermes Agent** | Nothing. They upload with their shell tool (`exec` in OpenClaw, `terminal` in Hermes). OpenClaw doesn't ask before running commands unless you turn approvals on |
 | **Codex** | Its sandbox blocks internet by default. Add this to `~/.codex/config.toml`: `[sandbox_workspace_write]` then `network_access = true` on the next line, or approve the upload when it asks |
 | **ChatGPT** | Can't: its code has no internet. The AI gives you the link; open it and pick the file |
 

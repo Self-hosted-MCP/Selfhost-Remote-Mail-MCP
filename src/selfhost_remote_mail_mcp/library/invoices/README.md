@@ -30,7 +30,7 @@ Your business name, address and tax number. The client's name, address and tax n
 selfhost-remote-mail-mcp addons enable invoices
 ```
 
-Or add `invoices` to `MAIL_ADDONS`. More ways: [the library page](../README.md#turn-one-on). Like `pdf_maker`, it needs `fpdf2` from the add-on extras (the Docker image has it).
+Or press **Turn on** in the **Add-ons** tab of the settings page, or add `invoices` to `MAIL_ADDONS`. More ways: [the library page](../README.md#turn-one-on). Like `pdf_maker`, it needs `fpdf2` from the add-on extras (the Docker image has it).
 
 ## Settings
 

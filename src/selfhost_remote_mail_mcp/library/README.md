@@ -20,6 +20,8 @@ More are added with new versions. Ideas are welcome in the [Share an add-on](htt
 
 ## Turn one on
 
+**On the settings page** (the web version): open the **Add-ons** tab and press **Turn on**. It works right away; start a new chat in your AI app to use it. If the add-on needs settings (its page says which), add them too.
+
 **On your computer:**
 
 ```bash

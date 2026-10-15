@@ -36,7 +36,9 @@ Nothing new opens to the internet. Add-on tools live at the same address, behind
 
 The server comes with ready-made add-ons, all off by default. Each one has a page that says what it does, what to ask your AI app, its settings, and whether it talks to an outside service or sends email by itself: **[the add-on library](../src/selfhost_remote_mail_mcp/library/README.md)**.
 
-To turn one on, on your computer:
+To turn one on in the web version, open the settings page, go to the **Add-ons** tab and press **Turn on**. It works right away, without a restart: start a new chat in your AI app to see the new tools. **Turn off** works the same way.
+
+On your computer:
 
 ```bash
 selfhost-remote-mail-mcp addons list
@@ -66,7 +68,7 @@ Where the files go:
 | On a hosting company | The `addons/` folder of your fork on GitHub. The host rebuilds with it |
 | On your own server (Docker) | The `addons/` folder of your copy, then `docker compose up -d --build` |
 
-Then restart the server (on a computer: restart your AI app). The `accounts` tool and the settings page (under **About this server**) list the add-ons that are on.
+Then restart the server (on a computer: restart your AI app). The `accounts` tool and the settings page (the **Add-ons** tab) list the add-ons that are on.
 
 If an add-on has a problem, the server stops at start-up and says which add-on and why, instead of running half-working.
 

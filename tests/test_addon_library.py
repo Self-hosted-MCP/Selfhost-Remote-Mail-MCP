@@ -393,3 +393,95 @@ def test_calendar_text_has_no_raw_control_characters(mailbox, monkeypatch):
     msg = email.message_from_bytes(list(mailbox["Drafts"].values())[-1], policy=POLICY)
     ics = next(p for p in msg.iter_attachments() if p.get_filename() == "invite.ics").get_content()
     assert "SUMMARY:A\\nBC" in ics and "DESCRIPTION:line 1\\nline 2" in ics
+
+
+def test_the_settings_page_lists_the_library(monkeypatch):
+    monkeypatch.setitem(server.LOADED_ADDONS, "my_own", "Mine: does a thing.")
+    rows = server.addon_rows()
+    names = [r["name"] for r in rows]
+    assert {"calendar_invite", "pdf_maker", "invoices"} <= set(names) and names[-1] == "my_own"
+    assert next(r for r in rows if r["name"] == "my_own") == {"name": "my_own", "about": "Mine: does a thing.",
+                                                              "on": True, "library": False, "in_settings": True}
+    from selfhost_remote_mail_mcp import pages
+    html = pages.settings("t", [], [], None, 5, False, None, False, None, None, None, rows)
+    assert 'href="#addons"' in html and "pdf_maker" in html and "Your own" in html
+    assert f'{pages.LIBRARY_URL}/pdf_maker' in html and "MAIL_ADDONS" in html
+
+
+def test_settings_page_buttons_turn_library_addons_on_and_off(monkeypatch):
+    monkeypatch.delenv("MAIL_ADDONS", raising=False)
+    server.unload_addon("calendar_invite")
+    act = lambda name, action: server.settings_action(None, "addon", {"name": name, "action": action})
+    kind, text = act("calendar_invite", "on")
+    assert kind == "ok" and "calendar_invite is on" in text
+    assert "add_invite" in server.TOOL_NAMES and server.mcp._tool_manager.get_tool("add_invite")
+    assert server.page_addons() == ["calendar_invite"]
+    kind, text = act("calendar_invite", "off")
+    assert kind == "ok" and "add_invite" not in server.TOOL_NAMES
+    assert server.mcp._tool_manager.get_tool("add_invite") is None and server.page_addons() == []
+    assert act("../evil", "on")[0] == "error" and "no add-on called" in act("nope", "on")[1]
+    monkeypatch.setenv("MAIL_ADDONS", "calendar_invite")
+    assert "Change it there" in act("calendar_invite", "off")[1]
+    rows = {r["name"]: r for r in server.addon_rows()}
+    assert rows["calendar_invite"]["in_settings"] is True
+
+
+def test_a_failed_setup_leaves_no_tools_behind(tmp_path):
+    (tmp_path / "halfway.py").write_text('def setup(api):\n    @api.tool(api.READ)\n    def halfway_tool() -> str:\n'
+                                         '        """x"""\n        return ""\n    raise ValueError("broken")\n')
+    with pytest.raises(ValueError):
+        server.load_addons("halfway", tmp_path)
+    assert "halfway_tool" not in server.TOOL_NAMES and server.mcp._tool_manager.get_tool("halfway_tool") is None
+
+
+def test_a_page_addon_that_fails_doesnt_stop_the_start(monkeypatch, capsys):
+    monkeypatch.delenv("MAIL_ADDONS", raising=False)
+    monkeypatch.setattr(server, "page_addons", lambda: ["invoices"])
+    def broken(names=None, folder=None):
+        if names == "invoices":
+            raise RuntimeError("add-on invoices needs the Python package fpdf")
+        return []
+    monkeypatch.setattr(server, "load_addons", broken)
+    server.load_startup_addons()
+    assert "invoices (turned on on the settings page) didn't load" in capsys.readouterr().err
+
+
+def test_odd_prefs_files_and_the_command_line(monkeypatch, capsys):
+    monkeypatch.delenv("MAIL_ADDONS", raising=False)
+    server.private_write(server.PREFS_FILE, "[1, 2]")
+    assert server.page_addons() == [] and server.pref_on("device_log", "DEVICE_LOG") is True
+    server.set_page_addon("pdf_maker", True)
+    assert server.page_addons() == ["pdf_maker"]
+    monkeypatch.setattr(server, "load_addons", lambda names, folder: names.split(","))
+    server.show_addons(["list"])
+    assert "[on] pdf_maker" in capsys.readouterr().out
+    server.show_addons(["disable", "pdf_maker"])
+    assert server.page_addons() == [] and "turned on on the settings page" in capsys.readouterr().out
+    server.PREFS_FILE.unlink()
+
+
+def test_own_file_with_a_library_name_is_marked(monkeypatch):
+    monkeypatch.setitem(server.LOADED_ADDONS, "invoices", "Mine.")
+    monkeypatch.setitem(server.ADDON_INFO, "invoices", {"source": "own file, replaces the library one"})
+    row = next(r for r in server.addon_rows() if r["name"] == "invoices")
+    assert row["own_file"] is True
+    from selfhost_remote_mail_mcp import pages
+    html = pages.settings("t", [], [], None, 5, False, None, False, None, None, None, [row])
+    assert "Your own" in html and f"{pages.LIBRARY_URL}/invoices" not in html
+    assert "@supports selector(:has(a))" in html
+
+
+def test_two_turn_ons_at_once_load_once(monkeypatch):
+    import threading
+    monkeypatch.delenv("MAIL_ADDONS", raising=False)
+    server.unload_addon("calendar_invite")
+    results = []
+    threads = [threading.Thread(target=lambda: results.append(server.settings_action(
+        None, "addon", {"name": "calendar_invite", "action": "on"}))) for _ in range(2)]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
+    assert [k for k, _ in results] == ["ok", "ok"] and server.TOOL_NAMES.count("add_invite") == 1
+    assert "calendar_invite" in server.LOADED_ADDONS
+    server.settings_action(None, "addon", {"name": "calendar_invite", "action": "off"})

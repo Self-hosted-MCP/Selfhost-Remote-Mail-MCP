@@ -17,7 +17,7 @@ It adds one tool, `make_pdf`. The text can have headings, **bold**, *italic*, li
 selfhost-remote-mail-mcp addons enable pdf_maker
 ```
 
-Or add `pdf_maker` to `MAIL_ADDONS`. More ways: [the library page](../README.md#turn-one-on).
+Or press **Turn on** in the **Add-ons** tab of the settings page, or add `pdf_maker` to `MAIL_ADDONS`. More ways: [the library page](../README.md#turn-one-on).
 
 It needs the Python package `fpdf2`. The Docker image already has it. On a computer, install the add-on extras once:
 

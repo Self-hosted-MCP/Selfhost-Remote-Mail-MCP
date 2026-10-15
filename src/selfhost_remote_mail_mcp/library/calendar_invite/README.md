@@ -17,7 +17,7 @@ It adds one tool, `add_invite`. The draft gets the invite as `invite.ics`. Nothi
 selfhost-remote-mail-mcp addons enable calendar_invite
 ```
 
-Or add `calendar_invite` to `MAIL_ADDONS`. More ways: [the library page](../README.md#turn-one-on).
+Or press **Turn on** in the **Add-ons** tab of the settings page, or add `calendar_invite` to `MAIL_ADDONS`. More ways: [the library page](../README.md#turn-one-on).
 
 ## Settings
 

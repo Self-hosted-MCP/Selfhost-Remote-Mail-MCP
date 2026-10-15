@@ -14,7 +14,7 @@ You need:
 
 - a Mac, Windows or Linux computer,
 - your email address and its password, or better, an **app password** ([email-providers.md](email-providers.md) shows how to make one),
-- an AI app that supports MCP: Claude Desktop, Claude Code, Codex, Cursor, VS Code, Gemini CLI and others.
+- an AI app that supports MCP: Claude Desktop, Claude Code, Codex, Cursor, VS Code, Gemini CLI, OpenClaw, Hermes Agent and others.
 
 You'll type a few commands. Copy and paste them exactly.
 

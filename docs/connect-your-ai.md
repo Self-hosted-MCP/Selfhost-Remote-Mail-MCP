@@ -8,7 +8,7 @@ There are two ways an AI app can reach this server:
 ```mermaid
 flowchart LR
     subgraph computer["On the same computer: stdio"]
-        A1["Claude Desktop, Claude Code,<br/>Codex, Cursor, VS Code"] -->|"starts it"| S1["mail server"]
+        A1["Claude Desktop, Claude Code,<br/>Codex, Cursor, VS Code,<br/>OpenClaw, Hermes Agent"] -->|"starts it"| S1["mail server"]
     end
     subgraph internet["Over the internet: serve"]
         A2["Claude website and phone,<br/>ChatGPT, any app"] -->|"https + passphrase"| S2["mail server"]
@@ -29,6 +29,8 @@ Menus in these apps change often. If a label below doesn't match what you see, l
 | [Cursor](#cursor) | Yes | Yes | Not yet |
 | [VS Code (Copilot)](#vs-code) | Yes | Yes | Not yet |
 | [Gemini CLI](#gemini-cli) | Yes | Yes | Not yet |
+| [OpenClaw](#openclaw) | Yes | Yes | Not yet |
+| [Hermes Agent](#hermes-agent) | Yes | Yes | Not yet |
 | Any other MCP app | Usually | If it supports MCP login (OAuth) | No |
 
 The server was also tested end to end with the official MCP Python client, both ways, against a real mailbox: login, listing the tools and calling them.
@@ -164,6 +166,49 @@ In `~/.gemini/settings.json`:
 
 Over the internet, use `"mail": { "httpUrl": "https://your-address/mcp" }`.
 
+## OpenClaw
+
+In `~/.openclaw/openclaw.json` (or Settings → MCP in the OpenClaw app, or `openclaw mcp add`):
+
+```json5
+{
+  mcp: {
+    servers: {
+      mail: { command: "/full/path/to/selfhost-remote-mail-mcp", args: ["stdio"] }
+    }
+  }
+}
+```
+
+Over the internet, use `mail: { url: "https://your-address/mcp", transport: "streamable-http", auth: "oauth" }`, then run `openclaw mcp login mail` and type your passphrase in the browser. If you use the **Sign in** button in OpenClaw's settings instead, the login returns to your OpenClaw address, so add that address to `ALLOWED_REDIRECT_HOSTS` ([below](#if-the-login-page-refuses-your-app)).
+
+> [!WARNING]
+> OpenClaw runs shell commands without asking, by default. To be asked before each email is sent, run `openclaw mcp configure mail --approval prompt`.
+
+## Hermes Agent
+
+The agent by Nous Research. In `~/.hermes/config.yaml` (or with `hermes mcp add`):
+
+```yaml
+mcp_servers:
+  mail:
+    command: "/full/path/to/selfhost-remote-mail-mcp"
+    args: ["stdio"]
+```
+
+Over the internet:
+
+```yaml
+mcp_servers:
+  mail:
+    url: "https://your-address/mcp"
+    auth: oauth
+```
+
+Run `/reload-mcp` in Hermes (or restart it). It opens the login page in your browser; type your passphrase. To log in again later: `hermes mcp login mail`.
+
+To keep Hermes from ever sending, hide the send tools: add `tools: { exclude: [send_email, schedule_send] }` under `mail`.
+
 ## The icon
 
 The server tells AI apps its name (**Selfhost Mail**) and an envelope icon, and the web version has the same icon as its favicon. Apps that show server icons use it. Not every app does yet.
@@ -174,4 +219,4 @@ Ask your AI: *"Use the mail accounts tool."* It should answer with your address 
 
 ## If the login page refuses your app
 
-Only apps from a list of known addresses may receive the login: Claude, ChatGPT and VS Code on the web, plus any app on your own computer (localhost). If another app shows "Redirect not allowed", add its domain to `ALLOWED_REDIRECT_HOSTS` ([settings.md](settings.md)).
+Only apps from a list of known addresses may receive the login: Claude, ChatGPT and VS Code on the web, plus any app on your own computer (localhost), which covers Claude Code, Codex, Cursor, OpenClaw's `mcp login` and Hermes. If another app shows "Redirect not allowed", add its domain to `ALLOWED_REDIRECT_HOSTS` ([settings.md](settings.md)).

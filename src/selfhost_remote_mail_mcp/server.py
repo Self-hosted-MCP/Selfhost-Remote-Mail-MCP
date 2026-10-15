@@ -2416,18 +2416,19 @@ def pref_on(name: str, env_key: str) -> bool:
     """Switches on the settings page (prefs.json), all on by default."""
     if forced_off(env_key):
         return False
-    try:
-        return bool(json.loads(PREFS_FILE.read_text()).get(name, True))
-    except (OSError, ValueError):
-        return True
+    return bool(read_prefs().get(name, True))
 
 
-def set_pref(name: str, on: bool) -> None:
+def read_prefs() -> dict:
     try:
         prefs = json.loads(PREFS_FILE.read_text())
     except (OSError, ValueError):
-        prefs = {}
-    private_write(PREFS_FILE, json.dumps({**prefs, name: on}))
+        return {}
+    return prefs if isinstance(prefs, dict) else {}
+
+
+def set_pref(name: str, on: bool) -> None:
+    private_write(PREFS_FILE, json.dumps({**read_prefs(), name: on}))
 
 
 def device_log_on() -> bool:
@@ -2620,6 +2621,18 @@ def upload_page(session: dict) -> HTMLResponse:
     return HTMLResponse(body, headers=pages.HEADERS)
 
 
+def addon_rows() -> list[dict]:
+    """For the settings page: every library add-on (on or off), then your own add-ons that are on."""
+    library = library_addons()
+    in_settings = setting_addons()
+    rows = [{"name": n, "about": about, "on": n in LOADED_ADDONS, "library": True, "in_settings": n in in_settings,
+             "own_file": ADDON_INFO.get(n, {}).get("source", "").startswith("own")}
+            for n, about in library.items()]
+    rows += [{"name": n, "about": about, "on": True, "library": False, "in_settings": True}
+             for n, about in LOADED_ADDONS.items() if n not in library]
+    return rows
+
+
 def settings_page(provider: "PassphraseOAuth", session: dict, uploads_on: bool = False) -> HTMLResponse:
     cfg = read_env()
     boxes = [{**asdict(a)} for a in all_accounts(cfg)]
@@ -2646,7 +2659,7 @@ def settings_page(provider: "PassphraseOAuth", session: dict, uploads_on: bool =
                "signins": [{**e, "time": when(e["time"])} for e in (recent_signins() if log_on else [])]}
     body = pages.settings(session["csrf"], boxes, apps, flash, max_mailboxes(cfg), server_read_only(cfg), about,
                           uploads_on, devices, privacy,
-                          [{**c, "time": when(c["time"])} for c in recent_changes()])
+                          [{**c, "time": when(c["time"])} for c in recent_changes()], addon_rows())
     return HTMLResponse(body, headers=pages.HEADERS)
 
 
@@ -2752,6 +2765,27 @@ def settings_action(provider: "PassphraseOAuth", kind: str, form) -> tuple[str, 
             return "error", T_("This is turned off in the server settings ({setting}=off).", setting=env_key)
         set_pref(str(form.get("name")), action == "on")
         return "ok", T_("{setting}: on.", setting=T_(label)) if action == "on" else T_("{setting}: off.", setting=T_(label))
+    if kind == "addon":
+        name = str(form.get("name", "")).strip()
+        if name not in library_addons():
+            return "error", T_("There's no add-on called {name}.", name=name)
+        if name in setting_addons():
+            return "error", T_("{name} is turned on in the server settings (MAIL_ADDONS). Change it there.", name=name)
+        with ADDON_SWITCH_LOCK:
+            if action == "on":
+                if name not in LOADED_ADDONS:
+                    try:
+                        load_addons(name)
+                    except Exception as exc:
+                        return "error", T_("{name} couldn't be turned on: {reason}", name=name, reason=str(exc))
+                set_page_addon(name, True)
+                start_jobs()
+                return "ok", T_("{name} is on. Start a new chat in your AI app to use it. Some add-ons need "
+                                "settings first: see Details.", name=name)
+            if action == "off":
+                set_page_addon(name, False)
+                unload_addon(name)
+                return "ok", T_("{name} is off.", name=name)
     return "error", "Unknown action."
 
 
@@ -2913,7 +2947,10 @@ def build_server(remote: bool) -> MCPServer:
                 session["flash"] = await asyncio.to_thread(settings_action, provider, kind, form)
             except ToolError as exc:
                 session["flash"] = ("error", str(exc))
-            return RedirectResponse("/settings", status_code=303, headers={"Cache-Control": "no-store"})
+            tab = {"mailbox": "mailboxes", "app": "apps", "device": "devices", "privacy": "privacy",
+                   "addon": "addons"}.get(kind, "")
+            return RedirectResponse("/settings" + (f"#{tab}" if tab else ""), status_code=303,
+                                    headers={"Cache-Control": "no-store"})
 
         @server.custom_route("/settings/mailbox", methods=["POST"])
         async def settings_mailbox(request: Request) -> Response:
@@ -2926,6 +2963,10 @@ def build_server(remote: bool) -> MCPServer:
         @server.custom_route("/settings/device", methods=["POST"])
         async def settings_device(request: Request) -> Response:
             return await settings_post(request, "device")
+
+        @server.custom_route("/settings/addon", methods=["POST"])
+        async def settings_addon(request: Request) -> Response:
+            return await settings_post(request, "addon")
 
         @server.custom_route("/settings/privacy", methods=["POST"])
         async def settings_privacy(request: Request) -> Response:
@@ -3795,6 +3836,9 @@ ADDON_STORE_LOCKS: dict[str, threading.Lock] = {}
 ADDON_STORE_OPEN = threading.local()   # stores this thread has open, so a nested api.store() gets the same dict
 ADDON_DRAFT = "X-Mail-MCP-Addon"   # draft-only: which add-on made the draft (api.send only sends its own); never sent
 ADDON_JOBS: list[dict] = []   # background jobs added with api.every
+ADDON_HOOKS: dict[str, list] = {}   # name -> its Sent-copy functions, so turning it off removes them
+_jobs_started = False
+ADDON_SWITCH_LOCK = threading.Lock()   # one turn-on or turn-off at a time (a double click must not load twice)
 ADDON_JOB: contextvars.ContextVar[str | None] = contextvars.ContextVar("addon_job", default=None)
 
 
@@ -3911,6 +3955,7 @@ class AddonAPI:
         """func(copy, headers) may change the copy saved in the Sent folder after sending, for example to leave
         out a large file. headers holds the draft's internal headers. It never changes what was sent."""
         SENT_COPY_HOOKS.append(func)
+        ADDON_HOOKS.setdefault(self.name, []).append(func)
 
     def log(self, text: str) -> None:
         print(f"add-on {self.name}: {text}", file=sys.stderr, flush=True)
@@ -4182,7 +4227,7 @@ def load_addons(names: str | None = None, folder: Path | None = None) -> list[st
     one, else the add-on of that name from the library. Returns their names."""
     import importlib
     import importlib.util
-    names = names if names is not None else (os.environ.get("MAIL_ADDONS") or read_env().get("MAIL_ADDONS", ""))
+    names = names if names is not None else ",".join(dict.fromkeys(setting_addons() + page_addons()))
     folder = folder or Path(read_env().get("MAIL_ADDONS_DIR") or ADDONS_DIR).expanduser()
     loaded = []
     for name in [n.strip() for n in names.split(",") if n.strip()]:
@@ -4221,11 +4266,60 @@ def load_addons(names: str | None = None, folder: Path | None = None) -> list[st
         ADDON_INFO[name] = {"source": source, "sends": getattr(module, "SENDS", False) is True,
                             "hosts": tuple(getattr(module, "HOSTS", ()))}
         api = AddonAPI(name)
-        module.setup(api)
+        try:
+            module.setup(api)
+        except BaseException:
+            ADDON_TOOLS[name] = api.tools   # take back what it added before failing
+            unload_addon(name)
+            raise
         LOADED_ADDONS[name] = (module.__doc__ or "").strip().splitlines()[0] if module.__doc__ else ""
         ADDON_TOOLS[name] = api.tools
         loaded.append(name)
     return loaded
+
+
+def setting_addons() -> list[str]:
+    """Add-ons turned on in the settings file or the host's variables (MAIL_ADDONS)."""
+    names = os.environ.get("MAIL_ADDONS") or read_env().get("MAIL_ADDONS", "")
+    return [n.strip() for n in names.split(",") if n.strip()]
+
+
+def page_addons() -> list[str]:
+    """Library add-ons turned on with the buttons on the settings page (kept in prefs.json)."""
+    names = read_prefs().get("addons", [])
+    library = library_addons()
+    return [n for n in names if isinstance(n, str) and n in library] if isinstance(names, list) else []
+
+
+def set_page_addon(name: str, on: bool) -> None:
+    prefs = read_prefs()
+    names = [n for n in page_addons() if n != name] + ([name] if on else [])
+    private_write(PREFS_FILE, json.dumps({**prefs, "addons": names}))
+
+
+def unload_addon(name: str) -> None:
+    """Turns an add-on off while the server runs: its tools, background jobs and Sent-copy functions go."""
+    for tool in ADDON_TOOLS.pop(name, []):
+        try:
+            mcp._tool_manager.remove_tool(tool)
+        except Exception:
+            pass
+        if tool in TOOL_NAMES:
+            TOOL_NAMES.remove(tool)
+    ADDON_JOBS[:] = [j for j in ADDON_JOBS if j["addon"] != name]
+    for func in ADDON_HOOKS.pop(name, []):
+        if func in SENT_COPY_HOOKS:
+            SENT_COPY_HOOKS.remove(func)
+    LOADED_ADDONS.pop(name, None)
+    ADDON_INFO.pop(name, None)
+
+
+def start_jobs() -> None:
+    """Starts the background-job thread once, on the web version, when some add-on has a job."""
+    global _jobs_started
+    if MODE == "serve" and ADDON_JOBS and not _jobs_started:
+        _jobs_started = True
+        threading.Thread(target=jobs_loop, name="addon-jobs", daemon=True).start()
 
 
 def run_jobs_once(now: float | None = None) -> list[str]:
@@ -4312,12 +4406,13 @@ def show_addons(args: list[str] | None = None) -> None:
     `addons list`: every library add-on. `addons enable <name>` / `addons disable <name>`: edits MAIL_ADDONS."""
     args = args or []
     folder = Path(read_env().get("MAIL_ADDONS_DIR") or ADDONS_DIR).expanduser()
-    names = os.environ.get("MAIL_ADDONS") or read_env().get("MAIL_ADDONS", "")
-    on = [n.strip() for n in names.split(",") if n.strip()]
+    on = setting_addons()
+    from_page = [n for n in page_addons() if n not in on]
+    names = ",".join(on + from_page)
     if args[:1] == ["list"]:
         print("Add-ons in the library (all off until you turn them on):")
         for name, about in library_addons().items():
-            print(f"  {'[on] ' if name in on else ''}{name}: {about}")
+            print(f"  {'[on] ' if name in on or name in from_page else ''}{name}: {about}")
         print(f"Turn one on: {APP} addons enable <name>. What each one needs: the README in "
               f"https://github.com/{REPO}/tree/main/src/selfhost_remote_mail_mcp/library")
         return
@@ -4325,18 +4420,22 @@ def show_addons(args: list[str] | None = None) -> None:
         if len(args) != 2:
             sys.exit(f"Usage: {APP} addons {args[0]} <name>")
         name, enable = args[1], args[0] == "enable"
+        if not enable and name in from_page:
+            set_page_addon(name, False)
+            print(f"{name} is off (it was turned on on the settings page).")
         if enable and name not in library_addons() and not (folder / f"{name}.py").is_file():
             sys.exit(f"There's no add-on called {name}. See: {APP} addons list")
         new = (on + [name] if name not in on else on) if enable else [n for n in on if n != name]
-        if os.environ.get("MAIL_ADDONS") is not None:
+        if os.environ.get("MAIL_ADDONS") is not None and (enable or name in on):
             sys.exit(f"MAIL_ADDONS is set where the server runs (your host's variables or Docker settings), not in "
                      f"the settings file. Set it there to: MAIL_ADDONS={','.join(new)}")
-        write_settings({"MAIL_ADDONS": ",".join(new)})
-        print(f"{name} is {'on' if enable else 'off'}. MAIL_ADDONS={','.join(new)}")
+        if new != on:
+            write_settings({"MAIL_ADDONS": ",".join(new)})
+            print(f"{name} is {'on' if enable else 'off'}. MAIL_ADDONS={','.join(new)}")
         if not enable:
             print("Restart the server (or your AI app) for it to take effect.")
             return
-        names = ",".join(new)
+        names = ",".join(new + [n for n in from_page if n not in new])
     if args and args[0] not in ("enable",):
         sys.exit(f"Unknown: addons {' '.join(args)}. Use: addons, addons list, addons enable <name>, addons disable <name>")
     if not names.strip():
@@ -4358,8 +4457,17 @@ def show_addons(args: list[str] | None = None) -> None:
     print("All add-ons load. Restart the server (or your AI app) to use them.")
 
 
+def load_startup_addons() -> None:
+    load_addons(",".join(setting_addons()))   # your own MAIL_ADDONS: a problem stops the start, so you notice
+    for name in page_addons():   # turned on with a button: a problem is only logged, so the page stays reachable
+        try:
+            load_addons(name)
+        except Exception as exc:
+            print(f"add-on {name} (turned on on the settings page) didn't load: {exc}", file=sys.stderr, flush=True)
+
+
 if MODE in ("stdio", "serve"):
-    load_addons()
+    load_startup_addons()
 
 
 # ---------------------------------------------------------------- entry point
@@ -4749,8 +4857,7 @@ def main() -> None:
         if (env.get("SCHEDULED_SEND") or "on").lower() not in ("off", "false", "0", "no"):
             threading.Thread(target=scheduler_loop, name="scheduler", daemon=True).start()
         threading.Thread(target=upload_cleaner, name="uploads", daemon=True).start()
-        if ADDON_JOBS:
-            threading.Thread(target=jobs_loop, name="addon-jobs", daemon=True).start()
+        start_jobs()
         public_host = urlparse(public).hostname or "localhost"
         mcp.run(
             "streamable-http",

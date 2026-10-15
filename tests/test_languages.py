@@ -123,7 +123,9 @@ def test_every_page_text_is_marked_for_translation():
                            "list": [{"id": "x", "device": "", "ip": "1.2.3.4", "since": "1 Oct", "seen": "2 Oct",
                                      "remember": True, "current": False}]},
                           [{"name": "upload_links", "label": "Upload links for AI apps", "on": True, "forced_off": False}],
-                          [])
+                          [], [{"name": "pdf_maker", "about": "", "on": True, "library": True},
+                               {"name": "invoices", "about": "", "on": False, "library": True},
+                               {"name": "decks", "about": "", "on": True, "library": False}])
     files = pages.uploads("t", [{"code": "F-AAAAAA", "name": "a.pdf", "size_text": "1 MB", "level": "suspect",
                                  "why": "x", "used": True, "minutes_left": 30}], None, "25 MB", ".pdf")
     html = (pages.uploads("t", [], None, "25 MB", ".pdf") + pages.settings_login() + pages.upload_link() + full + files
