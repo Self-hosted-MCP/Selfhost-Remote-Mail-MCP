@@ -1,3 +1,5 @@
+https://github.com/user-attachments/assets/e8d81327-da12-430e-a15a-bb2f73d9908a
+
 <p align="center"><img src="docs/images/icon.png" alt="" width="88"></p>
 
 <h1 align="center">Selfhost-Remote-Mail-MCP</h1>
