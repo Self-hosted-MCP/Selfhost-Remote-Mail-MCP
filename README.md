@@ -12,6 +12,12 @@
 <a href="https://modelcontextprotocol.io"><img src="https://img.shields.io/badge/MCP-server-black" alt="MCP server"></a>
 <a href="docs/connect-your-ai.md"><img src="https://img.shields.io/badge/works%20with-Claude%20%C2%B7%20ChatGPT%20%C2%B7%20Codex-orange" alt="Works with Claude, ChatGPT, Codex"></a>
 <a href="#choose-how-to-run-it"><img src="https://img.shields.io/badge/self--hosted-computer%20%C2%B7%20cloud%20%C2%B7%20server-green" alt="Self-hosted"></a>
+<br>
+<a href="https://github.com/s17sh70x2jfl031ag/Selfhost-Remote-Mail-MCP/actions/workflows/tests.yml"><img src="https://github.com/s17sh70x2jfl031ag/Selfhost-Remote-Mail-MCP/actions/workflows/tests.yml/badge.svg" alt="Tests"></a>
+<a href="https://github.com/s17sh70x2jfl031ag/Selfhost-Remote-Mail-MCP/releases/latest"><img src="https://img.shields.io/github/v/release/s17sh70x2jfl031ag/Selfhost-Remote-Mail-MCP" alt="Latest release"></a>
+<a href="https://github.com/s17sh70x2jfl031ag/Selfhost-Remote-Mail-MCP/commits/main"><img src="https://img.shields.io/github/last-commit/s17sh70x2jfl031ag/Selfhost-Remote-Mail-MCP" alt="Last commit"></a>
+<a href="docs/languages.md"><img src="https://img.shields.io/badge/languages-20-6a5cff" alt="20 languages"></a>
+<a href="src/selfhost_remote_mail_mcp/library/README.md"><img src="https://img.shields.io/badge/add--ons-library-c8f53a" alt="Add-on library"></a>
 </p>
 
 <p align="center"><b>Free and open source under the AGPL-3.0 license.</b> Use it, fork it and change it, share your changes, and keep the credit. See <a href="#credits">Credits</a>.</p>
