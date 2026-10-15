@@ -41,7 +41,7 @@
  "Settings": "Настройки",
  "Your mailboxes and the AI apps that may use them.": "Ваши почтовые ящики и ИИ-приложения, которым они доступны.",
  "What's new": "Что нового",
- "Mailboxes, modes, and which AI apps may use them.": "Почтовые ящики, режимы и ИИ-приложения, которым они доступны.",
+ "Everything your AI can do with your email, in one place.": "Всё, что ваш ИИ может делать с вашей почтой, в одном месте.",
  "Upload a file, then ask your AI app to attach it.": "Загрузите файл, а затем попросите ИИ-приложение прикрепить его.",
  "File <span class=\"hl\">uploaded</span>": "Файл <span class=\"hl\">загружен</span>",
  "Pick the file, then go back to your chat.": "Выберите файл и вернитесь в чат.",
@@ -209,7 +209,7 @@
  "Signed in": "Вход выполнен",
  "Wrong passphrase": "Неверная кодовая фраза",
  "The device log is off: no sign-in history or device details are kept.": "Журнал устройств выключен: история входов и данные устройств не сохраняются.",
- "Edit": "Изменить",
+ "Server and password": "Сервер и пароль",
  "Name on outgoing mail": "Имя в исходящих письмах",
  "Mode": "Режим",
  "New password": "Новый пароль",
@@ -390,5 +390,7 @@
  "The default is set in the server settings (MAIL_DEFAULT). Change it there.": "Ящик по умолчанию задан в настройках сервера (MAIL_DEFAULT). Измените его там.",
  "That signature is too long.": "Эта подпись слишком длинная.",
  "Signature for {address} saved.": "Подпись для {address} сохранена.",
- "{address} has no signature now.": "У {address} теперь нет подписи."
+ "{address} has no signature now.": "У {address} теперь нет подписи.",
+ "Private": "Приватно",
+ "Open source": "Открытый код"
 }

@@ -41,7 +41,7 @@
  "Settings": "設定",
  "Your mailboxes and the AI apps that may use them.": "你的信箱，以及可以使用它們的 AI App。",
  "What's new": "新功能",
- "Mailboxes, modes, and which AI apps may use them.": "信箱、模式，以及哪些 AI App 可以使用它們。",
+ "Everything your AI can do with your email, in one place.": "你的 AI 能對郵件做的一切，都在這裡。",
  "Upload a file, then ask your AI app to attach it.": "上傳檔案，再請 AI App 將它加入附件。",
  "File <span class=\"hl\">uploaded</span>": "檔案<span class=\"hl\">已上傳</span>",
  "Pick the file, then go back to your chat.": "選擇檔案，然後回到對話。",
@@ -209,7 +209,7 @@
  "Signed in": "登入成功",
  "Wrong passphrase": "通關密語錯誤",
  "The device log is off: no sign-in history or device details are kept.": "裝置紀錄已關閉：不會保留登入紀錄或裝置資訊。",
- "Edit": "編輯",
+ "Server and password": "伺服器和密碼",
  "Name on outgoing mail": "寄件者名稱",
  "Mode": "模式",
  "New password": "新密碼",
@@ -390,5 +390,7 @@
  "The default is set in the server settings (MAIL_DEFAULT). Change it there.": "預設信箱已在伺服器設定中指定（MAIL_DEFAULT）。請在那裡修改。",
  "That signature is too long.": "這個簽名太長了。",
  "Signature for {address} saved.": "已儲存 {address} 的簽名。",
- "{address} has no signature now.": "{address} 現在沒有簽名。"
+ "{address} has no signature now.": "{address} 現在沒有簽名。",
+ "Private": "私密",
+ "Open source": "開源"
 }

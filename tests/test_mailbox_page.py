@@ -108,3 +108,24 @@ def test_the_page_shows_the_new_controls(web, two):
     assert "Remove for good" in page and page.count("Remove web@example.com from this server?") == 1
     assert "<script>x()" not in page and "&lt;/textarea&gt;&lt;script&gt;" in page   # escaped in the box
     assert "Save mode" in page and page.count("Save mode") == 1   # only the page-added mailbox
+
+
+def test_the_mailbox_rows_are_one_tidy_toolbar(web, two):
+    client, _provider = web
+    _csrf, page = sign_in(client)
+    assert page.count("<div") == page.count("</div>")   # every box closed: rows never nest inside each other
+    assert page.count('class="tools"') == 2 and page.count('name="mb1"') == 5   # one group of panels per mailbox
+    assert page.count('<details class="tool remove"') == 1   # only the page-added mailbox can be removed here
+
+
+def test_a_failed_add_keeps_what_was_typed_but_never_the_password(web, two):
+    client, _provider = web
+    csrf, _page = sign_in(client)
+    client.post("/settings/mailbox", headers={"origin": "http://localhost"}, follow_redirects=False,
+                data={"csrf": csrf, "action": "add", "address": "new@studio.test", "name": "Studio", "label": "Work",
+                      "password": "secret-typed-pw", "mode": "draft", "imap_host": "", "smtp_host": ""})
+    page = client.get("/settings").text
+    assert 'value="new@studio.test"' in page and 'value="Studio"' in page and 'value="Work"' in page
+    assert '<option value="draft" selected>' in page and "<details open><summary>Server settings" in page
+    assert "secret-typed-pw" not in page
+    assert 'value="new@studio.test"' not in client.get("/settings").text   # shown once, then the form is empty

@@ -2766,6 +2766,10 @@ def addon_setup_page(session: dict, name: str) -> HTMLResponse:
     return HTMLResponse(pages.addon_setup(session["csrf"], row, fields, flash, zones), headers=pages.HEADERS)
 
 
+ADD_FORM_FIELDS = ("address", "label", "name", "mode", "imap_host", "imap_port", "smtp_host", "smtp_port", "username",
+                   "smtp_username")   # what Add a mailbox shows again after a failed try: never the password
+
+
 def settings_page(provider: "PassphraseOAuth", session: dict, uploads_on: bool = False) -> HTMLResponse:
     cfg = read_env()
     adopt_old_signature()
@@ -2795,7 +2799,8 @@ def settings_page(provider: "PassphraseOAuth", session: dict, uploads_on: bool =
                "signins": [{**e, "time": when(e["time"])} for e in (recent_signins() if log_on else [])]}
     body = pages.settings(session["csrf"], boxes, apps, flash, max_mailboxes(cfg), server_read_only(cfg), about,
                           uploads_on, devices, privacy,
-                          [{**c, "time": when(c["time"])} for c in recent_changes()], addon_rows())
+                          [{**c, "time": when(c["time"])} for c in recent_changes()], addon_rows(),
+                          session.pop("add_form", None))
     return HTMLResponse(body, headers=pages.HEADERS)
 
 
@@ -3154,6 +3159,10 @@ def build_server(remote: bool) -> MCPServer:
                 session["flash"] = await asyncio.to_thread(settings_action, provider, kind, form)
             except ToolError as exc:
                 session["flash"] = ("error", str(exc))
+            session.pop("add_form", None)
+            if kind == "mailbox" and form.get("action") == "add" and session["flash"][0] == "error":
+                # shown again on the page, so nothing has to be typed twice. Never the password.
+                session["add_form"] = {k: str(form.get(k, ""))[:200] for k in ADD_FORM_FIELDS}
             tab = {"mailbox": "mailboxes", "app": "apps", "device": "devices", "privacy": "privacy",
                    "addon": "addons", "update": "about"}.get(kind, "")
             name = str(form.get("name", ""))

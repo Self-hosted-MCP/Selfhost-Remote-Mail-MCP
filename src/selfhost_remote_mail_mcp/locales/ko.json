@@ -41,7 +41,7 @@
  "Settings": "설정",
  "Your mailboxes and the AI apps that may use them.": "내 메일함과 이를 사용할 수 있는 AI 앱이에요.",
  "What's new": "새로운 기능",
- "Mailboxes, modes, and which AI apps may use them.": "메일함, 모드, 그리고 이를 사용할 수 있는 AI 앱이에요.",
+ "Everything your AI can do with your email, in one place.": "AI가 내 이메일로 할 수 있는 모든 것을 한곳에서.",
  "Upload a file, then ask your AI app to attach it.": "파일을 업로드한 다음 AI 앱에 첨부해 달라고 하세요.",
  "File <span class=\"hl\">uploaded</span>": "파일 <span class=\"hl\">업로드 완료</span>",
  "Pick the file, then go back to your chat.": "파일을 선택한 다음 채팅으로 돌아가세요.",
@@ -209,7 +209,7 @@
  "Signed in": "로그인 성공",
  "Wrong passphrase": "암호 문구가 틀림",
  "The device log is off: no sign-in history or device details are kept.": "기기 기록이 꺼져 있어요. 로그인 기록이나 기기 정보를 저장하지 않아요.",
- "Edit": "편집",
+ "Server and password": "서버 및 비밀번호",
  "Name on outgoing mail": "보내는 사람 이름",
  "Mode": "모드",
  "New password": "새 비밀번호",
@@ -390,5 +390,7 @@
  "The default is set in the server settings (MAIL_DEFAULT). Change it there.": "기본 메일함은 서버 설정(MAIL_DEFAULT)에서 정해져 있어요. 거기서 바꾸세요.",
  "That signature is too long.": "서명이 너무 길어요.",
  "Signature for {address} saved.": "{address}의 서명을 저장했어요.",
- "{address} has no signature now.": "{address}에 이제 서명이 없어요."
+ "{address} has no signature now.": "{address}에 이제 서명이 없어요.",
+ "Private": "비공개",
+ "Open source": "오픈 소스"
 }

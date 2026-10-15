@@ -41,7 +41,7 @@
  "Settings": "Ρυθμίσεις",
  "Your mailboxes and the AI apps that may use them.": "Τα γραμματοκιβώτιά σας και οι εφαρμογές AI που μπορούν να τα χρησιμοποιούν.",
  "What's new": "Τι νέο υπάρχει",
- "Mailboxes, modes, and which AI apps may use them.": "Γραμματοκιβώτια, λειτουργίες και ποιες εφαρμογές AI μπορούν να τα χρησιμοποιούν.",
+ "Everything your AI can do with your email, in one place.": "Όλα όσα μπορεί να κάνει το AI σας με το email σας, σε ένα μέρος.",
  "Upload a file, then ask your AI app to attach it.": "Ανεβάστε ένα αρχείο και μετά ζητήστε από την εφαρμογή AI να το επισυνάψει.",
  "File <span class=\"hl\">uploaded</span>": "Το αρχείο <span class=\"hl\">ανέβηκε</span>",
  "Pick the file, then go back to your chat.": "Επιλέξτε το αρχείο και μετά επιστρέψτε στη συνομιλία.",
@@ -209,7 +209,7 @@
  "Signed in": "Επιτυχής σύνδεση",
  "Wrong passphrase": "Λάθος φράση πρόσβασης",
  "The device log is off: no sign-in history or device details are kept.": "Το αρχείο καταγραφής συσκευών είναι ανενεργό: δεν διατηρείται ιστορικό συνδέσεων ούτε στοιχεία συσκευών.",
- "Edit": "Επεξεργασία",
+ "Server and password": "Διακομιστής και κωδικός",
  "Name on outgoing mail": "Όνομα στα εξερχόμενα email",
  "Mode": "Λειτουργία",
  "New password": "Νέος κωδικός πρόσβασης",
@@ -390,5 +390,7 @@
  "The default is set in the server settings (MAIL_DEFAULT). Change it there.": "Η προεπιλογή ορίζεται στις ρυθμίσεις του διακομιστή (MAIL_DEFAULT). Αλλάξτε την εκεί.",
  "That signature is too long.": "Αυτή η υπογραφή είναι πολύ μεγάλη.",
  "Signature for {address} saved.": "Η υπογραφή για το {address} αποθηκεύτηκε.",
- "{address} has no signature now.": "Το {address} δεν έχει πλέον υπογραφή."
+ "{address} has no signature now.": "Το {address} δεν έχει πλέον υπογραφή.",
+ "Private": "Ιδιωτικό",
+ "Open source": "Ανοιχτός κώδικας"
 }

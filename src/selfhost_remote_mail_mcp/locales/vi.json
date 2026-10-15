@@ -41,7 +41,7 @@
  "Settings": "Cài đặt",
  "Your mailboxes and the AI apps that may use them.": "Hộp thư của bạn và các ứng dụng AI được phép dùng chúng.",
  "What's new": "Có gì mới",
- "Mailboxes, modes, and which AI apps may use them.": "Hộp thư, chế độ và những ứng dụng AI được phép dùng chúng.",
+ "Everything your AI can do with your email, in one place.": "Mọi việc AI có thể làm với email của bạn, ở một nơi.",
  "Upload a file, then ask your AI app to attach it.": "Tải tệp lên, rồi nhờ ứng dụng AI đính kèm tệp đó.",
  "File <span class=\"hl\">uploaded</span>": "Đã <span class=\"hl\">tải tệp lên</span>",
  "Pick the file, then go back to your chat.": "Chọn tệp, rồi quay lại cuộc trò chuyện.",
@@ -209,7 +209,7 @@
  "Signed in": "Đã đăng nhập",
  "Wrong passphrase": "Sai cụm mật khẩu",
  "The device log is off: no sign-in history or device details are kept.": "Nhật ký thiết bị đang tắt: không lưu lịch sử đăng nhập hay thông tin thiết bị.",
- "Edit": "Sửa",
+ "Server and password": "Máy chủ và mật khẩu",
  "Name on outgoing mail": "Tên trên thư gửi đi",
  "Mode": "Chế độ",
  "New password": "Mật khẩu mới",
@@ -390,5 +390,7 @@
  "The default is set in the server settings (MAIL_DEFAULT). Change it there.": "Hộp thư mặc định được đặt trong cài đặt máy chủ (MAIL_DEFAULT). Hãy đổi ở đó.",
  "That signature is too long.": "Chữ ký này quá dài.",
  "Signature for {address} saved.": "Đã lưu chữ ký cho {address}.",
- "{address} has no signature now.": "{address} giờ không có chữ ký."
+ "{address} has no signature now.": "{address} giờ không có chữ ký.",
+ "Private": "Riêng tư",
+ "Open source": "Mã nguồn mở"
 }

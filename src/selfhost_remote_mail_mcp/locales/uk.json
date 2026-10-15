@@ -41,7 +41,7 @@
  "Settings": "Налаштування",
  "Your mailboxes and the AI apps that may use them.": "Ваші поштові скриньки та ШІ-застосунки, яким вони доступні.",
  "What's new": "Що нового",
- "Mailboxes, modes, and which AI apps may use them.": "Поштові скриньки, режими та ШІ-застосунки, яким вони доступні.",
+ "Everything your AI can do with your email, in one place.": "Усе, що ваш ШІ може робити з вашою поштою, в одному місці.",
  "Upload a file, then ask your AI app to attach it.": "Завантажте файл, а потім попросіть ШІ-застосунок прикріпити його.",
  "File <span class=\"hl\">uploaded</span>": "Файл <span class=\"hl\">завантажено</span>",
  "Pick the file, then go back to your chat.": "Виберіть файл і поверніться в чат.",
@@ -209,7 +209,7 @@
  "Signed in": "Вхід виконано",
  "Wrong passphrase": "Неправильна кодова фраза",
  "The device log is off: no sign-in history or device details are kept.": "Журнал пристроїв вимкнено: історія входів і дані пристроїв не зберігаються.",
- "Edit": "Змінити",
+ "Server and password": "Сервер і пароль",
  "Name on outgoing mail": "Ім’я у вихідних листах",
  "Mode": "Режим",
  "New password": "Новий пароль",
@@ -390,5 +390,7 @@
  "The default is set in the server settings (MAIL_DEFAULT). Change it there.": "Скриньку за замовчуванням задано в налаштуваннях сервера (MAIL_DEFAULT). Змініть її там.",
  "That signature is too long.": "Цей підпис задовгий.",
  "Signature for {address} saved.": "Підпис для {address} збережено.",
- "{address} has no signature now.": "У {address} тепер немає підпису."
+ "{address} has no signature now.": "У {address} тепер немає підпису.",
+ "Private": "Приватно",
+ "Open source": "Відкритий код"
 }

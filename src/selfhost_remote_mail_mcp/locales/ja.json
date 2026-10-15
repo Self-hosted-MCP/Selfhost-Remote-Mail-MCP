@@ -41,7 +41,7 @@
  "Settings": "設定",
  "Your mailboxes and the AI apps that may use them.": "メールボックスと、それを使える AI アプリ。",
  "What's new": "新機能",
- "Mailboxes, modes, and which AI apps may use them.": "メールボックス、モード、使える AI アプリ。",
+ "Everything your AI can do with your email, in one place.": "AI がメールでできることを、ひとつの場所で。",
  "Upload a file, then ask your AI app to attach it.": "ファイルをアップロードしてから、AI アプリに添付するよう頼んでください。",
  "File <span class=\"hl\">uploaded</span>": "ファイルを<span class=\"hl\">アップロードしました</span>",
  "Pick the file, then go back to your chat.": "ファイルを選んでから、チャットに戻ってください。",
@@ -209,7 +209,7 @@
  "Signed in": "ログイン成功",
  "Wrong passphrase": "パスフレーズが違います",
  "The device log is off: no sign-in history or device details are kept.": "デバイスログはオフです。ログイン履歴やデバイスの情報は保存されません。",
- "Edit": "編集",
+ "Server and password": "サーバーとパスワード",
  "Name on outgoing mail": "送信メールの表示名",
  "Mode": "モード",
  "New password": "新しいパスワード",
@@ -390,5 +390,7 @@
  "The default is set in the server settings (MAIL_DEFAULT). Change it there.": "デフォルトはサーバー設定（MAIL_DEFAULT）で決まっています。そちらで変更してください。",
  "That signature is too long.": "署名が長すぎます。",
  "Signature for {address} saved.": "{address} の署名を保存しました。",
- "{address} has no signature now.": "{address} の署名をなしにしました。"
+ "{address} has no signature now.": "{address} の署名をなしにしました。",
+ "Private": "プライベート",
+ "Open source": "オープンソース"
 }

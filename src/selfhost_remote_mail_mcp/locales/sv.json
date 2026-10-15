@@ -41,7 +41,7 @@
  "Settings": "Inställningar",
  "Your mailboxes and the AI apps that may use them.": "Dina brevlådor och de AI-appar som får använda dem.",
  "What's new": "Nyheter",
- "Mailboxes, modes, and which AI apps may use them.": "Brevlådor, lägen och vilka AI-appar som får använda dem.",
+ "Everything your AI can do with your email, in one place.": "Allt din AI kan göra med din e-post, på ett ställe.",
  "Upload a file, then ask your AI app to attach it.": "Ladda upp en fil och be sedan din AI-app att bifoga den.",
  "File <span class=\"hl\">uploaded</span>": "Filen är <span class=\"hl\">uppladdad</span>",
  "Pick the file, then go back to your chat.": "Välj filen och gå sedan tillbaka till chatten.",
@@ -209,7 +209,7 @@
  "Signed in": "Inloggad",
  "Wrong passphrase": "Fel lösenfras",
  "The device log is off: no sign-in history or device details are kept.": "Enhetsloggen är avstängd: ingen inloggningshistorik eller enhetsinformation sparas.",
- "Edit": "Redigera",
+ "Server and password": "Server och lösenord",
  "Name on outgoing mail": "Namn på utgående mejl",
  "Mode": "Läge",
  "New password": "Nytt lösenord",
@@ -390,5 +390,7 @@
  "The default is set in the server settings (MAIL_DEFAULT). Change it there.": "Standarden är satt i serverns inställningar (MAIL_DEFAULT). Ändra den där.",
  "That signature is too long.": "Den signaturen är för lång.",
  "Signature for {address} saved.": "Signatur för {address} sparad.",
- "{address} has no signature now.": "{address} har ingen signatur nu."
+ "{address} has no signature now.": "{address} har ingen signatur nu.",
+ "Private": "Privat",
+ "Open source": "Öppen källkod"
 }

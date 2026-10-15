@@ -69,6 +69,8 @@ ICON_MAIL = ('<svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-
 ICON_SHIELD = ('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" '
                'stroke-linejoin="round" aria-hidden="true"><path d="M12 3 4 6v6c0 4.5 3.4 8.3 8 9 4.6-.7 8-4.5 8-9V6z"/>'
                '<path d="M12 8v5"/><path d="M12 16.5v.01"/></svg>')
+ICON_CODE = ('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" '
+             'stroke-linejoin="round" aria-hidden="true"><path d="m8 7-5 5 5 5"/><path d="m16 7 5 5-5 5"/></svg>')
 ICON_ALERT = ('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" '
               'stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7.5v5.5"/>'
               '<path d="M12 16.5v.01"/></svg>')
@@ -254,6 +256,37 @@ details[open] summary::after{content:" \\2013"}
 .remember{margin:14px 0 0}
 .remember input{accent-color:var(--brand)}
 .empty{padding:22px 18px;color:var(--ink-soft)}
+.traits{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+.trait{display:inline-flex;align-items:center;gap:6px;padding:5px 12px 5px 9px;border-radius:999px;font-size:.84rem;font-weight:700;
+background:color-mix(in srgb,var(--on-brand) 15%,transparent);color:var(--on-brand);text-decoration:none;transition:background .15s,color .15s}
+.trait svg{width:15px;height:15px;flex:none}
+a.trait:hover,a.trait:focus-visible{background:var(--lime);color:var(--lime-ink);outline:none}
+.mbx{padding:18px 20px}
+.mbx .muted{margin-top:4px}
+.tools{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:14px}
+.tools form{margin:0}
+.tools button.quiet,.tool>summary{display:inline-flex;align-items:center;gap:7px;min-height:38px;padding:7px 14px;border-radius:999px;
+border:1.5px solid var(--line);background:transparent;color:var(--ink);font-weight:650;font-size:.92rem;line-height:1.2;box-shadow:none}
+.tools button.quiet:hover,.tool>summary:hover{border-color:var(--ink-soft);background:color-mix(in srgb,var(--line-soft) 60%,transparent)}
+.tools .sep{width:1.5px;height:22px;background:var(--line-soft);margin:0 2px}
+details.tool{margin:0}
+.tool>summary::after{content:"";width:6px;height:6px;border-right:1.8px solid currentColor;border-bottom:1.8px solid currentColor;
+transform:translateY(-2px) rotate(45deg);opacity:.7;transition:transform .15s}
+.tool[open]{flex-basis:100%;order:10;margin-top:6px}
+.tool[open]>summary{background:var(--chip);color:var(--chip-ink);border-color:transparent}
+.tool[open]>summary::after{transform:translateY(1px) rotate(-135deg)}
+.tool.remove>summary{color:var(--error);border-color:color-mix(in srgb,var(--error) 40%,transparent)}
+.tool.remove>summary:hover{background:var(--error-bg)}
+.tool.remove[open]>summary{background:var(--error-bg);color:var(--error)}
+.panel-body{margin-top:10px;padding:16px 18px;border-radius:14px;background:color-mix(in srgb,var(--chip) 45%,var(--card));
+border:1.5px solid var(--line-soft)}
+.panel-body label{margin-top:2px}
+.panel-body .actions{margin-top:14px}
+.panel-body .grid{margin-top:0}
+.panel-body .grid+.grid{margin-top:14px}
+.panel-body .warn{margin-top:0}
+.gone{margin:10px 0 4px;padding-left:20px}
+@media (max-width:540px){.tools .sep{display:none}}
 .bar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-top:34px;padding-top:22px;border-top:1.5px solid var(--line-soft)}
 .changelog{margin-top:8px;color:var(--ink-soft);font-size:.95rem}
 .changelog h3{color:var(--ink);font-size:1rem;margin:18px 0 6px}
@@ -555,9 +588,12 @@ def _host_fields(prefix: str, imap_host: str = "", imap_port: str = "993", smtp_
 def settings(csrf: str, mailboxes: list[dict], apps: list[dict], flash: tuple[str, str] | None, max_boxes: int,
              server_read_only: bool, about: dict | None = None, uploads_on: bool = False,
              devices: dict | None = None, privacy: list[dict] | None = None, changes: list[dict] | None = None,
-             addons: list[dict] | None = None) -> str:
+             addons: list[dict] | None = None, add_form: dict | None = None) -> str:
     """mailboxes: dicts with address, mode, source, name, imap_host, imap_port, smtp_host, smtp_port, username,
-    smtp_username. apps: dicts with client_id, name, host, grant (list or None)."""
+    smtp_username. apps: dicts with client_id, name, host, grant (list or None). add_form: what was typed in Add a
+    mailbox when it failed (never the password), so it's shown again."""
+    typed = add_form or {}
+    val = lambda key, default="": esc(str(typed.get(key) or default))
     if flash and flash[0] == "domain":
         icons = {"good": ("ok", ICON_CHECK), "warn": ("tip", ICON_ALERT), "bad": ("error", ICON_ALERT)}
         rows = "".join(f'<p class="msg {icons[level][0]}">{icons[level][1]}<span><b>{esc(name)}</b> {esc(text)}</span></p>'
@@ -587,58 +623,58 @@ def settings(csrf: str, mailboxes: list[dict], apps: list[dict], flash: tuple[st
         for i, m in enumerate(mailboxes):
             addr, web = m["address"], m["source"] == "web"
             where = _("Added on this page") if web else _("From the settings file. Change it there.")
-            row = [f'<div class="item"><div class="item-head">{who(addr, m["label"]) if m["label"] else f"<b>{esc(addr)}</b>"}'
-                   f'{badge(m["mode"])}{"<span class=badge>" + esc(_("Default")) + "</span>" if i == 0 else ""}</div>'
-                   f'<div class="muted">{esc(where)} · {esc(_(MODE_HELP[m["mode"]]))}</div><div class="actions">',
+            group = f"mb{i}"   # one panel open at a time per mailbox (no script needed)
+
+            def tool(label: str, body: str, cls: str = "") -> str:
+                return (f'<details class="tool{" " + cls if cls else ""}" name="{group}"><summary>{esc(label)}</summary>'
+                        f'<div class="panel-body">{body}</div></details>')
+
+            def save_form(action: str, fields: str, button: str) -> str:
+                return (f'<form method="post" action="/settings/mailbox">{_csrf(csrf)}'
+                        f'<input type="hidden" name="action" value="{action}"><input type="hidden" name="address" value="{esc(addr)}">'
+                        f'{fields}<div class="actions"><button type="submit">{esc(button)}</button></div></form>')
+
+            row = [f'<div class="item mbx"><div class="item-head">{who(addr, m["label"]) if m["label"] else f"<b>{esc(addr)}</b>"}'
+                   f'{badge(m["mode"])}{"<span class=\"badge lime\">" + esc(_("Default")) + "</span>" if i == 0 else ""}</div>'
+                   f'<div class="muted">{esc(where)} · {esc(_(MODE_HELP[m["mode"]]))}</div><div class="tools">',
                    _post("/settings/mailbox", csrf, {"action": "test", "address": addr}, _("Test login")),
                    _post("/settings/mailbox", csrf, {"action": "domain", "address": addr}, _("Check domain"))]
             if i > 0 and not m.get("default_locked"):
                 row.append(_post("/settings/mailbox", csrf, {"action": "default", "address": addr}, _("Make default")))
-            row.append("</div>")
+            row.append('<span class="sep" aria-hidden="true"></span>')
             if web:
-                row.append(f'<details><summary>{esc(_("Mode"))}</summary><form method="post" action="/settings/mailbox">{_csrf(csrf)}'
-                           f'<input type="hidden" name="action" value="mode"><input type="hidden" name="address" value="{esc(addr)}">'
-                           f'<div class="grid"><div><label for="mo{i}">{esc(_("What the AI may do with this mailbox"))}</label>'
-                           f'<select id="mo{i}" name="mode">{mode_options(m["mode"])}</select>{mode_hint()}</div></div>'
-                           f'<div class="actions"><button type="submit">{esc(_("Save mode"))}</button></div></form></details>')
-            row.append(f'<details><summary>{esc(_("Signature"))}</summary><form method="post" action="/settings/mailbox">{_csrf(csrf)}'
-                       f'<input type="hidden" name="action" value="signature"><input type="hidden" name="address" value="{esc(addr)}">'
-                       f'<div class="grid"><div><label for="sg{i}">{esc(_("Signature for this mailbox"))} <span class="hint">'
-                       f'{esc(_("Added under every email written from it. Plain text, or HTML starting with <. Leave empty for none."))}'
-                       f'</span></label><textarea id="sg{i}" name="signature" rows="5" maxlength="20000">'
-                       f'{esc(m.get("signature", ""))}</textarea></div></div>'
-                       f'<div class="actions"><button type="submit">{esc(_("Save signature"))}</button></div></form></details>')
-            row.append(f'<details><summary>{esc(_("Rename"))}</summary><form method="post" action="/settings/mailbox">{_csrf(csrf)}'
-                       f'<input type="hidden" name="action" value="rename"><input type="hidden" name="address" value="{esc(addr)}">'
-                       f'<div class="grid"><div><label for="r{i}">{esc(_("Name for this mailbox"))} <span class="hint">'
-                       f'{esc(_("like Work or Personal. Leave empty to remove the name"))}</span></label>'
-                       f'<input id="r{i}" name="label" value="{esc(m["label"])}" maxlength="40"></div></div>'
-                       f'<div class="actions"><button type="submit">{esc(_("Save name"))}</button></div></form></details>')
+                row.append(tool(_("Mode"), save_form("mode",
+                    f'<label for="mo{i}">{esc(_("What the AI may do with this mailbox"))}</label>'
+                    f'<select id="mo{i}" name="mode">{mode_options(m["mode"])}</select>{mode_hint()}', _("Save mode"))))
+            row.append(tool(_("Signature"), save_form("signature",
+                f'<label for="sg{i}">{esc(_("Signature for this mailbox"))}</label>'
+                f'<textarea id="sg{i}" name="signature" rows="5" maxlength="20000">{esc(m.get("signature", ""))}</textarea>'
+                f'<p class="hint">{esc(_("Added under every email written from it. Plain text, or HTML starting with <. Leave empty for none."))}</p>',
+                _("Save signature"))))
+            row.append(tool(_("Rename"), save_form("rename",
+                f'<label for="r{i}">{esc(_("Name for this mailbox"))}</label>'
+                f'<input id="r{i}" name="label" value="{esc(m["label"])}" maxlength="40">'
+                f'<p class="hint">{esc(_("like Work or Personal. Leave empty to remove the name"))}</p>', _("Save name"))))
             if web:
-                edit = (f'<details><summary>{esc(_("Edit"))}</summary><form method="post" action="/settings/mailbox">{_csrf(csrf)}'
-                        f'<input type="hidden" name="action" value="update"><input type="hidden" name="address" value="{esc(addr)}">'
-                        f'<div class="grid two"><div><label for="n{i}">{esc(_("Name on outgoing mail"))}</label><input id="n{i}" name="name" value="{esc(m["name"])}"></div>'
-                        f'<div><label for="m{i}">{esc(_("Mode"))}</label><select id="m{i}" name="mode">{mode_options(m["mode"])}</select>{mode_hint()}</div></div>'
-                        f'<div class="grid"><div><label for="p{i}">{esc(_("New password"))} <span class="hint">'
-                        f'{esc(_("leave empty to keep the current one"))}</span></label>'
-                        f'<input id="p{i}" type="password" name="password" autocomplete="new-password"></div></div>'
-                        + _host_fields(f"e{i}", m["imap_host"], str(m["imap_port"]), m["smtp_host"], str(m["smtp_port"]),
-                                       m["username"], m["smtp_username"])
-                        + f'<div class="actions"><button type="submit">{esc(_("Save changes"))}</button></div></form>'
-                        + "</details>")
-                row.append(edit)
+                row.append(tool(_("Server and password"), save_form("update",
+                    f'<div class="grid two"><div><label for="n{i}">{esc(_("Name on outgoing mail"))}</label>'
+                    f'<input id="n{i}" name="name" value="{esc(m["name"])}"></div>'
+                    f'<div><label for="p{i}">{esc(_("New password"))} <span class="hint">{esc(_("leave empty to keep the current one"))}</span></label>'
+                    f'<input id="p{i}" type="password" name="password" autocomplete="new-password"></div></div>'
+                    + _host_fields(f"e{i}", m["imap_host"], str(m["imap_port"]), m["smtp_host"], str(m["smtp_port"]),
+                                   m["username"], m["smtp_username"]), _("Save changes"))))
                 gone = [_("Its emails, folders and drafts stay in the mailbox, untouched."),
                         _("Emails scheduled to go out later from it won't be sent."),
                         _("AI apps can no longer use it, and its name and signature are deleted.")]
                 if i == 0:
                     gone.append(_("It's the default now: the next mailbox becomes the default."))
-                row.append(f'<details><summary>{esc(_("Remove"))}</summary>'
-                           f'<p class="warn">{ICON_ALERT}<span>{esc(_("Remove {address} from this server?", address=addr))}</span></p>'
-                           f'<ul class="hint">{"".join(f"<li>{esc(g)}</li>" for g in gone)}</ul>'
-                           + _post("/settings/mailbox", csrf, {"action": "delete", "address": addr}, _("Remove for good"), "danger",
-                                   '<label class="confirm"><input type="checkbox" name="confirm" value="yes" required>'
-                                   + esc(_("Yes, remove it from this server.")) + "</label>")
-                           + "</details>")
+                row.append(tool(_("Remove"),
+                    f'<p class="warn">{ICON_ALERT}<span>{esc(_("Remove {address} from this server?", address=addr))}</span></p>'
+                    f'<ul class="hint gone">{"".join(f"<li>{esc(g)}</li>" for g in gone)}</ul>'
+                    + _post("/settings/mailbox", csrf, {"action": "delete", "address": addr}, _("Remove for good"), "danger",
+                            '<label class="confirm"><input type="checkbox" name="confirm" value="yes" required>'
+                            + esc(_("Yes, remove it from this server.")) + "</label>"), "remove"))
+            row.append("</div>")   # the tools row
             row.append("</div>")
             rows.append("".join(row))
         parts.append(f'<div class="list">{"".join(rows)}</div>')
@@ -653,15 +689,17 @@ def settings(csrf: str, mailboxes: list[dict], apps: list[dict], flash: tuple[st
                     "Most of them need an app password.")) + "</p>"
             f'<form method="post" action="/settings/mailbox">{_csrf(csrf)}<input type="hidden" name="action" value="add">'
             '<div class="grid two">'
-            f'<div><label for="aa">{esc(_("Email address"))}</label><input id="aa" type="email" name="address" required autocomplete="off"></div>'
-            f'<div><label for="al">{esc(_("Name for this mailbox"))} <span class="hint">{esc(_("like Work"))}</span></label><input id="al" name="label" maxlength="40" autocomplete="off"></div>'
-            f'<div><label for="an">{esc(_("Name on outgoing mail"))}</label><input id="an" name="name" autocomplete="off"></div>'
+            f'<div><label for="aa">{esc(_("Email address"))}</label><input id="aa" type="email" name="address" required autocomplete="off" value="{val("address")}"></div>'
+            f'<div><label for="al">{esc(_("Name for this mailbox"))} <span class="hint">{esc(_("like Work"))}</span></label><input id="al" name="label" maxlength="40" autocomplete="off" value="{val("label")}"></div>'
+            f'<div><label for="an">{esc(_("Name on outgoing mail"))}</label><input id="an" name="name" autocomplete="off" value="{val("name")}"></div>'
             f'<div><label for="ap">{esc(_("Password or app password"))}</label><input id="ap" type="password" name="password" required autocomplete="new-password"></div>'
             f'<div><label for="am">{esc(_("Mode"))}</label><select id="am" name="mode" required>'
-            f'<option value="" disabled selected>{esc(_("Choose a mode"))}</option>{mode_options("")}</select>{mode_hint()}</div>'
-            f'</div><details><summary>{esc(_("Server settings"))}</summary><p class="hint">'
+            f'<option value="" disabled{"" if typed.get("mode") else " selected"}>{esc(_("Choose a mode"))}</option>{mode_options(str(typed.get("mode") or ""))}</select>{mode_hint()}</div>'
+            f'</div><details{" open" if typed else ""}><summary>{esc(_("Server settings"))}</summary><p class="hint">'
             + esc(_("Only needed for providers that aren't filled in by themselves. See docs/email-providers.md."))
-            + "</p>" + _host_fields("a") + "</details>"
+            + "</p>" + _host_fields("a", str(typed.get("imap_host") or ""), str(typed.get("imap_port") or "993"),
+                                    str(typed.get("smtp_host") or ""), str(typed.get("smtp_port") or "465"),
+                                    str(typed.get("username") or ""), str(typed.get("smtp_username") or "")) + "</details>"
             f'<div class="actions"><button type="submit">{esc(_("Test and add"))}</button></div></form>')
     else:
         parts.append(f'<p class="lead">{esc(_("This server holds up to {count} mailboxes (MAX_MAILBOXES).", count=max_boxes))}</p>')
@@ -877,7 +915,9 @@ def settings(csrf: str, mailboxes: list[dict], apps: list[dict], flash: tuple[st
             ("changes", _("AI changes")) if changes is not None else None,
             ("addons", _("Add-ons")) if addons is not None else None,
             ("about", _("About")) if about else None]
-    return page('Selfhost Mail <span class="hl">MCP</span>', esc(_("Mailboxes, modes, and which AI apps may use them.")),
+    traits = (f'<span class="traits"><span class="trait">{ICON_SHIELD}{esc(_("Private"))}</span>'
+              f'<a class="trait" href="{PROJECT_URL}" rel="noopener">{ICON_CODE}{esc(_("Open source"))}</a></span>')
+    return page('Selfhost Mail <span class="hl">MCP</span>', esc(_("Everything your AI can do with your email, in one place.")) + traits,
                 "".join(parts), wide=True, tabs=[t for t in tabs if t])
 
 

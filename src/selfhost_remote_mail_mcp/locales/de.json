@@ -41,7 +41,7 @@
  "Settings": "Einstellungen",
  "Your mailboxes and the AI apps that may use them.": "Deine Postfächer und die KI-Apps, die sie nutzen dürfen.",
  "What's new": "Neuigkeiten",
- "Mailboxes, modes, and which AI apps may use them.": "Postfächer, Modi und welche KI-Apps sie nutzen dürfen.",
+ "Everything your AI can do with your email, in one place.": "Alles, was deine KI mit deinen E-Mails tun kann, an einem Ort.",
  "Upload a file, then ask your AI app to attach it.": "Lade eine Datei hoch und bitte dann deine KI-App, sie anzuhängen.",
  "File <span class=\"hl\">uploaded</span>": "Datei <span class=\"hl\">hochgeladen</span>",
  "Pick the file, then go back to your chat.": "Wähle die Datei aus und kehre dann zu deinem Chat zurück.",
@@ -209,7 +209,7 @@
  "Signed in": "Angemeldet",
  "Wrong passphrase": "Falsche Passphrase",
  "The device log is off: no sign-in history or device details are kept.": "Das Geräteprotokoll ist aus: Es werden kein Anmeldeverlauf und keine Gerätedaten gespeichert.",
- "Edit": "Bearbeiten",
+ "Server and password": "Server und Passwort",
  "Name on outgoing mail": "Absendername",
  "Mode": "Modus",
  "New password": "Neues Passwort",
@@ -390,5 +390,7 @@
  "The default is set in the server settings (MAIL_DEFAULT). Change it there.": "Der Standard ist in den Server-Einstellungen festgelegt (MAIL_DEFAULT). Ändere ihn dort.",
  "That signature is too long.": "Diese Signatur ist zu lang.",
  "Signature for {address} saved.": "Signatur für {address} gespeichert.",
- "{address} has no signature now.": "{address} hat jetzt keine Signatur."
+ "{address} has no signature now.": "{address} hat jetzt keine Signatur.",
+ "Private": "Privat",
+ "Open source": "Open Source"
 }

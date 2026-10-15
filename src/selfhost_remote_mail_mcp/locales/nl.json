@@ -41,7 +41,7 @@
  "Settings": "Instellingen",
  "Your mailboxes and the AI apps that may use them.": "Je mailboxen en de AI-apps die ze mogen gebruiken.",
  "What's new": "Wat is er nieuw",
- "Mailboxes, modes, and which AI apps may use them.": "Mailboxen, modi en welke AI-apps ze mogen gebruiken.",
+ "Everything your AI can do with your email, in one place.": "Alles wat je AI met je e-mail kan doen, op één plek.",
  "Upload a file, then ask your AI app to attach it.": "Upload een bestand en vraag je AI-app dan om het bij te voegen.",
  "File <span class=\"hl\">uploaded</span>": "Bestand <span class=\"hl\">geüpload</span>",
  "Pick the file, then go back to your chat.": "Kies het bestand en ga dan terug naar je chat.",
@@ -209,7 +209,7 @@
  "Signed in": "Ingelogd",
  "Wrong passphrase": "Verkeerde wachtwoordzin",
  "The device log is off: no sign-in history or device details are kept.": "Het apparaatlogboek staat uit: er wordt geen inloggeschiedenis of apparaatinformatie bewaard.",
- "Edit": "Bewerken",
+ "Server and password": "Server en wachtwoord",
  "Name on outgoing mail": "Naam bij uitgaande mail",
  "Mode": "Modus",
  "New password": "Nieuw wachtwoord",
@@ -390,5 +390,7 @@
  "The default is set in the server settings (MAIL_DEFAULT). Change it there.": "De standaard staat in de serverinstellingen (MAIL_DEFAULT). Wijzig hem daar.",
  "That signature is too long.": "Die handtekening is te lang.",
  "Signature for {address} saved.": "Handtekening voor {address} opgeslagen.",
- "{address} has no signature now.": "{address} heeft nu geen handtekening."
+ "{address} has no signature now.": "{address} heeft nu geen handtekening.",
+ "Private": "Privé",
+ "Open source": "Open source"
 }

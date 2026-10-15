@@ -2,6 +2,12 @@
 
 All notable changes to this project. Versions follow [semantic versioning](https://semver.org).
 
+## 0.18.1 (2026-10-15)
+
+- **Tidier mailbox rows on the settings page:** each mailbox has one row of buttons. Test login, Check domain and Make default work right away; Mode, Signature, Rename, Server and password, and Remove open a panel below the row, one at a time. No more stack of folds and empty space.
+- **Adding a mailbox keeps what you typed:** if the test fails or something is missing, the form shows your entries again (never the password) and opens Server settings, so nothing has to be typed twice.
+- A clearer line at the top of the settings page, "Everything your AI can do with your email, in one place.", with two labels under it: Private, and Open source (it links to this project).
+
 ## 0.18.0 (2026-10-15)
 
 - **Make default:** a button on the settings page picks the mailbox used for new emails and plain folder names like `INBOX`. `MAIL_DEFAULT` in the settings wins over it. Start a new chat after changing it.
