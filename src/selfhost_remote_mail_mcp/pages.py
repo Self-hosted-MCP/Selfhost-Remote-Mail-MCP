@@ -615,15 +615,16 @@ def settings(csrf: str, mailboxes: list[dict], apps: list[dict], flash: tuple[st
 
     # mailboxes
     panel("mailboxes")
-    parts.append(f'<h2>{esc(_("Mailboxes"))}</h2>'
-                 f'<p class="lead">{esc(_("The default mailbox is used for new emails and for plain folder names like INBOX. "
-                                "Each mailbox has its own mode and signature."))}</p>')
+    lead = _("The default mailbox is used for new emails and for plain folder names like INBOX. "
+             "Each mailbox has its own mode and signature.")
+    parts.append(f'<h2>{esc(_("Mailboxes"))}</h2><p class="lead">{esc(lead)}</p>')
     if mailboxes:
         rows = []
         for i, m in enumerate(mailboxes):
             addr, web = m["address"], m["source"] == "web"
             where = _("Added on this page") if web else _("From the settings file. Change it there.")
             group = f"mb{i}"   # one panel open at a time per mailbox (no script needed)
+            default_badge = '<span class="badge lime">' + esc(_("Default")) + "</span>"
 
             def tool(label: str, body: str, cls: str = "") -> str:
                 return (f'<details class="tool{" " + cls if cls else ""}" name="{group}"><summary>{esc(label)}</summary>'
@@ -635,7 +636,7 @@ def settings(csrf: str, mailboxes: list[dict], apps: list[dict], flash: tuple[st
                         f'{fields}<div class="actions"><button type="submit">{esc(button)}</button></div></form>')
 
             row = [f'<div class="item mbx"><div class="item-head">{who(addr, m["label"]) if m["label"] else f"<b>{esc(addr)}</b>"}'
-                   f'{badge(m["mode"])}{"<span class=\"badge lime\">" + esc(_("Default")) + "</span>" if i == 0 else ""}</div>'
+                   f'{badge(m["mode"])}{default_badge if i == 0 else ""}</div>'
                    f'<div class="muted">{esc(where)} · {esc(_(MODE_HELP[m["mode"]]))}</div><div class="tools">',
                    _post("/settings/mailbox", csrf, {"action": "test", "address": addr}, _("Test login")),
                    _post("/settings/mailbox", csrf, {"action": "domain", "address": addr}, _("Check domain"))]
