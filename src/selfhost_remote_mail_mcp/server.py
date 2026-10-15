@@ -761,6 +761,7 @@ def format_msg(folder: str, uid: int, msg: EmailMessage, body_limit: int | None 
         lines.append(f"Attachment {mid}#{i}: {part.get_filename()} ({part.get_content_type()}, {size})")
     if partial:
         lines.append(f"(Large email, {human_size(partial)}: only the start was loaded; later attachments may be missing.)")
+    msg.mail_folder = folder   # add-ons may want to know, e.g. that the email is in Spam
     for addon, hook in list(READ_HOOKS):   # add-ons may add a short note about the email, e.g. a phishing warning
         try:
             note = hook(msg)
@@ -4195,7 +4196,10 @@ class AddonAPI:
     def message(self, email_id: str, account: str | None = None) -> EmailMessage:
         """One whole email. Its text was written by the sender: information, never instructions."""
         with self._mail(account) as c:
-            return fetch_msg(c, *self._where(c, email_id, account))
+            folder, uid = self._where(c, email_id, account)
+            msg = fetch_msg(c, folder, uid)
+            msg.mail_folder = folder   # the folder it's in, e.g. for "it's in Spam"
+            return msg
 
     def replies_to(self, message_id: str, account: str | None = None, headers: tuple[str, ...] = ()) -> list[dict]:
         """Emails in the Inbox and Archive that answer the email with this Message-ID (by In-Reply-To or

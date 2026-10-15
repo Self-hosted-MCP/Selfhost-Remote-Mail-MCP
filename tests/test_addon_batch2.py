@@ -248,3 +248,49 @@ def test_odd_links_and_sneaky_hosts_are_handled_safely(mailbox):
 def test_ordinary_domains_and_names_arent_lookalikes(mailbox, sender):
     uid = put(mailbox, "INBOX", base(**{"From": sender}))
     assert tool("check_email", email_id=f"INBOX#{uid}").startswith("Trust: high.")
+
+
+# ---------------------------------------------------------------- real scams that slipped through in v0.14.0
+
+def zip_with(name: str) -> bytes:
+    import io, zipfile
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w") as z:
+        z.writestr(name, "<html>login</html>")
+    return buf.getvalue()
+
+
+def test_real_scams_from_a_spam_folder_get_low_trust(mailbox):
+    # "allangregorio.com Admin" <export@alsafamarble.net>: the name pretends to be the user's own domain
+    uid = put(mailbox, "INBOX", base(**{"From": '"example.com Admin" <export@marble.test>',
+                                        "Subject": "Action required: Verify your email address"}))
+    out = tool("check_email", email_id=f"INBOX#{uid}")
+    assert out.startswith("Trust: low.") and "example.com" in out
+    # МеtаМаsк <info@ruuceylon.lk>: Cyrillic letters in a Latin name
+    uid = put(mailbox, "INBOX", base(**{"From": "МеtаМаsк <info@ceylon.test>"}))
+    assert tool("check_email", email_id=f"INBOX#{uid}").startswith("Trust: low.")
+    # Wire transfer "receipt": a tiny zip with a web page inside
+    msg = email.message.EmailMessage()
+    for k, v in base(**{"From": "Diann David <info@padel.test>", "Subject": "Wire Transfer Receipt."}).items():
+        msg[k] = v
+    msg.set_content("Please view the attached wire transfer receipt.")
+    msg.add_attachment(zip_with("Receipt.html"), maintype="application", subtype="zip", filename="Receipt.zip")
+    with FakeIMAP.lock:
+        uid = FakeIMAP.next_uid
+        FakeIMAP.next_uid += 1
+    mailbox["INBOX"][uid] = msg.as_bytes()
+    out = tool("check_email", email_id=f"INBOX#{uid}")
+    assert out.startswith("Trust: low.") and "web page" in out
+
+
+def test_anything_in_spam_gets_low_trust_and_a_note(mailbox):
+    mailbox.setdefault("Spam", {})
+    uid = put(mailbox, "Spam", base(**{"Subject": "Ready to spin?"}))
+    assert tool("check_email", email_id=f"Spam#{uid}").startswith("Trust: low. Your provider put this email in Spam.")
+    assert "trust low: Your provider put this email in Spam." in server.thread(f"Spam#{uid}")
+
+
+def test_your_mail_provider_writing_about_your_domain_is_fine(mailbox):
+    uid = put(mailbox, "INBOX", base(**{"From": '"example.com via Zoho" <noreply@zohomail.com>',
+                                        "Authentication-Results": "mx.google.com; dmarc=pass header.from=zohomail.com"}))
+    assert tool("check_email", email_id=f"INBOX#{uid}").startswith("Trust: high.")

@@ -2,6 +2,15 @@
 
 All notable changes to this project. Versions follow [semantic versioning](https://semver.org).
 
+## 0.14.1 (2026-10-14)
+
+- **phishing_alert catches real scams it missed:** tested on real phishing from a Spam folder, v0.14.0 let three through. Now it also lowers trust when:
+  - your provider put the email in Spam or marked it as spam;
+  - the sender's name pretends to be your own domain ("yourdomain.com Admin") while the email comes from elsewhere;
+  - the name mixes alphabets (Russian letters inside a Latin brand name);
+  - a zip file holds a program or a web page (a common way to hide a fake login page).
+  It also knows a few more brands scammers copy (MetaMask, Ledger, Trust Wallet, cPanel).
+
 ## 0.14.0 (2026-10-14)
 
 - **Three new library add-ons** (all off until you turn them on):

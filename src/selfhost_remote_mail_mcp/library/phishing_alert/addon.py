@@ -34,8 +34,17 @@ BRANDS = {
     "spotify": {"spotify"},
     "adobe": {"adobe", "adobesign", "echosign"},
     "wetransfer": {"wetransfer"},
+    "metamask": {"metamask", "consensys"},
+    "ledger": {"ledger"},
+    "trust wallet": {"trustwallet"},
+    "cpanel": {"cpanel"},
+    "instagram": {"instagram", "facebookmail", "meta"},
+    "binance": {"binance"},
 }
-WORDS = {"apple", "amazon", "adobe", "spotify", "dropbox"}   # brands that are also ordinary words: exact matches only
+WORDS = {"apple", "amazon", "adobe", "spotify", "dropbox", "ledger", "trust wallet"}   # brands that are also ordinary words: exact matches only
+SERVICES = {"zoho", "zohomail", "google", "messagingengine", "fastmail", "cloudflare", "namecheap", "godaddy",
+            "porkbun", "hostinger", "ionos", "ovh", "privateemail", "github", "vercel", "netlify", "gandi", "squarespace",
+            "wix", "shopify", "mailgun", "postmarkapp", "sendgrid", "amazonses", "migadu", "purelymail", "proton"}
 FREEMAIL = {"gmail", "googlemail", "outlook", "hotmail", "live", "msn", "yahoo", "ymail", "icloud", "me", "mac",
             "proton", "protonmail", "pm", "gmx", "web", "mail", "aol", "zoho", "yandex", "fastmail", "tutanota",
             "tuta", "hey", "qq", "163", "126", "naver", "libero", "orange", "free", "laposte", "t-online"}
@@ -165,6 +174,13 @@ def setup(api):
         mine = own_names()
         brands = set(BRANDS)
 
+        # 0. The user's provider already thinks it's spam
+        folder = str(getattr(msg, "mail_folder", "")).split(":")[-1].lower()
+        if folder in ("spam", "junk", "junk email", "junk e-mail", "bulk mail", "[gmail]/spam") or \
+                (msg.get("X-Spam-Flag") or "").strip().lower() == "yes" or \
+                str(msg.get("X-Spam-Status") or "").lower().startswith("yes"):
+            add("high", "Your provider put this email in Spam.")
+
         # 1. Sender checks done by the user's own provider
         if auth.get("dmarc") == "fail":
             add("high", f"The sender failed your provider's DMARC check: it may not really come from {sender_domain}.")
@@ -172,6 +188,16 @@ def setup(api):
             add("low", "One of your provider's sender checks failed (SPF or DKIM). This also happens with forwarded mail and mailing lists.")
 
         # 2. Display name tricks
+        own_full = {a.lower() for a in api.mailboxes()}
+        own_domains = {domain_of(a) for a in own_full} - {""}
+        if display and sender.lower() not in own_full and sender_domain not in own_domains:
+            low = display.lower()
+            hit = next((d for d in own_domains if d in low and name_of(d) not in FREEMAIL), None)
+            service = sender_name in SERVICES or any(sender_name in v for v in BRANDS.values())
+            if hit and not (dmarc_pass and service):   # your mail or domain provider writing about your domain is fine
+                add("high", f"The name pretends to be {hit}, but it comes from {sender_domain}.")
+            if mixed_script(display):
+                add("high", f"The name {short(display, 40)} mixes alphabets to look like someone else.")
         if display:
             shown = re.findall(r"[\w.+-]+@[\w-]+(?:\.[\w-]+)+", display)
             if shown and all(s.lower() != sender.lower() for s in shown):
@@ -263,10 +289,16 @@ def setup(api):
             elif last == "zip":
                 try:
                     data = part.get_payload(decode=True) or b""
-                    if len(data) < 25_000_000 and any(i.flag_bits & 1 for i in zipfile.ZipFile(io.BytesIO(data)).infolist()):
-                        add("medium", f"The attachment {short(fname, 50)} is a password-protected zip, which mail scanners can't look inside.")
+                    inside = zipfile.ZipFile(io.BytesIO(data)).infolist() if len(data) < 25_000_000 else []
                 except Exception:
-                    pass
+                    inside = []
+                inner = [i.filename.rsplit(".", 1)[-1].lower() for i in inside[:200] if "." in i.filename]
+                if any(e in PROGRAMS for e in inner):
+                    add("high", f"The zip {short(fname, 50)} holds a program.")
+                elif any(e in WEB_FILES for e in inner):
+                    add("high", f"The zip {short(fname, 50)} holds a web page, a common way to hide a fake login page.")
+                elif any(i.flag_bits & 1 for i in inside):
+                    add("medium", f"The zip {short(fname, 50)} is password-protected, so mail scanners can't look inside.")
         out.sort(key=lambda f: LEVELS[f[0]])
         return out[:12]
 
