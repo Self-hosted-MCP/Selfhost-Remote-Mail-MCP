@@ -40,6 +40,8 @@ The AI saves a draft and shows it to you. Nothing is sent yet.
 - *Put this list in a CSV and attach it.*
 - *Attach a calendar invite for Thursday 3pm.*
 - *Which files did I upload?* then *Attach the photo I just uploaded.*
+- *Attach the beach photos, but make them smaller.*
+- *Send that iPhone photo as a JPG.*
 - *Attach ~/Desktop/invoice.pdf* (computer version)
 
 ## Settings

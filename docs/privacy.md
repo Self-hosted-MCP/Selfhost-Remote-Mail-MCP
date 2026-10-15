@@ -56,7 +56,7 @@ Everything that travels is encrypted. Everything secret that's stored is encrypt
 
 ## Your files and tracking
 
-- **Photos you attach lose their location** (GPS), camera and dates. **Documents lose the author's name**, last editor and company. On by default. See [attachments.md](attachments.md#private-details-are-removed).
+- **Photos you attach lose their location** (GPS), camera and dates. iPhone HEIC photos only do once you agree to change them to JPG. **Documents lose the author's name**, last editor and company. On by default. See [attachments.md](attachments.md#private-details-are-removed).
 - **No tracking.** Many emails hide a tiny picture that tells the sender when and where you opened it. The server never loads pictures or links inside emails, so the sender never learns you opened it. The AI only gets the text.
 
 ## What the server keeps

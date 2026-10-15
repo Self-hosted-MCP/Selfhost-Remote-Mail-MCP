@@ -2,6 +2,12 @@
 
 All notable changes to this project. Versions follow [semantic versioning](https://semver.org).
 
+## 0.7.0 (2026-10-14)
+
+- **Photo size:** photos go as they are (HD), or smaller when you ask: at most 2560 pixels on the long side, at high quality, often 5 to 10 times lighter. When files are over the size limit, the AI offers to make the photos smaller instead of failing.
+- **iPhone HEIC photos:** the AI asks first, then changes them to JPG (full size, location removed) or keeps them as they are.
+- New dependencies: Pillow and pillow-heif (about 25 MB installed).
+
 ## 0.6.1 (2026-10-14)
 
 - **Where to find the settings:** the login page shows the settings page link, and the `accounts` tool gives the AI the settings and upload links to share once you've connected.

@@ -77,7 +77,7 @@ The server is a small program. Your AI app talks to it through **MCP** (Model Co
 
 **Write.** Make drafts: new emails, replies, reply-to-all and forwards. Your signature and saved templates are added for you. Drafts go to your normal Drafts folder, so you can also finish them in your usual mail app.
 
-**Attach files.** From other emails, from your computer, files the AI writes (like a CSV), or photos and documents you upload from your phone on the upload page. Programs are refused, and suspect files (like spreadsheets with macros) need your OK. See [docs/attachments.md](docs/attachments.md).
+**Attach files.** From other emails, from your computer, files the AI writes (like a CSV), or photos and documents you upload from your phone on the upload page. Programs are refused, and suspect files (like spreadsheets with macros) need your OK. Photos go in HD, or smaller if you ask (the AI offers it when files are too big), and iPhone HEIC photos can become JPG after you say yes. See [docs/attachments.md](docs/attachments.md).
 
 **Create files on the go.** Ask your AI to make a calendar invite, a CSV spreadsheet, a contact card or notes, and it attaches them to your email.
 

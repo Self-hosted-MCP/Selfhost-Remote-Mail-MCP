@@ -106,6 +106,13 @@ Not when you attach them through this server. It removes the location from jpg, 
 </details>
 
 <details>
+<summary><b>My photos are too big to send. What can I do?</b></summary>
+
+Ask: *"Make the photos smaller."* They're resized to look the same on screens, often 5 to 10 times lighter. If the files are over the 25 MB limit, the AI offers this by itself. See [attachments.md](attachments.md#photo-size-hd-or-smaller).
+
+</details>
+
+<details>
 <summary><b>My emails land in spam. Can it help?</b></summary>
 
 If you use your own domain, yes: press **Check domain** on the settings page. It checks SPF, DKIM and DMARC and says what to fix. See [mailboxes.md](mailboxes.md#check-your-domain).

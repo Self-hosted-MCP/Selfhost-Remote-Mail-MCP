@@ -1401,7 +1401,7 @@ def clean_new_file(f: NewFile) -> str:
             return ""
         cleaner, what = DOCUMENT_CLEANERS[f.kind], "author details"
     elif f.kind in ("heic", "heif", "avif", "tif", "tiff") and pref_on("remove_photo_location", "REMOVE_PHOTO_LOCATION"):
-        return f"{f.name}: .{f.kind} photos can't be cleaned here, so it may still hold its location"
+        return f"{f.name}: .{f.kind} photos can't be cleaned here, so it may still hold its location (heic=\"jpg\" removes it)"
     else:
         return ""
     try:
@@ -1412,6 +1412,75 @@ def clean_new_file(f: NewFile) -> str:
         return ""
     f.data = cleaned
     return f"{f.name}: removed {what}"
+
+
+# Photo size: "hd" sends photos as they are; "smaller" resizes them to at most SMALLER_SIDE pixels on the long side
+# at high quality (looks the same on screens). iPhone HEIC photos become JPG only after the user says yes.
+
+SMALLER_SIDE = 2560
+SHRINKABLE = ("jpg", "jpeg", "png", "webp", "heic", "heif")
+
+
+def _open_image(data: bytes):
+    from PIL import Image, ImageOps
+    import pillow_heif
+    pillow_heif.register_heif_opener()
+    image = Image.open(io.BytesIO(data))
+    image.load()
+    return ImageOps.exif_transpose(image)   # keep the photo the right way up once its EXIF is gone
+
+
+def photo_as(f: NewFile, to_jpg: bool, smaller: bool) -> NewFile:
+    """A new version of a photo: HEIC to JPG and/or smaller. Returns f unchanged if there's nothing to gain."""
+    image = _open_image(f.data)
+    if smaller:
+        image.thumbnail((SMALLER_SIDE, SMALLER_SIDE))
+    stem = f.name.rsplit(".", 1)[0]
+    out = io.BytesIO()
+    if to_jpg or f.kind in ("jpg", "jpeg", "heic", "heif"):
+        if image.mode not in ("RGB", "L"):
+            image = image.convert("RGB")
+        image.save(out, "JPEG", quality=85 if smaller else 92, optimize=True)
+        name = f"{stem}.jpg"
+    elif f.kind == "webp":
+        image.save(out, "WEBP", quality=85)
+        name = f.name
+    else:   # png keeps its format (transparency, screenshots with text)
+        image.save(out, "PNG", optimize=True)
+        name = f.name
+    data = out.getvalue()
+    if smaller and not to_jpg and len(data) >= len(f.data):
+        return f   # already small: keep the original
+    return check_new_file(name, data)
+
+
+def prepare_photos(files: list[NewFile], photos: str, heic: str) -> list[NewFile]:
+    """Applies the user's photo choices. Asks (by refusing with a clear message) before changing a HEIC photo."""
+    photos, heic = (photos or "hd").strip().lower(), (heic or "").strip().lower()
+    if photos not in ("hd", "smaller"):
+        raise ToolError('photos must be "hd" (as they are) or "smaller".')
+    if heic not in ("", "jpg", "keep"):
+        raise ToolError('heic must be "jpg" or "keep".')
+    iphone = [f for f in files if f.kind in ("heic", "heif")]
+    if iphone and not heic:
+        raise ToolError(
+            "Nothing was saved yet. Ask the user first: "
+            + ", ".join(f.name for f in iphone)
+            + (" is an iPhone photo" if len(iphone) == 1 else " are iPhone photos")
+            + " (HEIC), which some people can't open, and HEIC photos keep their location. Change to JPG (full size, "
+            "high quality, location removed)? Then call draft again with the same arguments plus heic=\"jpg\", or "
+            "heic=\"keep\" to send as they are.")
+    out = []
+    for f in files:
+        to_jpg = f.kind in ("heic", "heif") and heic == "jpg"
+        smaller = photos == "smaller" and f.kind in SHRINKABLE
+        if to_jpg or smaller:
+            try:
+                f = photo_as(f, to_jpg, smaller)
+            except Exception as exc:   # a photo Pillow can't read goes as it is
+                print(f"photo left as it is: {type(exc).__name__}", file=sys.stderr)
+        out.append(f)
+    return out
 
 
 def attach_limit(cfg: dict | None = None) -> int:
@@ -1471,7 +1540,8 @@ def content_file(item: dict) -> NewFile:
     return check_new_file(str(item["name"]), data)
 
 
-def gather_new_files(attach_path, attach_content, attach_upload, allow_suspect: bool) -> tuple[list[NewFile], list[str]]:
+def gather_new_files(attach_path, attach_content, attach_upload, allow_suspect: bool, photos: str = "hd",
+                     heic: str = "") -> tuple[list[NewFile], list[str]]:
     """Reads and checks every new file before anything is saved. Returns the files and the upload codes used."""
     cfg = read_env()
     files: list[NewFile] = []
@@ -1498,8 +1568,14 @@ def gather_new_files(attach_path, attach_content, attach_upload, allow_suspect: 
             + "\n".join(f"- {f.name}: {f.why}" for f in suspect)
             + "\nIf they say yes, call draft again with the same arguments plus allow_suspect=true. "
             f'You may suggest a line they could add for the receiver (only if they want it): "{notes}"')
+    files = prepare_photos(files, photos, heic)
     total = sum(len(f.data) for f in files)
     if total > attach_limit(cfg):
+        if (photos or "hd") != "smaller" and any(f.kind in SHRINKABLE for f in files):
+            raise ToolError(f"Nothing was saved yet. These files add up to {human_size(total)}, more than the "
+                            f"{human_size(attach_limit(cfg))} an email may carry. Ask the user if you may make the photos "
+                            f"smaller (at most {SMALLER_SIDE} pixels, high quality: they look the same on screens). If "
+                            "yes, call draft again with the same arguments plus photos=\"smaller\".")
         raise ToolError(f"These files add up to {human_size(total)}, more than the {human_size(attach_limit(cfg))} "
                         "an email may carry (ATTACH_MAX_MB). Send them in separate emails, or share a link.")
     for f in files:
@@ -3051,7 +3127,7 @@ def draft(to: list[str] | None = None, cc: list[str] | None = None, bcc: list[st
           placeholder: list[str] | None = None, no_signature: bool = False, delete: str | None = None,
           mode: str | None = None, account: str | None = None, attach_path: list[str] | None = None,
           attach_content: list[dict] | None = None, attach_upload: list[str] | None = None,
-          allow_suspect: bool = False) -> str:
+          allow_suspect: bool = False, photos: str = "hd", heic: str = "") -> str:
     """Create or edit a draft in a Drafts folder. NOTHING IS SENT (use send_email for that).
 
     - New: to, subject, body (markdown). reply_to=<ID> answers the sender; reply_all=<ID> keeps everyone;
@@ -3065,6 +3141,10 @@ def draft(to: list[str] | None = None, cc: list[str] | None = None, bcc: list[st
       page, by file name (["Beach-day.jpg"]), ["latest"] for the newest ("the file I just uploaded"), or a code.
     - Some files are suspect (macros, scripts, archives that can't be checked): the draft is then NOT saved and you
       get the reasons. Tell the user, and only if they agree, call again with allow_suspect=true.
+    - photos="hd" (default) sends photos as they are; photos="smaller" resizes new photos to at most 2560 px at high
+      quality (use it when the user asks, or after they agree when files are over the size limit).
+    - iPhone HEIC photos: the draft is NOT saved until the user chose: heic="jpg" (convert, location removed) or
+      heic="keep". Ask them first.
     - template: name or number from templates; placeholder: ["name=value", ...] for its manual fields.
     - If a signature is set up (accounts says so), it is added automatically under the body: end the body with a
       short closing line (e.g. "Best,") and don't write the sender's name yourself. no_signature=true skips it.
@@ -3080,7 +3160,8 @@ def draft(to: list[str] | None = None, cc: list[str] | None = None, bcc: list[st
         return uploads_text()
     if sum(bool(x) for x in (reply_to, reply_all, forward, edit, delete)) > 1:
         raise ToolError("Use only one of reply_to, reply_all, forward, edit or delete.")
-    new_files, codes = ([], []) if delete else gather_new_files(attach_path, attach_content, attach_upload, allow_suspect)
+    new_files, codes = ([], []) if delete else gather_new_files(attach_path, attach_content, attach_upload, allow_suspect,
+                                                                  photos, heic)
     with imap() as c:
         source = edit or delete or reply_to or reply_all or forward
         if edit or delete:

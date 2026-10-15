@@ -98,9 +98,33 @@ Before a new file is attached, the server removes details you may not want to sh
 | PDF | The author and the apps that made it | The pages and the title. Signed or locked PDFs are left alone, because changing them would break the signature |
 
 - The draft summary says what was removed, like *"beach.jpg: removed location and camera details"*.
-- **heic, heif, avif and tiff photos can't be cleaned here.** The AI tells you when one may still hold its location. iPhones usually send jpg when you upload from Safari.
+- **iPhone photos (HEIC)** keep their location unless you change them to JPG (below). avif and tiff photos can't be cleaned here; the AI tells you when one may still hold its location.
 - Files forwarded from other emails stay as they are, because they belong to someone else.
 - Both are on by default. Turn them off under **Privacy** on the settings page, or with `REMOVE_PHOTO_LOCATION=off` and `REMOVE_DOCUMENT_DETAILS=off`.
+
+## Photo size: HD or smaller
+
+Photos go **as they are (HD)** unless you ask otherwise.
+
+| You say | What happens |
+|---|---|
+| Nothing, or *"send it in HD"* | The photo goes exactly as it is |
+| *"Make the photos smaller"* | Each photo is resized to at most 2560 pixels on its long side, at high quality. It looks the same on screens and is often 5 to 10 times lighter, for example 6 MB becomes about 0.8 MB. Photos that are already small stay as they are |
+
+- **Over the limit?** If the files are bigger than an email may carry (25 MB), the AI asks whether it may make the photos smaller, instead of failing, and does it if you say yes.
+- **PNG** pictures (screenshots, logos) stay PNG, transparency included. JPG and WebP stay in their format too.
+- Smaller works for jpg, png, webp and iPhone HEIC photos. PDFs, videos and other files are never changed.
+
+## iPhone photos (HEIC)
+
+iPhones save photos as **HEIC**, which some people (and some Windows computers) can't open. HEIC photos also keep the place they were taken.
+
+When you attach one, the AI **asks you first**: change it to JPG, or keep it as HEIC?
+
+- **JPG:** full size, high quality, location removed. Anyone can open it.
+- **Keep:** it goes as it is, location included.
+
+Nothing is saved until you choose.
 
 ## Settings
 

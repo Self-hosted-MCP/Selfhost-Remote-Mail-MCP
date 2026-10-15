@@ -233,7 +233,7 @@ def test_device_log_can_be_turned_off(web, fresh_log, monkeypatch):
     csrf = re.search(r'name="csrf" value="([^"]+)"', client.get("/settings").text)[1]
     r = client.post("/settings/device", data={"csrf": csrf, "action": "log_off"}, headers={"origin": "http://localhost"})
     assert "history is deleted" in r.text and "Turn on the device log" in r.text
-    assert not server.SIGNINS_FILE.exists() and "iPhone" not in r.text
+    assert not server.SIGNINS_FILE.exists() and "iPhone · Safari" not in r.text
     client.post("/settings/login", data={"passphrase": PASS}, headers={"origin": "http://localhost", "user-agent": IPHONE})
     assert not server.SIGNINS_FILE.exists()
     csrf = re.search(r'name="csrf" value="([^"]+)"', client.get("/settings").text)[1]   # a new sign-in, a new token
