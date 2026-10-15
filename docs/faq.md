@@ -78,6 +78,20 @@ Yes. Each app connects separately: Claude on your phone and Codex on your comput
 </details>
 
 <details>
+<summary><b>What are add-ons?</b></summary>
+
+Extra features that come with the server, all off until you turn them on: a calendar, meeting invites, PDFs, invoices and quotes, a phishing check, follow-up reminders, an out-of-office reply and webhooks for automations. Turn one on in the settings page's **Add-ons** tab, then start a new chat in your AI app. Each one has a page with what it's good for and what to ask: see [the add-on library](../src/selfhost_remote_mail_mcp/library/README.md). You can also write your own ([addons.md](addons.md)).
+
+</details>
+
+<details>
+<summary><b>Can it use my calendar?</b></summary>
+
+Yes, with the [Calendar add-on](../src/selfhost_remote_mail_mcp/library/caldav/README.md): your AI app can see your events, find free times, and add, move or delete events. Deleting is always checked with you first, and no one is ever invited or emailed. It works with calendars that use CalDAV with an app password: iCloud, Fastmail, Nextcloud, mailbox.org, Posteo, Zoho and others. Google Calendar only allows Google's own sign-in, and Microsoft 365 and Outlook.com have no CalDAV, so those don't work yet. To send someone an invite instead, use [Calendar invite](../src/selfhost_remote_mail_mcp/library/calendar_invite/README.md), which works with any calendar.
+
+</details>
+
+<details>
 <summary><b>What are my server's links?</b></summary>
 
 Your server has one address. Every link is that address with something added at the end.

@@ -234,7 +234,7 @@ More in [docs/safety.md](docs/safety.md) (risks and good settings) and [docs/pri
 
 - **Outlook.com, Hotmail and Live accounts**, and Microsoft 365 accounts that need Microsoft's own sign-in. Microsoft stopped accepting passwords from mail apps.
 - **Proton Mail** through Proton Bridge. Bridge uses a certificate this server doesn't accept yet.
-- **Google, Microsoft 365 and Outlook.com calendars.** The Calendar add-on needs CalDAV, which they don't offer to outside apps.
+- **Google, Microsoft 365 and Outlook.com calendars.** The Calendar add-on uses CalDAV with an app password. Google's CalDAV only allows Google's own sign-in, and Microsoft has no CalDAV.
 
 ## Help and feedback
 

@@ -81,6 +81,49 @@ If you have more than one (named, say, *Work*, *Personal* and *Archive*):
 - *Draft this from Work.*
 - *Search Archive for the 2024 tax letters.*
 
+## With add-ons
+
+These need the add-on turned on first, in the settings page's **Add-ons** tab ([how](../src/selfhost_remote_mail_mcp/library/README.md#turn-one-on-and-set-it-up)).
+
+**[Calendar](../src/selfhost_remote_mail_mcp/library/caldav/README.md)**
+
+- *What's on my calendar this week?*
+- *When am I free on Thursday for an hour?*
+- *Reply to Sam with three times I'm free next week.*
+- *Put "Dentist" on Friday at 3pm for 45 minutes.*
+- *Move the dentist to 4pm.* / *Delete the gym on Saturday.* (it shows you the event and asks first)
+
+**[Calendar invite](../src/selfhost_remote_mail_mcp/library/calendar_invite/README.md)**
+
+- *Reply that Tuesday at 3 works and attach an invite.*
+- *Add a 45-minute invite for the call on 20 October at 10:00, with the Zoom link in the details.*
+
+**[PDF maker](../src/selfhost_remote_mail_mcp/library/pdf_maker/README.md)**
+
+- *Write a one-page proposal for Acme with the three options, make it a PDF and attach it.*
+- *Put these meeting notes in a PDF and attach it to my email to the team.*
+
+**[Invoices and quotes](../src/selfhost_remote_mail_mcp/library/invoices/README.md)**
+
+- *Make a quote for Acme: logo design 1200, brand guidelines 800. Attach it to my reply.*
+- *Turn that into a proforma with 23% VAT.*
+- *Which quotes did I send this month?*
+
+**[Phishing alert](../src/selfhost_remote_mail_mcp/library/phishing_alert/README.md)**
+
+- *Is this email safe?*
+- *Which of today's emails look risky?*
+
+**[Follow-up reminders](../src/selfhost_remote_mail_mcp/library/follow_ups/README.md)**
+
+- *Remind me if Sam doesn't reply to this in 3 days.*
+- *Which of my emails are still waiting for an answer? Draft a friendly nudge for each.*
+
+**[Out of office](../src/selfhost_remote_mail_mcp/library/out_of_office/README.md)** and **[Webhooks](../src/selfhost_remote_mail_mcp/library/webhooks/README.md)** work by themselves. You set them up on the settings page; your AI app can only tell you how they're doing:
+
+- *Is my out of office on?*
+- *Are my webhooks working?*
+
 ## Asking well
 
 - **Say which email.** "The one from Sam about the lease" works better than "that email".

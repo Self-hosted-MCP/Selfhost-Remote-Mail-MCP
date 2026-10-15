@@ -36,6 +36,64 @@ Your provider names its folders unusually. Run the `folders` tool and look for y
 
 </details>
 
+## The server on your computer
+
+On a computer, `setup` runs the server in the background, so you have the settings page at `http://localhost:8765/settings`. Start with `selfhost-remote-mail-mcp service status`: it says whether it's set to start at login and whether it runs.
+
+<details>
+<summary>The settings page doesn't open at localhost:8765</summary>
+
+- Run `selfhost-remote-mail-mcp service status`. **Not installed:** run `selfhost-remote-mail-mcp service install`. **Not running:** run `selfhost-remote-mail-mcp service start`.
+- Setup may have picked another port because 8765 was taken (it said so, like "this one uses 8766"). Open that one, or look for `PORT=` in the settings file.
+- Still nothing? Read its log: on a Mac `~/Library/Logs/selfhost-remote-mail-mcp.log`, on Linux `journalctl --user -u selfhost-remote-mail-mcp`.
+
+</details>
+
+<details>
+<summary>"It doesn't answer yet" or "Couldn't start it in the background"</summary>
+
+The server started but stopped again, usually for one of these reasons, which its log shows:
+
+- **No passphrase in the settings file.** One set only in a terminal doesn't count, because the background server doesn't see it. Run `selfhost-remote-mail-mcp set-passphrase`, then `service restart`.
+- **An add-on can't load**, for example one that needs extra packages. See [the add-on library](../src/selfhost_remote_mail_mcp/library/README.md#if-an-add-on-doesnt-show-up).
+
+</details>
+
+<details>
+<summary>"On this system, start-at-login isn't automatic yet" (Windows)</summary>
+
+On Windows, start it by hand with `selfhost-remote-mail-mcp serve`, or let Task Scheduler start it when you log in ([steps](setup-computer.md#keep-it-running-in-the-background)).
+
+</details>
+
+<details>
+<summary>"This server's web version already runs ..., started another way"</summary>
+
+Setup found this server already running on this computer, for example as your own systemd service or in a terminal window. It leaves that one alone and changes nothing. Use it as it is, or stop it and run `selfhost-remote-mail-mcp service install` to have setup manage it.
+
+</details>
+
+<details>
+<summary>A Mac asks whether the server may use the keychain</summary>
+
+That happens for passwords that `setup --terminal` kept in the keychain, the first time the background server reads them, and again after some updates. Choose **Always Allow**. Until you answer, that mailbox can't log in. Mailboxes added on the settings page don't use the keychain.
+
+</details>
+
+<details>
+<summary>Linux: logins fail after a restart, but work after I log in</summary>
+
+The Linux keychain (Secret Service) unlocks only when you log in to the desktop. A password kept there can't be read before that. Add the mailbox on the settings page instead (its password is stored encrypted in the data folder), or put it in the settings file.
+
+</details>
+
+<details>
+<summary>Scheduled emails or add-ons stop when the computer sleeps</summary>
+
+They work only while the computer is on and awake. Emails scheduled while it was off go out when it's back, unless they're more than 2 hours late. Those are held, not sent, so nothing goes out at a strange time. For always-on, use [a hosting company](setup-hosting.md) or [your own server](setup-own-server.md).
+
+</details>
+
 ## Your AI app
 
 <details>
@@ -108,6 +166,28 @@ An add-on in `MAIL_ADDONS` has a problem, and the message says which and why. Ru
 <summary>"... can't be changed by an AI app" or "turned off in the server settings"</summary>
 
 AI apps may only change six settings when you ask ([tools.md](tools.md#settings)). Everything else is yours, on the settings page or in the settings file. "Turned off in the server settings" means the settings file or hosting variables say `off`, which always wins. Change it there.
+
+</details>
+
+<details>
+<summary>My AI app doesn't know an add-on's tools</summary>
+
+Start a new chat after turning an add-on on. Old chats keep the tools they started with. An AI app on your computer (Claude Desktop, Claude Code, Codex) needs a restart: quit and reopen it. More in [the add-on library](../src/selfhost_remote_mail_mcp/library/README.md#if-an-add-on-doesnt-show-up).
+
+</details>
+
+<details>
+<summary>An add-on says "Needs setting up", or won't turn on</summary>
+
+- **Needs setting up:** a required detail is empty. Press **Set up** next to it on the settings page and fill in the required fields. Calendar and Webhooks have a **Test connection** button to check them.
+- **Won't turn on and names a package** (`fpdf`, `caldav`): on a computer, install the add-on extras and restart ([how](../src/selfhost_remote_mail_mcp/library/README.md#turn-one-on-and-set-it-up)). The Docker image already has them.
+
+</details>
+
+<details>
+<summary>Out of office or Webhooks do nothing</summary>
+
+They check for new mail every 5 minutes in the background. Check that the add-on is on and set up, and on a computer that the server runs (`selfhost-remote-mail-mcp service status`). They stay off on a copy of the server where `ADDON_JOBS=off` is set: on a computer, setup sets that when you said another copy already uses the same mailboxes, so the other copy does it. Ask your AI app *"Is my out of office on?"* or *"Are my webhooks working?"* to see the last problem.
 
 </details>
 

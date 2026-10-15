@@ -72,7 +72,31 @@ You don't call these yourself: you ask in plain words, and your AI app picks the
 
 ## Add-on tools
 
-Add-ons can add more tools, like `add_invite` from the calendar invite example. `accounts` lists the add-ons that are on. See [addons.md](addons.md).
+Each add-on you turn on brings its own tools. They follow the same rules as the ones above: they see only the mailboxes your AI app may use, a read-only mailbox stays read-only, and none of them sends email except Out of office, whose whole job is sending. `accounts` lists the add-ons that are on.
+
+These come with the server, all off until you turn them on in the settings page's **Add-ons** tab ([how](../src/selfhost_remote_mail_mcp/library/README.md#turn-one-on-and-set-it-up)):
+
+| Tool | Add-on | What it does | Changes anything? |
+|---|---|---|---|
+| `calendar_events` | [Calendar](../src/selfhost_remote_mail_mcp/library/caldav/README.md) | Your events for up to 31 days, each with an ID | No |
+| `calendar_free` | Calendar | Free times in your working hours for up to 14 days | No |
+| `add_event` | Calendar | Adds an event; with several calendars, asks you which one | Your calendar |
+| `edit_event` | Calendar | Changes an event's title, time, length, place or notes | Your calendar |
+| `delete_event` | Calendar | Shows you the event, asks, and deletes only after your yes | **Deletes** a calendar event |
+| `add_invite` | [Calendar invite](../src/selfhost_remote_mail_mcp/library/calendar_invite/README.md) | Attaches a meeting invite (`.ics`) to a draft | Only the draft |
+| `make_pdf` | [PDF maker](../src/selfhost_remote_mail_mcp/library/pdf_maker/README.md) | Turns text into a PDF and attaches it to a draft | Only the draft |
+| `make_invoice` | [Invoices and quotes](../src/selfhost_remote_mail_mcp/library/invoices/README.md) | A numbered quote, proforma or invoice as a PDF, attached to a draft | The draft, and uses the next number |
+| `invoices` | Invoices and quotes | Lists the documents made so far | No |
+| `check_email` | [Phishing alert](../src/selfhost_remote_mail_mcp/library/phishing_alert/README.md) | Gives one email a trust level and says why | No |
+| `remind_if_no_reply` | [Follow-up reminders](../src/selfhost_remote_mail_mcp/library/follow_ups/README.md) | Remembers a sent email to check for a reply in 1 to 90 days | Only its own list |
+| `follow_ups` | Follow-up reminders | Sent emails that got no reply in time | No |
+| `cancel_follow_up` | Follow-up reminders | Forgets one reminder | Only its own list |
+| `out_of_office` | [Out of office](../src/selfhost_remote_mail_mcp/library/out_of_office/README.md) | Whether your away reply is on and how many went out today | No |
+| `webhooks` | [Webhooks](../src/selfhost_remote_mail_mcp/library/webhooks/README.md) | Whether new-mail webhooks are working | No |
+
+Phishing alert also works without being asked: when your AI app opens an email that looks suspicious, a one-line warning comes with it. Out of office and Webhooks work in the background, every 5 minutes.
+
+Tools that change your calendar or use up an invoice number are good ones to set to **Always ask** in your AI app. Your own add-ons can add more tools: see [addons.md](addons.md).
 
 ## Settings
 
