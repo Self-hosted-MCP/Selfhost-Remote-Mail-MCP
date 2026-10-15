@@ -17,6 +17,7 @@ flowchart LR
 | The AI app you connect (Claude, ChatGPT, ...) | The emails, attachments and contacts the AI asks for | So it can answer you. That company's own privacy rules apply to what it receives |
 | Your internet provider's DNS, only when you press **Check domain** or run `check` | Your email domain's name, to read its public records | To check SPF, DKIM and DMARC. Nothing else is sent |
 | GitHub, only if you turn on `UPDATE_CHECK` | A plain "which release is newest?" request, once a day | To tell you about updates. No login, address or usage is sent |
+| GitHub, when you open the **About** tab of the settings page | Your browser loads the author's profile picture from GitHub | To show who made the project. Like any picture on the web, GitHub sees your browser's IP address. Nothing from your mail or settings is sent |
 | The authors of this project | Nothing | No account, no tracking, no usage statistics |
 
 The AI app only receives what it asks for through the tools, normally while you are chatting with it. Each request is one tool call, such as "list the Inbox" or "open this email".

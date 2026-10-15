@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-only
 """Several mailboxes: settings, routing, modes, per-app choices, encrypted storage, the scheduler."""
 import datetime as dt
 import email

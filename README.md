@@ -6,14 +6,15 @@
 
 <p align="center">
 <a href="#credits"><img src="https://img.shields.io/badge/-open%20source-brightgreen" alt="Open source"></a>
-<a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="License: MIT"></a>
+<a href="https://github.com/s17sh70x2jfl031ag/Selfhost-Remote-Mail-MCP/stargazers"><img src="https://img.shields.io/github/stars/s17sh70x2jfl031ag/Selfhost-Remote-Mail-MCP?style=flat" alt="GitHub stars"></a>
+<a href="LICENSE"><img src="https://img.shields.io/badge/license-AGPL--3.0-blue" alt="License: AGPL-3.0"></a>
 <a href="pyproject.toml"><img src="https://img.shields.io/badge/python-3.11%2B-blue" alt="Python 3.11+"></a>
 <a href="https://modelcontextprotocol.io"><img src="https://img.shields.io/badge/MCP-server-black" alt="MCP server"></a>
 <a href="docs/connect-your-ai.md"><img src="https://img.shields.io/badge/works%20with-Claude%20%C2%B7%20ChatGPT%20%C2%B7%20Codex-orange" alt="Works with Claude, ChatGPT, Codex"></a>
 <a href="#choose-how-to-run-it"><img src="https://img.shields.io/badge/self--hosted-computer%20%C2%B7%20cloud%20%C2%B7%20server-green" alt="Self-hosted"></a>
 </p>
 
-<p align="center"><b>Free and open source under the MIT license.</b> Use it, fork it and change it, and keep the credit. See <a href="#credits">Credits</a>.</p>
+<p align="center"><b>Free and open source under the AGPL-3.0 license.</b> Use it, fork it and change it, share your changes, and keep the credit. See <a href="#credits">Credits</a>.</p>
 
 <p align="center">
 <a href="#quick-start-option-1-about-5-minutes">Quick start</a> ·
@@ -219,8 +220,16 @@ Issues are public, so leave out passwords, email addresses and email content.
 
 Selfhost-Remote-Mail-MCP was made by [s17sh70x2jfl031ag](https://github.com/s17sh70x2jfl031ag).
 
-You're welcome to fork it, change it and build on it under the MIT license. The license asks you to keep the copyright notice in [LICENSE](LICENSE). Please also keep the [NOTICE](NOTICE) file and a line in your README such as *"Based on Selfhost-Remote-Mail-MCP by s17sh70x2jfl031ag"*. GitHub's "Cite this repository" button uses [CITATION.cff](CITATION.cff).
+You're welcome to use, fork, change and build on it under the [GNU Affero General Public License v3.0](LICENSE) (AGPL-3.0-only) and the additional terms in [NOTICE](NOTICE). In short:
+
+- Keep [LICENSE](LICENSE), [NOTICE](NOTICE) and the copyright lines.
+- If you share a changed version, or run one that other people use over the internet, offer them its source code under the same license. Set `SOURCE_URL` to where it is, and the pages link to it.
+- Keep the credit in the page footers (*"Selfhost-Remote-Mail-MCP by s17sh70x2jfl031ag"*), and mark your version as changed.
+
+GitHub's "Cite this repository" button uses [CITATION.cff](CITATION.cff). Versions up to 0.12.0 were released under the MIT license and stay available under it.
 
 ## License
 
-MIT. See [LICENSE](LICENSE).
+[GNU Affero General Public License v3.0](LICENSE) (AGPL-3.0-only), with the additional terms in [NOTICE](NOTICE). Copyright (C) 2026 s17sh70x2jfl031ag and Selfhost-Remote-Mail-MCP contributors.
+
+The copyright holder may also offer it under other terms, for example a commercial license. Ask through GitHub.

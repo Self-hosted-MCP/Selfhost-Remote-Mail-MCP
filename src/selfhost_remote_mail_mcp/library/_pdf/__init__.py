@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-only
 """Shared PDF code for library add-ons (pdf_maker, invoices). Not an add-on itself.
 
 Uses fpdf2 (pure Python) and the bundled Noto Sans fonts (SIL Open Font License, see fonts/OFL.txt), which cover

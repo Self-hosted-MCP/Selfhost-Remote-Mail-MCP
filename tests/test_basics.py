@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-only
 """Login passphrase, hosting addresses, the read-only mailbox and the signature."""
 import pytest
 from mcp.server.mcpserver.exceptions import ToolError

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-only
 """The server's web pages: the login page AI apps open, and the settings page.
 
 Plain HTML and CSS, no scripts, no fonts or images from anywhere else (see HEADERS), so the pages work under a
@@ -22,7 +23,8 @@ AUTHOR = "s17sh70x2jfl031ag"
 HEADERS = {
     "Cache-Control": "no-store",
     "X-Frame-Options": "DENY",
-    "Content-Security-Policy": "default-src 'none'; style-src 'unsafe-inline'; img-src 'self' data:; "
+    "Content-Security-Policy": "default-src 'none'; style-src 'unsafe-inline'; "
+                               "img-src 'self' data: https://github.com https://avatars.githubusercontent.com; "
                                "form-action 'self' https: http://localhost:* http://127.0.0.1:*; frame-ancestors 'none'; base-uri 'none'",
     "Referrer-Policy": "no-referrer",
     "X-Content-Type-Options": "nosniff",
@@ -76,6 +78,7 @@ THEME_ICONS = {   # what the button shows: the look now
 }
 THEME_LABELS = {"": N_("Light or dark: like your device. Tap to change."), "light": N_("Light. Tap to change."),
                 "dark": N_("Dark. Tap to change.")}
+SOURCE_URL = contextvars.ContextVar("source_url", default="")   # a changed version's source code (AGPL), if set
 THEME = contextvars.ContextVar("theme", default="")      # "", "light" or "dark", from the visitor's cookie
 HERE_PATH = contextvars.ContextVar("here", default="/")  # the page's own address, to come back to after a tap
 
@@ -88,6 +91,8 @@ def theme_button() -> str:
             f'{THEME_ICONS.get(t, THEME_ICONS[""])}</button></form>')
 
 
+ICON_STAR = ('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" '
+             'aria-hidden="true"><path d="m12 3.5 2.6 5.3 5.8.8-4.2 4.1 1 5.8L12 16.8l-5.2 2.7 1-5.8-4.2-4.1 5.8-.8z"/></svg>')
 ICON_BACK = ('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" '
              'stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>')
 # The envelope mark, as the favicon and the icon AI apps may show next to this server.
@@ -179,6 +184,14 @@ a.button svg{width:16px;height:16px;flex:none}
 @media (max-width:540px){.addons .file-row{flex-direction:column;align-items:stretch}.addons .actions.tight{flex-wrap:wrap}}
 .state{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
 .state p{margin:4px 0 0}
+.maker{margin-top:18px}
+.maker .item{display:flex;align-items:center;gap:14px}
+.maker img{width:56px;height:56px;border-radius:50%;flex:none;background:var(--chip);object-fit:cover}
+.maker b{display:block}
+.maker .star{display:flex;width:max-content;margin-top:10px}
+.star svg{color:var(--warn)}
+.maker a{color:inherit}
+.links{margin-top:6px}
 a.button.quiet{color:var(--ink);border:1.5px solid var(--line);font-weight:650;padding:9px 14px;font-size:.95rem}
 a.button.quiet:hover{border-color:var(--ink-soft)}
 textarea{resize:vertical;line-height:1.45}
@@ -281,7 +294,7 @@ $theme
 </section>
 $tabs<section class="body">$content</section>
 </main>
-<footer><a href="$project_url">$project</a> $by $author</footer>
+<footer><a href="$project_url">$project</a> $by $author$source</footer>
 </body></html>""")
 
 
@@ -301,7 +314,9 @@ def page(headline: str, sub: str, content: str, wide: bool = False, tabs: list[t
     return PAGE.substitute(title=f"{title} · Selfhost Mail", headline=headline, sub=sub, content=content, tabs=nav,
                            css=CSS, icon=ICON_MAIL, width="wide" if wide else "", project=PROJECT,
                            project_url=PROJECT_URL, author=AUTHOR, lang=LANG.get(), by=esc(_("by")), back=back_link,
-                           theme=theme_button(), theme_attr=f' data-theme="{THEME.get()}"' if THEME.get() else "")
+                           theme=theme_button(), theme_attr=f' data-theme="{THEME.get()}"' if THEME.get() else "",
+                           source=(f' · <a href="{esc(SOURCE_URL.get())}">{esc(_("Source code"))}</a>'
+                                   if SOURCE_URL.get() else ""))
 
 
 def panel_css(names: list[str]) -> str:
@@ -782,6 +797,27 @@ def settings(csrf: str, mailboxes: list[dict], apps: list[dict], flash: tuple[st
         if about.get("changelog"):
             parts.append(f'<details><summary>{whats_new}</summary>'
                          f'<div class="changelog">{about["changelog"]}</div></details>')
+        source = SOURCE_URL.get() or PROJECT_URL
+        parts.append(f'<p class="hint">{esc(_("Free and open source software under the GNU Affero General Public License v3.0, with no warranty."))} '
+                     f'<a href="{esc(source)}">{esc(_("Source code"))}</a> · '
+                     f'<a href="https://www.gnu.org/licenses/agpl-3.0.html">{esc(_("License"))}</a></p>')
+        profile = f"https://github.com/{AUTHOR}"
+        parts.append(f'<div class="list maker"><div class="item"><img src="{profile}.png?size=112" alt="" width="56" '
+                     f'height="56" loading="lazy" referrerpolicy="no-referrer"><div><b>'
+                     + _("Made by {author}", author=f'<a href="{profile}">{esc(AUTHOR)}</a>') + '</b><span class="muted">'
+                     + esc(_("An open-source project. Your mail and passwords never reach the author: they stay on your "
+                             "server.")) + "</span>"
+                     f'<a class="button quiet star" href="{PROJECT_URL}">{ICON_STAR}{esc(_("Star it on GitHub"))}</a>'
+                     "</div></div></div>")
+        issues = f"{PROJECT_URL}/issues/new?template="
+        links = [(issues + "bug_report.yml", _("Report a problem")),
+                 (issues + "question.yml", _("Ask a question or suggest an idea")),
+                 (issues + "provider_request.yml", _("My email provider doesn't work")),
+                 (issues + "addon.yml", _("Share an add-on")),
+                 (f"{PROJECT_URL}/security/advisories/new", _("Report a security problem privately"))]
+        parts.append(f'<h2>{esc(_("Help and ideas"))}</h2><div class="actions links">'
+                     + "".join(f'<a class="button quiet" href="{esc(u)}">{esc(t)}</a>' for u, t in links) + "</div>"
+                     f'<p class="hint">{esc(_("These open GitHub, where reports are public: leave out passwords, email addresses and email content. Security problems go privately to the author."))}</p>')
         parts.append(f'<p class="hint">{esc(_("Page language: {language}. It follows your browser; LANGUAGE in the settings can fix it.", language=LANGUAGES.get(LANG.get(), LANG.get())))}</p>')
     parts.append("</div></div>" if shown else "")
     parts.append(panel_css(shown))

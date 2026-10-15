@@ -82,7 +82,7 @@ To try `hello`, copy the file into your add-ons folder and add `hello` to `MAIL_
 
 ### 1. Make the file
 
-The file name is the add-on's name: lowercase letters, digits and `_`, like `my_quotes.py`. The first line of the file is a short description, shown in `accounts`.
+The file name is the add-on's name: lowercase letters, digits and `_`, like `my_quotes.py`. The file starts with a short description in triple quotes (its docstring), shown in `accounts`.
 
 ```python
 """Quotes: makes a price quote PDF and attaches it to a draft."""

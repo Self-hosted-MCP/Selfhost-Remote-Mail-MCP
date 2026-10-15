@@ -50,4 +50,4 @@ Add it to the table in [docs/email-providers.md](docs/email-providers.md) with a
 
 ## Credit
 
-By contributing you agree that your work is shared under the MIT license. Keep the original credit (`LICENSE`, `NOTICE`, `CITATION.cff`, the login page footer) and add yourself to the changelog entry if you like.
+By contributing you agree that your work is shared under the AGPL-3.0-only license and the additional terms in `NOTICE`, and that the project's copyright holder (s17sh70x2jfl031ag) may also offer it under other license terms, such as a commercial license. Keep the original credit (`LICENSE`, `NOTICE`, `CITATION.cff`, the login page footer) and add yourself to the changelog entry if you like.

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-only
 """Languages for the web pages: picking one, falling back to English, the translate command and its checks."""
 import json
 import re

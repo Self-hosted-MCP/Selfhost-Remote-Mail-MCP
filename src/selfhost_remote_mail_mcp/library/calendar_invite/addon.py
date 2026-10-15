@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-only
 """Calendar invites: attaches an .ics invite to a draft, so the receiver can add the meeting in one tap."""
 
 import datetime as dt

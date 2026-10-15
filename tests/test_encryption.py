@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-only
 """What is encrypted or private by default: connections, the send log, the keychain, HTTPS-only pages."""
 import ssl
 

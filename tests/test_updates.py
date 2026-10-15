@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-only
 """Update check (opt-in), the update command (releases only), and the About section."""
 import json
 import subprocess

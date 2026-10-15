@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-only
 """The add-on library and the toolbox parts library add-ons use: reading mail, new drafts, saved data,
 background jobs, web requests and sending."""
 import email

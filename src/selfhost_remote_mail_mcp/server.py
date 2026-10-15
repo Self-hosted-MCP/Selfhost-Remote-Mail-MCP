@@ -1,7 +1,10 @@
+# SPDX-License-Identifier: AGPL-3.0-only
 """selfhost-remote-mail-mcp: your own mailbox for AI assistants, over plain IMAP/SMTP.
 
-Original project by s17sh70x2jfl031ag: https://github.com/s17sh70x2jfl031ag/Selfhost-Remote-Mail-MCP
-(MIT license: if you copy or fork this, keep this credit and the LICENSE file.)
+Copyright (C) 2026 s17sh70x2jfl031ag and Selfhost-Remote-Mail-MCP contributors.
+Original project: https://github.com/s17sh70x2jfl031ag/Selfhost-Remote-Mail-MCP
+Licensed under the GNU Affero General Public License v3.0 only, with additional terms under its section 7 (the
+author credit in the page footers, marking changed versions, the project's names): see LICENSE and NOTICE.
 
 Reads, searches, drafts and organises up to 5 mailboxes, each full, draft only or read only.
 Sending is a separate tool (send_email, schedule_send) so your AI app can ask you
@@ -117,7 +120,7 @@ SETTINGS = ("MAIL_ADDRESS", "MAIL_NAME", "MAIL_USERNAME", "SMTP_USERNAME", "MAIL
             "REMOVE_PHOTO_LOCATION", "REMOVE_DOCUMENT_DETAILS", "MAIL_ADDONS", "UPLOAD_LINKS", "LANGUAGE", "MAIL_LOCALES_DIR",
             "MAIL_ADDONS_DIR",
             "READ_ONLY_ADDRESS", "READ_ONLY_USERNAME", "READ_ONLY_PASSWORD",
-            "RENDER_EXTERNAL_URL", "RAILWAY_PUBLIC_DOMAIN")
+            "RENDER_EXTERNAL_URL", "RAILWAY_PUBLIC_DOMAIN", "SOURCE_URL")
 
 
 def read_env() -> dict[str, str]:
@@ -2570,6 +2573,8 @@ def use_language(request: Request) -> None:
     """The web pages speak the browser's language (or LANGUAGE from the settings), English if there's no file for it,
     and use the light or dark look the visitor picked (a cookie; none means: like the device)."""
     i18n.LANG.set(i18n.pick(request.headers.get("accept-language", ""), read_env().get("LANGUAGE", "")))
+    source = read_env().get("SOURCE_URL", "").strip()
+    pages.SOURCE_URL.set(source if source.startswith(("https://", "http://")) else "")
     theme = request.cookies.get("theme", "")
     pages.THEME.set(theme if theme in ("light", "dark") else "")
     here = request.url.path + (f"?{request.url.query}" if request.url.query else "")
@@ -4326,7 +4331,7 @@ def library_addons() -> dict[str, str]:
     """The add-ons that ship with the server: name -> one-line description."""
     out = {}
     for path in sorted(LIBRARY.glob("*/addon.py")):
-        head = re.search(r'^"""(.+)', path.read_text(encoding="utf-8"))
+        head = re.search(r'^"""(.+)', path.read_text(encoding="utf-8"), re.M)   # the docstring's first line
         out[path.parent.name] = head.group(1).strip().rstrip('"') if head else ""
     return out
 

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-only
 """The web pages over real HTTP requests: settings login, sessions, forged forms, the icon."""
 import asyncio
 import json
@@ -309,3 +310,22 @@ def test_the_light_dark_switch_cycles_and_is_remembered(web):
     r = client.post("/theme", data={"next": "/settings/upload"}, headers={"origin": "https://evil.example"},
                     follow_redirects=False)
     assert r.headers["location"] == "/settings"
+
+
+def test_pages_show_the_license_and_a_changed_versions_source(web, monkeypatch):
+    client, _provider = web
+    page = client.get("/settings").text
+    assert "Source code" not in page.split("<footer>")[1]   # unchanged project: the credit link is enough
+    monkeypatch.setenv("SOURCE_URL", "https://git.example.org/my-fork")
+    page = client.get("/settings").text
+    assert '<a href="https://git.example.org/my-fork">Source code</a>' in page.split("<footer>")[1]
+    assert "Selfhost-Remote-Mail-MCP</a> by s17sh70x2jfl031ag" in page
+    monkeypatch.setenv("SOURCE_URL", "javascript:alert(1)")
+    assert "javascript:" not in client.get("/settings").text
+
+
+def test_about_names_the_license():
+    from selfhost_remote_mail_mcp import pages
+    html = pages.settings("t", [], [], None, 5, False, {"version": "1", "update": None, "changelog": "", "addons": []},
+                          False, None, None, [], [])
+    assert "GNU Affero General Public License v3.0" in html and "https://www.gnu.org/licenses/agpl-3.0.html" in html

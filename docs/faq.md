@@ -3,7 +3,7 @@
 <details>
 <summary><b>Is it free?</b></summary>
 
-The software is free (MIT license). Running it on your own computer is free. A hosting company costs about $5 to $8 a month, paid to them. The AI app you use may need its own plan.
+The software is free and open source (AGPL-3.0 license). Running it on your own computer is free. A hosting company costs about $5 to $8 a month, paid to them. The AI app you use may need its own plan.
 
 </details>
 
@@ -180,6 +180,6 @@ See "Deleting everything" in [privacy.md](privacy.md#deleting-everything), then 
 <details>
 <summary><b>Can I change the code?</b></summary>
 
-Yes. Fork it, change it, share it, under the MIT license. Please keep the credit ([README](../README.md#credits)). [AGENTS.md](../AGENTS.md) explains the code, and [CONTRIBUTING.md](../CONTRIBUTING.md) explains how to send changes back.
+Yes. Fork it, change it, share it, under the AGPL-3.0 license. If you share a changed version or run one for other people, offer them its source code too (set `SOURCE_URL`). Please keep the credit ([README](../README.md#credits)). [AGENTS.md](../AGENTS.md) explains the code, and [CONTRIBUTING.md](../CONTRIBUTING.md) explains how to send changes back.
 
 </details>

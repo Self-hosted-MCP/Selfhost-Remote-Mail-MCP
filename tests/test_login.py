@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-only
 """The web login: tokens kept only as fingerprints, the client cap and the login page."""
 import asyncio
 import json

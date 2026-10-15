@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-only
 """New files: the type checks, attach_path / attach_content / attach_upload, the upload page and its clean-up."""
 import base64
 import email

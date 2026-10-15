@@ -77,6 +77,7 @@ Mailboxes 2 to 5 use the same settings with their number: `MAIL_2_...`, `MAIL_3_
 | `HOST` | `127.0.0.1` | Network address to listen on. Docker images use `0.0.0.0` |
 | `PORT` | `8765` | Port to listen on. Railway and Render set it themselves |
 | `ALLOWED_REDIRECT_HOSTS` | `claude.ai,claude.com,chatgpt.com,openai.com,vscode.dev` | Web apps allowed to receive the login. Apps on your own computer (localhost) are always allowed |
+| `SOURCE_URL` | empty | Only for a changed version that other people use: the address of its source code. The page footers and the settings page link to it, as the AGPL license asks. Leave it empty if you run the project unchanged |
 
 `serve` refuses to start without a passphrase. If `PUBLIC_URL` isn't set, it uses the address Render (`RENDER_EXTERNAL_URL`) or Railway (`RAILWAY_PUBLIC_DOMAIN`) provides, and otherwise `http://localhost:PORT`, which only works on the same computer.
 

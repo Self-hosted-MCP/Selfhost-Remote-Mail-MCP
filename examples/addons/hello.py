@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-only
 """Says hello: the smallest possible add-on, to copy when you start a new one."""
 
 

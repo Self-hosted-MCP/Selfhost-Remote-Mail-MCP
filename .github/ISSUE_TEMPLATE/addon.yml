@@ -50,4 +50,4 @@ body:
       options:
         - label: It never sends email itself, and changes mail only through api.edit_draft.
         - label: It keeps secrets in settings, not in the code.
-        - label: I'm happy for it to be included in the project under the MIT license, credited to me.
+        - label: I'm happy for it to be included in the project under the AGPL-3.0 license, credited to me, and for the project's copyright holder to also offer it under other terms.

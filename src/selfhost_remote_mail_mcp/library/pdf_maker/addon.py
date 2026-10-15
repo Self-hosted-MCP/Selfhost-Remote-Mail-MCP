@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-only
 """PDF maker: turns text (headings, lists, tables, links) into a PDF and attaches it to a draft."""
 
 import re

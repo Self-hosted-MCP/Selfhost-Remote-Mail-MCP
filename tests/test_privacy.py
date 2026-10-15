@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-only
 """Private details removed from new attachments: photo location, document authors. And the switches for it."""
 import base64
 import io

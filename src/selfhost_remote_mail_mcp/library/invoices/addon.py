@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-only
 """Invoices and quotes: makes a numbered quote, proforma or invoice PDF with totals and attaches it to a draft."""
 
 import datetime as dt

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-only
 """Languages for the web pages (login, settings, upload). Tool answers stay in English: the AI app reads them and
 talks to the user in the user's own language.
 

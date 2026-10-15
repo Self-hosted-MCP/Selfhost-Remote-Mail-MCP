@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-only
 """Photo size (hd / smaller) and iPhone HEIC photos, which only become JPG after the user says yes."""
 import base64
 import email

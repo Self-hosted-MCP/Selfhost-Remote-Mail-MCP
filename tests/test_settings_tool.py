@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-only
 """The settings the AI may show and change (only six), and the list of changes on the settings page."""
 import re
 import shutil

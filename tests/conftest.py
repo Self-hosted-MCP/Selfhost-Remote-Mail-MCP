@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-only
 """A fake mailbox and a fake SMTP server, so the tests never touch real mail."""
 import atexit
 import email

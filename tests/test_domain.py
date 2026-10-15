@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-only
 """The domain check: SPF, DKIM, DMARC and MX in plain words, with DNS answers faked."""
 import re
 

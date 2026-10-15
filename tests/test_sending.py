@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-only
 """Sending, limits and scheduled send, against the fake mailbox in conftest.py."""
 import datetime as dt
 import email

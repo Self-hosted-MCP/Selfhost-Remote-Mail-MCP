@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-only
 """Add-ons: loading, the API they get, the checks that still apply, and the example add-ons."""
 import email
 import itertools

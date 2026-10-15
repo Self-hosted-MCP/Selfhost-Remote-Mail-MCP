@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-only
 """One-time upload links: an AI app's code (or the user, in a browser) sends one file, without the passphrase."""
 import re
 import shutil
