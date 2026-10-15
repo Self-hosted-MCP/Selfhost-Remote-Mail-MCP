@@ -20,7 +20,7 @@ For each new email in the Inbox, one small JSON message:
 
 1. In Zapier (*Webhooks by Zapier → Catch Raw Hook*), Make (*Custom webhook*), n8n (*Webhook* node) or your own app, create an address that accepts POST requests.
 2. Make a signing secret: at least 24 random characters, for example from your password manager.
-3. On the settings page, open the **Add-ons** tab, press **Set up** next to **Webhooks**, paste the address and the secret, and press **Save**. Then **Turn on**.
+3. On the settings page, open the **Add-ons** tab, press **Set up** next to **Webhooks**, paste the address and the secret, and press **Save**. Then **Turn on**, and **Test connection** to send a test message (`{"type": "test", ...}`) to your receiver.
 
 It checks for new mail every 5 minutes, so messages arrive within about 5 minutes. Mail that was already there when you turned it on isn't sent. It works on the web version only (it runs in the background).
 

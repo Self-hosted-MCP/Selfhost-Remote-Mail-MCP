@@ -273,3 +273,20 @@ def test_webhook_400_is_retried_and_status_and_a_long_pause_resets(mailbox, hook
     count = len(sent)
     run()   # starts fresh: the mail from while it was off isn't sent
     assert len(sent) == count
+
+
+def test_the_test_connection_button(cal, hook, monkeypatch):
+    kind, text = server.settings_action(None, "addon_setup", {"name": "caldav", "action": "test"})
+    assert kind == "ok" and text.startswith('Connected. Using the calendar "Work"')
+    monkeypatch.setenv("CALDAV_PASSWORD", "wrong")
+    kind, text = server.settings_action(None, "addon_setup", {"name": "caldav", "action": "test"})
+    assert kind == "error" and "login failed" in text
+    run, sent, answers = hook
+    kind, text = server.settings_action(None, "addon_setup", {"name": "webhooks", "action": "test"})
+    assert kind == "ok" and "accepted a test message" in text and json.loads(sent[-1].data)["type"] == "test"
+    answers[:] = [500]
+    kind, text = server.settings_action(None, "addon_setup", {"name": "webhooks", "action": "test"})
+    assert kind == "error" and "500" in text
+    from selfhost_remote_mail_mcp import pages
+    row = {"name": "caldav", "about": "", "on": True, "library": True, "in_settings": False, "testable": True}
+    assert "Test connection" in pages.addon_setup("t", row, [], None)

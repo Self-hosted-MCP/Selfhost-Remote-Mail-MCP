@@ -151,6 +151,18 @@ def setup(api):
         same = e["end"].date() == e["start"].date()
         return f"{e['start']:%a %d %b %H:%M}-{e['end']:%H:%M}" if same else f"{e['start']:%a %d %b %H:%M} to {e['end']:%a %d %b %H:%M}"
 
+    def test() -> str:
+        cal = calendar()
+        tz = zone()
+        try:
+            name = cal.get_display_name() or "(no name)"
+        except Exception:
+            name = "(no name)"
+        found = events(dt.datetime.now(tz).date(), 7, tz)
+        return f"Connected. Using the calendar \"{name[:60]}\": {len(found)} event(s) in the next 7 days."
+
+    api.on_test(test)
+
     @api.tool(api.READ)
     def calendar_events(start_date: str = "", days: int = 7) -> str:
         """The user's calendar events from start_date (YYYY-MM-DD, default today) for `days` days (1 to 31),

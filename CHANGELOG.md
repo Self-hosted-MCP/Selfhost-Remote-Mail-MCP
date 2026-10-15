@@ -2,6 +2,11 @@
 
 All notable changes to this project. Versions follow [semantic versioning](https://semver.org).
 
+## 0.15.1 (2026-10-15)
+
+- **Test connection:** the setup pages of Calendar and Webhooks have a button that checks the connection right away: which calendar it uses and how many events are coming up, or whether your web address accepted a test message. Add-on writers get it with `api.on_test`.
+- Tests: the daily send limit tests no longer fail just after midnight.
+
 ## 0.15.0 (2026-10-14)
 
 - **Two new library add-ons** (off until you turn them on):

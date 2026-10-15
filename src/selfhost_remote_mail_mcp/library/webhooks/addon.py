@@ -118,6 +118,21 @@ def setup(api):
 
     api.every(5, run)
 
+    def test() -> str:
+        url, key = s("URL").strip(), key_bytes()
+        if not url:
+            raise api.ToolError("Add the web address first.")
+        if key is None:
+            raise api.ToolError("The signing secret must be 24+ characters, or a valid whsec_ secret.")
+        body = json.dumps({"type": "test", "message": "A test from your mail server."}).encode()
+        status, _h, _b = api.http("POST", url, data=body, headers=signed("msg_test_" + secrets.token_hex(6), body, key),
+                                  timeout=15, max_bytes=1024)
+        if 200 <= status < 300:
+            return f"Connected: the receiver accepted a test message ({status})."
+        raise api.ToolError(f"The receiver answered {status}, so it didn't accept the test message.")
+
+    api.on_test(test)
+
     @api.tool(api.READ)
     def webhooks() -> str:
         """Whether new-mail webhooks are on and working: where they go (the host only), how many were delivered,

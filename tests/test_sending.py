@@ -39,7 +39,10 @@ def write_log(rows):
 
 
 def ago(minutes):
-    return (dt.datetime.now() - dt.timedelta(minutes=minutes)).isoformat(timespec="seconds")
+    """A log time `minutes` ago, but never before today's midnight, so the daily-limit tests work at any hour."""
+    now = dt.datetime.now()
+    return max(now - dt.timedelta(minutes=minutes), now.replace(hour=0, minute=0, second=0, microsecond=0)
+               ).isoformat(timespec="seconds")
 
 
 # ---- sending now

@@ -359,8 +359,13 @@ def addon_setup(csrf: str, addon: dict, fields: list[dict], flash: tuple[str, st
                        _("Turn off") if addon["on"] else _("Turn on"), "quiet" if addon["on"] else "")
     elif addon.get("in_settings") and addon["on"]:
         state += f' <span class="badge">{esc(_("In server settings"))}</span>'
+    test = ""
+    if addon.get("testable"):
+        test = (f'<form method="post" action="/settings/addon/{esc(name)}">{_csrf(csrf)}'
+                f'<input type="hidden" name="name" value="{esc(name)}"><input type="hidden" name="action" value="test">'
+                f'<button class="quiet" type="submit">{esc(_("Test connection"))}</button></form>')
     parts.append(f'<div class="list"><div class="item state"><div><b class="addon-name">{esc(addon_title(name))} {state}</b>'
-                 f'<p class="muted">{esc(note)}</p></div>{toggle}</div></div>')
+                 f'<p class="muted">{esc(note)}</p></div><div class="actions tight">{test}{toggle}</div></div></div>')
     # the form
     if fields:
         boxes, halves = [], []

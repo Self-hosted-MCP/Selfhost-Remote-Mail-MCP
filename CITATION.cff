@@ -6,6 +6,6 @@ authors:
   - alias: "s17sh70x2jfl031ag"
 repository-code: "https://github.com/s17sh70x2jfl031ag/Selfhost-Remote-Mail-MCP"
 license: AGPL-3.0-only
-version: 0.15.0
-date-released: "2026-10-14"
+version: 0.15.1
+date-released: "2026-10-15"
 keywords: [mcp, email, imap, smtp, self-hosted]

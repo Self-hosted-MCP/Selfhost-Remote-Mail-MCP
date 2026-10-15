@@ -178,6 +178,7 @@ def setup(api):
 | `api.internal_header(name)` | Registers a private draft header (starts with `X-`). It's removed before sending |
 | `api.on_sent_copy(function)` | `function(copy, headers)` may change the copy saved in Sent, never what was sent |
 | `api.setup_link()` | The address of the add-on's setup page, to give the user when a setting is missing |
+| `api.on_test(function)` | Adds a **Test connection** button to the add-on's setup page. `function()` returns one line when it works, or raises `api.ToolError` saying what's wrong |
 | `api.on_read(function)` | `function(msg)` runs on every email the AI opens and may return one short note shown with it (like a phishing warning). Keep it quick and local |
 | `api.sender_checks(msg)` | The SPF, DKIM and DMARC results the user's own provider added to an email, or None. Headers the sender could have written never count |
 | `api.locate(message_id, account)` | The current ID of the email with this Message-ID in Sent, Inbox or Archive, or "" |

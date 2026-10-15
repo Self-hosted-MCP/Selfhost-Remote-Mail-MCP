@@ -32,7 +32,8 @@ Calendars that use **CalDAV** with an app password:
 
 1. On the settings page, open the **Add-ons** tab and press **Set up** next to **Calendar**.
 2. Enter the server address, your login and an **app password**, and your time zone. Press **Save**.
-3. Press **Turn on**, then start a new chat in your AI app.
+3. Press **Turn on**, then **Test connection**: it says which calendar it uses and how many events are coming up.
+4. Start a new chat in your AI app.
 
 It needs the Python package `caldav` from the add-on extras; the Docker image has it.
 

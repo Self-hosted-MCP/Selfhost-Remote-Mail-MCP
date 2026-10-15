@@ -2670,6 +2670,7 @@ def addon_setup_page(session: dict, name: str) -> HTMLResponse:
                        "has_value": bool(value)})
     row = next((r for r in addon_rows() if r["name"] == name), None) or {"name": name, "about": "", "on": False,
                                                                          "library": False, "in_settings": True}
+    row = {**row, "testable": name in ADDON_TESTS and name in LOADED_ADDONS}
     flash, session["flash"] = session["flash"], None
     return HTMLResponse(pages.addon_setup(session["csrf"], row, fields, flash), headers=pages.HEADERS)
 
@@ -2817,6 +2818,16 @@ def settings_action(provider: "PassphraseOAuth", kind: str, form) -> tuple[str, 
     if kind == "addon_setup":
         name = str(form.get("name", "")).strip()
         fields = addon_fields(name) if name in library_addons() or name in LOADED_ADDONS else []
+        if action == "test":
+            test = ADDON_TESTS.get(name)
+            if test is None or name not in LOADED_ADDONS:
+                return "error", T_("Turn {name} on first, then test it.", name=name)
+            try:
+                return "ok", str(test())[:400]
+            except ToolError as exc:
+                return "error", str(exc)[:400]
+            except Exception as exc:
+                return "error", T_("The test failed ({reason}).", reason=type(exc).__name__)
         if not fields:
             return "error", T_("There's no add-on called {name}.", name=name)
         prefix, values = addon_prefix(name), {}
@@ -3951,6 +3962,7 @@ def change_setting(setting: str, value: str = "", name: str = "") -> str:
 ADDONS_DIR = Path(os.environ.get("MAIL_ADDONS_DIR") or CONFIG_DIR / "addons").expanduser()
 SENT_COPY_HOOKS: list = []   # add-on functions that may change the copy saved in Sent (never what's sent)
 READ_HOOKS: list = []   # (add-on, function(msg) -> short note or None), shown with each email the AI opens
+ADDON_TESTS: dict = {}   # add-on -> function() -> one line, run by the "Test connection" button on its setup page
 LOADED_ADDONS: dict[str, str] = {}   # name -> one-line description
 ADDON_TOOLS: dict[str, list[str]] = {}   # name -> the tools it added
 ADDON_INFO: dict[str, dict] = {}   # name -> where it came from, whether it sends, which outside hosts it uses
@@ -4084,6 +4096,11 @@ class AddonAPI:
 
     def log(self, text: str) -> None:
         print(f"add-on {self.name}: {text}", file=sys.stderr, flush=True)
+
+    def on_test(self, func) -> None:
+        """func() checks the add-on's connection (to a calendar, a web address ...) and returns one line saying it
+        works, or raises api.ToolError saying what's wrong. Its setup page gets a "Test connection" button."""
+        ADDON_TESTS[self.name] = func
 
     def on_read(self, func) -> None:
         """func(msg) runs on every email the AI opens and may return one short note (or None), shown with that
@@ -4658,6 +4675,7 @@ def unload_addon(name: str) -> None:
         if func in SENT_COPY_HOOKS:
             SENT_COPY_HOOKS.remove(func)
     READ_HOOKS[:] = [(a, f) for a, f in READ_HOOKS if a != name]
+    ADDON_TESTS.pop(name, None)
     LOADED_ADDONS.pop(name, None)
     ADDON_INFO.pop(name, None)
 
