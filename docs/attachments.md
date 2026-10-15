@@ -4,11 +4,11 @@ Your AI can attach files to drafts in five ways:
 
 | Where the file is | Say something like | Works on |
 |---|---|---|
-| **Dropped into the chat** | *"Email this to Sam"* | The web version, in AI apps that can run code (Claude, coding apps). Others give you a link |
+| **Dropped into the chat** | *"Email this to Sam"* | AI apps that connect over the internet and can run code (Claude, coding apps). Others give you a link |
 | In another email | *"Attach the PDF from Sam's email"* or *"Forward this with its attachments"* | Every version |
-| On your computer | *"Attach ~/Desktop/invoice.pdf"* | The computer version only |
+| On your computer | *"Attach ~/Desktop/invoice.pdf"* | AI apps on the same computer (Claude Desktop, Claude Code, Codex ...) |
 | Written by the AI | *"Put the list in a CSV and attach it"* | Every version (up to 2 MB per file) |
-| On your phone or anywhere else | Upload it on the upload page, then *"Attach the photo I just uploaded"* | The web version |
+| On your phone or anywhere else | Upload it on the upload page, then *"Attach the photo I just uploaded"* | Every option (on a computer: `http://localhost:8765/upload`) |
 
 Each email can carry up to **25 MB** of files (`ATTACH_MAX_MB`), which is what most providers accept.
 
@@ -72,7 +72,7 @@ The AI can also see the list of waiting files, so you can ask *"Which files did 
 
 Up to 20 files can wait at once. Delete some to upload more.
 
-Files on the server are stored encrypted, with the same key as the mailbox passwords (`MAIL_SECRET_KEY`). The page only exists on the web version, behind your passphrase. `UPLOAD_PAGE=off` removes it.
+Files on the server are stored encrypted, with the same key as the mailbox passwords (`MAIL_SECRET_KEY`). The page is behind your passphrase. `UPLOAD_PAGE=off` removes it.
 
 ## Which files are allowed
 
@@ -121,7 +121,7 @@ On the upload page, a suspect file gets a yellow **Check this** label with the r
 
 ## Files from your computer
 
-This only works when the server runs on your own computer (`stdio`), since a server online can't see your files. To keep a tricked AI from sending your private files:
+This only works for AI apps on your own computer (`stdio`), since a server online can't see your files. The server running in the background refuses it too, because it can be reached from a browser. To keep a tricked AI from sending your private files:
 
 - Only files in your home folder are allowed. Set `ATTACH_FOLDERS` to allow other folders, or fewer: `ATTACH_FOLDERS=~/Documents,~/Desktop`.
 - Hidden files and folders (`.ssh`, `.env`, `.config` ...) are never attached, nor anything in the server's own folders.

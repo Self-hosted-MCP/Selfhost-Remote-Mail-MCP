@@ -300,7 +300,7 @@
  "The device log is turned off in the server settings (DEVICE_LOG=off).": "O registro de dispositivos está desativado nas configurações do servidor (DEVICE_LOG=off).",
  "Turn {name} on first, then test it.": "Ative {name} primeiro e depois teste.",
  "{value} isn't a time zone: pick one from the list.": "{value} não é um fuso horário: escolha um da lista.",
- "{name} is on. Start a new chat in your AI app to use it. Some add-ons need settings first: see Details.": "{name} está ativado. Comece um novo chat no seu app de IA para usá-lo. Alguns complementos precisam de configurações antes: veja Detalhes.",
+ "{name} is on. Start a new chat in your AI app to use it (an AI app on this computer: restart it first). Some add-ons need settings first: see Details.": "{name} está ativado. Comece um novo chat no seu app de IA para usá-lo (um app de IA neste computador: reinicie-o antes). Alguns complementos precisam de configurações antes: veja Detalhes.",
  "{name} is off.": "{name} está desativado.",
  "There are two SPF records; there must be only one. Merge them into one.": "Há dois registros SPF; só pode haver um. Junte-os em um só.",
  "Set to p=none: fake emails using your name are only watched, not stopped. Once SPF and DKIM are good, change it to p=quarantine.": "Definido como p=none: e-mails falsos usando seu nome são apenas observados, não bloqueados. Quando SPF e DKIM estiverem corretos, mude para p=quarantine.",

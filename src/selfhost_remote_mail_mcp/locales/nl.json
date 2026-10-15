@@ -300,7 +300,7 @@
  "The device log is turned off in the server settings (DEVICE_LOG=off).": "Het apparaatlogboek staat uit in de serverinstellingen (DEVICE_LOG=off).",
  "Turn {name} on first, then test it.": "Zet {name} eerst aan en test het daarna.",
  "{value} isn't a time zone: pick one from the list.": "{value} is geen tijdzone: kies er een uit de lijst.",
- "{name} is on. Start a new chat in your AI app to use it. Some add-ons need settings first: see Details.": "{name} staat aan. Start een nieuwe chat in je AI-app om het te gebruiken. Sommige add-ons hebben eerst instellingen nodig: zie Details.",
+ "{name} is on. Start a new chat in your AI app to use it (an AI app on this computer: restart it first). Some add-ons need settings first: see Details.": "{name} staat aan. Start een nieuwe chat in je AI-app om het te gebruiken (een AI-app op deze computer: eerst herstarten). Sommige add-ons hebben eerst instellingen nodig: zie Details.",
  "{name} is off.": "{name} staat uit.",
  "There are two SPF records; there must be only one. Merge them into one.": "Er zijn twee SPF-records; er mag er maar één zijn. Voeg ze samen tot één.",
  "Set to p=none: fake emails using your name are only watched, not stopped. Once SPF and DKIM are good, change it to p=quarantine.": "Ingesteld op p=none: nepmails op jouw naam worden alleen in de gaten gehouden, niet tegengehouden. Zodra SPF en DKIM in orde zijn, verander je het in p=quarantine.",

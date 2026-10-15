@@ -59,7 +59,7 @@ No. Everything stays in your mailbox. The server keeps only a few small files: s
 <details>
 <summary><b>What happens if my computer is off?</b></summary>
 
-With option 1, the AI app on that computer can't use your mail while it's off, scheduled emails wait, and phone access stops. Scheduled emails more than 2 hours late are held, not sent, so nothing goes out at a strange time. Options 2 and 3 run all the time.
+With option 1, the AI app on that computer can't use your mail while it's off, scheduled emails and add-ons wait, the settings page is closed and phone access stops. Scheduled emails more than 2 hours late are held, not sent, so nothing goes out at a strange time. Options 2 and 3 run all the time.
 
 </details>
 
@@ -78,16 +78,54 @@ Yes. Each app connects separately: Claude on your phone and Codex on your comput
 </details>
 
 <details>
+<summary><b>What are my server's links?</b></summary>
+
+Your server has one address. Every link is that address with something added at the end.
+
+**Your address**, by where it runs:
+
+| Where it runs | Your address |
+|---|---|
+| Your computer | `http://localhost:8765`. It only opens on that computer |
+| Your computer, reached from your phone | The tunnel's address, like `https://your-computer.your-tailnet.ts.net` |
+| A hosting company | The address it gives you, like `https://your-mail.up.railway.app` |
+| Your own server or VPS | Your domain, like `https://mail.yourdomain.com` |
+
+It's the `PUBLIC_URL` setting, if you set one.
+
+**What to add to the end:**
+
+| Add | What opens |
+|---|---|
+| `/mcp` | The link you paste into your AI app |
+| `/settings` | The settings page: mailboxes, apps, add-ons, privacy, devices |
+| `/settings/addon/caldav` | One add-on's setup page (here the Calendar's) |
+| `/upload` | The upload page, for files to attach |
+| `/upload/...` | A one-time link your AI app makes for a file. It works once, for 10 minutes |
+| `/health` | Shows `ok` when the server runs |
+| `/login` | You never open it yourself. Your AI app sends you there to type your passphrase |
+
+**One full example:** with `mail.yourdomain.com`, the settings page is `https://mail.yourdomain.com/settings`, and the link for your AI app is `https://mail.yourdomain.com/mcp`.
+
+Easy to mix up:
+
+- `localhost` only works on the computer the server runs on, never from your phone.
+- `PUBLIC_URL` is the address alone, without `/mcp` at the end.
+- An old one-time `/upload/...` link stops working. Ask your AI app for a new one.
+
+</details>
+
+<details>
 <summary><b>How do I open the settings page?</b></summary>
 
-In the web version, go to your server's address with `/settings` on the end, like `https://mail.example.com/settings`, and type your passphrase. On your own computer with `serve`, it's `http://localhost:8765/settings`. The computer-only version (`stdio`) has no page. Use `selfhost-remote-mail-mcp setup` or the settings file.
+Go to your server's address with `/settings` on the end, like `https://mail.example.com/settings`, and type your passphrase. On your own computer it's `http://localhost:8765/settings`. If it doesn't open there, run `selfhost-remote-mail-mcp service status`. All the other links are in the question above.
 
 </details>
 
 <details>
 <summary><b>How do I send a photo or PDF from my phone?</b></summary>
 
-Open `https://your-address/upload`, choose the file and press **Upload**. Then tell your AI app: *"Attach the file I just uploaded to the email to Sam."* More in [attachments.md](attachments.md).
+Open `https://your-address/upload` (on a computer: `http://localhost:8765/upload`), choose the file and press **Upload**. Then tell your AI app: *"Attach the file I just uploaded to the email to Sam."* More in [attachments.md](attachments.md).
 
 </details>
 
@@ -115,7 +153,7 @@ Yes. The login, settings and upload pages come in 20 languages and follow your b
 <details>
 <summary><b>Can I drop a file into the chat and have it emailed?</b></summary>
 
-Yes, on the web version, in AI apps that can run code. Drop it in and say *"email this to Sam"*. Your AI app uploads it to your server with a one-time link and attaches it. Some apps need their code tool turned on first (in Claude: **Settings → Capabilities → Code execution and file creation**). If your app can't upload, it gives you the link to pick the file yourself. See [attachments.md](attachments.md#drop-a-file-in-the-chat).
+Yes, in AI apps that connect over the internet and can run code. Drop it in and say *"email this to Sam"*. Your AI app uploads it to your server with a one-time link and attaches it. AI apps on your own computer attach the file straight from its folder instead. Some apps need their code tool turned on first (in Claude: **Settings → Capabilities → Code execution and file creation**). If your app can't upload, it gives you the link to pick the file yourself. See [attachments.md](attachments.md#drop-a-file-in-the-chat).
 
 </details>
 

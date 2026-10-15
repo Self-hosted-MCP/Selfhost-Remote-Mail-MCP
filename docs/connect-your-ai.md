@@ -2,7 +2,7 @@
 
 There are two ways an AI app can reach this server:
 
-- **On the same computer (`stdio`).** The app starts the server itself. No login and no web address needed. You need [option 1](setup-computer.md) installed and `setup` done.
+- **On the same computer (`stdio`).** The app starts its own small copy of the server. No login and no web address needed. You need [option 1](setup-computer.md) installed and `setup` done. It uses the same settings and mailboxes as the server running in the background, which gives you the settings page at `http://localhost:8765/settings`.
 - **Over the internet (`serve`).** The app connects to `https://your-address/mcp` and you log in once with your passphrase. You need [option 2](setup-hosting.md), [option 3](setup-own-server.md), or option 1 with the phone extra.
 
 ```mermaid

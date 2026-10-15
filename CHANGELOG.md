@@ -2,6 +2,16 @@
 
 All notable changes to this project. Versions follow [semantic versioning](https://semver.org).
 
+## 0.17.0 (2026-10-15)
+
+- **The full version on every computer.** `setup` now asks for a passphrase, starts the server in the background, makes it start by itself when you log in (Mac and Linux), and opens your settings page at `http://localhost:8765/settings`. You add your mailbox there, the same way as on a server. Every computer now gets the settings page, the upload page, scheduled send and add-ons that work in the background. On Windows, start it by hand for now.
+- **Already using it on a computer?** Run `selfhost-remote-mail-mcp service install` once. Your mailboxes and settings stay as they are, and your AI app keeps connecting the same way.
+- **New `service` command:** `install`, `start`, `stop`, `restart`, `status` and `remove`. `update` restarts the background server by itself.
+- **Another copy on a server?** setup asks whether another copy already uses the same mailboxes. If so, this one leaves scheduled emails and background add-ons to the other copy, so nothing happens twice (`SCHEDULED_SEND=off`, and the new `ADDON_JOBS=off`).
+- **The AI on your computer** now names the local settings and upload pages, and the add-on setup links.
+- `setup --terminal` still asks for a mailbox in the terminal and can keep its password in your computer's keychain.
+- FAQ: **What are my server's links?** Your address on each option, and what to add at the end.
+
 ## 0.16.2 (2026-10-15)
 
 - **Safer when two copies share one computer:** the web version and the copy your AI app starts can now change the same settings at the same moment without one undoing the other (a switch, an add-on, a name, the change list). Each save uses its own temporary file, and two copies starting for the first time can no longer each make a different secret key.

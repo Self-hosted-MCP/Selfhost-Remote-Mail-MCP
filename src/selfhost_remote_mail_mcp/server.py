@@ -11,11 +11,13 @@ Sending is a separate tool (send_email, schedule_send) so your AI app can ask yo
 before every send.
 
 Commands (see `selfhost-remote-mail-mcp help`):
-    setup           answer a few questions, test the login, write the settings file
+    setup           choose a passphrase and start the web version, so you add mailboxes on its settings page
+                    (http://localhost:8765/settings); setup --terminal asks for a mailbox here instead
+    service         the web version in the background: install, start, stop, restart, status or remove
     check           test the logins and your domain's anti-spam records (sends nothing)
     stdio           run for one AI app on this computer (Claude Desktop, Claude Code, Codex, ...)
     serve           run as a web server with a passphrase login (phone, claude.ai, ChatGPT, ...)
-    set-passphrase  choose the login passphrase for serve (only its hash is stored)
+    set-passphrase  choose the passphrase for the settings page and logins (only its hash is stored)
     update          install the newest official release (computer version, needs uv)
     version         show the installed version
     addons          load the add-ons in MAIL_ADDONS and list their tools (a check; starts nothing)
@@ -115,7 +117,7 @@ CRLF = POLICY.clone(linesep="\r\n")
 
 SETTINGS = ("MAIL_ADDRESS", "MAIL_NAME", "MAIL_USERNAME", "SMTP_USERNAME", "MAIL_PASSWORD", "IMAP_HOST", "IMAP_PORT", "SMTP_HOST",
             "SMTP_PORT", "PUBLIC_URL", "HOST", "PORT", "ALLOWED_REDIRECT_HOSTS", "SEND_DAILY_LIMIT",
-            "SEND_MINUTE_LIMIT", "SCHEDULED_SEND", "LOGIN_HASH", "LOGIN_PASSPHRASE", "MAIL_SIGNATURE",
+            "SEND_MINUTE_LIMIT", "SCHEDULED_SEND", "ADDON_JOBS", "LOGIN_HASH", "LOGIN_PASSPHRASE", "MAIL_SIGNATURE",
             "MAIL_READ_ONLY", "SEND_ALLOWED_RECIPIENTS", "SEND_LOG_DETAILS", "MAIL_MODE", "MAX_MAILBOXES",
             "MAIL_SECRET_KEY", "SETTINGS_PAGE", "MAIL_LABEL", "UPDATE_CHECK",
             "ATTACH_MAX_MB", "ATTACH_FOLDERS", "UPLOAD_PAGE", "DEVICE_LOG",
@@ -2884,8 +2886,9 @@ def settings_action(provider: "PassphraseOAuth", kind: str, form) -> tuple[str, 
                         return "error", T_("{name} couldn't be turned on: {reason}", name=name, reason=str(exc))
                 set_page_addon(name, True)
                 start_jobs()
-                return "ok", T_("{name} is on. Start a new chat in your AI app to use it. Some add-ons need "
-                                "settings first: see Details.", name=name)
+                return "ok", T_("{name} is on. Start a new chat in your AI app to use it (an AI app on this "
+                                "computer: restart it first). Some add-ons need settings first: see Details.",
+                                name=name)
             if action == "off":
                 set_page_addon(name, False)
                 unload_addon(name)
@@ -3237,7 +3240,7 @@ def accounts() -> str:
     news = update_line()
     if news:
         lines.append(news)
-    base = getattr(PROVIDER, "public_url", "")   # web version only
+    base = pages_url(cfg)
     if base and is_on(cfg.get("SETTINGS_PAGE") or "on"):
         lines.append(f"Settings page for the user: {base}/settings"
                      + (f" (files to attach: {base}/upload)" if is_on(cfg.get("UPLOAD_PAGE") or "on") else "")
@@ -3838,8 +3841,11 @@ def upload_link(file_name: str = "", size_mb: float = 0) -> str:
     file_name and size_mb (if you know them) let the server refuse a file that can't be sent before you upload."""
     cfg = read_env()
     if PROVIDER is None:
+        page = pages_url(cfg)
         raise ToolError("Upload links are for the web version. On this computer, attach the file by its path "
-                        "(draft attach_path).")
+                        "(draft attach_path)" + (f", or ask the user to upload it on {page}/upload and tell you "
+                                                 "its name" if page and is_on(cfg.get("UPLOAD_PAGE") or "on") else "")
+                        + ".")
     if not upload_links_on():
         raise ToolError("Upload links are turned off on this server. Ask the user to upload the file on "
                         f"{PROVIDER.public_url}/upload and tell you its name.")
@@ -3891,7 +3897,7 @@ def settings() -> str:
     lines.append("- uploaded files (may be deleted): " + (", ".join(waiting) if waiting else "none"))
     library = library_addons()
     if library or LOADED_ADDONS:
-        base = f"{public_url(cfg)}/settings/addon/" if MODE == "serve" else ""
+        base = f"{pages_url(cfg)}/settings/addon/" if pages_url(cfg) else ""
         lines += ["", "Add-ons. You can't turn them on or set them up: give the user the setup link, where they "
                       "turn it on and fill in what it needs" + ("" if base else " (on this computer: the settings "
                                                                  "file, see each add-on's page in the add-on library)")
@@ -4068,9 +4074,10 @@ class AddonAPI:
         return value or default
 
     def setup_link(self) -> str:
-        """The address of this add-on's setup page, to give the user when a setting is missing ("" on the
-        computer version, which has no web pages)."""
-        return f"{public_url(read_env())}/settings/addon/{self.name}" if MODE == "serve" else ""
+        """The address of this add-on's setup page, to give the user when a setting is missing ("" when no
+        web version runs, so there are no pages)."""
+        base = pages_url()
+        return f"{base}/settings/addon/{self.name}" if base else ""
 
     def internal_header(self, name: str) -> None:
         """A header the add-on puts on drafts for its own bookkeeping. It's removed before sending."""
@@ -4717,9 +4724,10 @@ def unload_addon(name: str) -> None:
 
 
 def start_jobs() -> None:
-    """Starts the background-job thread once, on the web version, when some add-on has a job."""
+    """Starts the background-job thread once, on the web version, when some add-on has a job. ADDON_JOBS=off
+    (a second copy that shares the mailboxes with another one) runs none."""
     global _jobs_started
-    if MODE == "serve" and ADDON_JOBS and not _jobs_started:
+    if MODE == "serve" and ADDON_JOBS and not _jobs_started and is_on(read_env().get("ADDON_JOBS") or "on"):
         _jobs_started = True
         threading.Thread(target=jobs_loop, name="addon-jobs", daemon=True).start()
 
@@ -5063,7 +5071,9 @@ def check() -> None:
         sys.exit("Some logins failed. See docs/troubleshooting.md.")
 
 
-def setup() -> None:
+def setup_mailbox() -> None:
+    """`setup --terminal`: asks for a mailbox here instead of on the settings page, and keeps its password in
+    the system keychain."""
     cfg = read_env()
     existing = settings_accounts(cfg)
     print(f"Settings will be saved in {ENV_FILE} (only you can read it).\n")
@@ -5137,9 +5147,235 @@ def setup() -> None:
               pre + "LABEL": account.label}
     write_settings(values, drop=tuple(k for k, v in values.items() if not v))
     TEMPLATES.mkdir(parents=True, exist_ok=True)
-    print(f"\nSaved as mailbox {slot}. Optional extras in {CONFIG_DIR}: signature.html (or signature.md) and templates/*.md.")
-    print("Add another mailbox: run setup again. Next: connect your AI app. See docs/connect-your-ai.md, "
-          f"or for Claude Code run:\n  claude mcp add -s user mail -- {APP} stdio")
+    print(f"\nSaved as mailbox {slot}. Optional extras in {CONFIG_DIR}: signature.html (or signature.md) and templates/*.md.\n")
+
+
+def setup(args: list[str]) -> None:
+    """The `setup` command: the web version on this computer, so the settings page is where everything else
+    happens (mailboxes, add-ons, privacy). --terminal also asks for a mailbox here first."""
+    if "--terminal" in args:
+        setup_mailbox()
+    secret_box()   # the key exists before two copies could each make one
+    cfg = read_env()
+    if not (cfg.get("LOGIN_HASH") or len(cfg.get("LOGIN_PASSPHRASE", "")) >= 12):
+        print("Choose a passphrase. It locks your settings page, and AI apps that connect over the internet "
+              "ask for it once. Save it in your password manager.")
+        set_passphrase()
+    if not cfg.get("SCHEDULED_SEND") and not cfg.get("ADDON_JOBS"):
+        other = ask("Does another copy of this server already use the same mailboxes (on a server, a hosting "
+                    "company or in Docker)? (y/n)", "n").lower().startswith("y")
+        if other:   # that copy sends the scheduled emails and runs the add-ons; doing it here too would double them
+            write_settings({"SCHEDULED_SEND": "off", "ADDON_JOBS": "off"})
+            print("Then the other copy sends scheduled emails and runs the add-ons; this one won't, so nothing "
+                  "happens twice (SCHEDULED_SEND=off, ADDON_JOBS=off in the settings file).")
+        else:
+            write_settings({"SCHEDULED_SEND": "on"})
+    running = service_install()
+    url = local_url()
+    if running:
+        print(f"\nYour settings page: {url}/settings (type your passphrase).")
+        try:
+            import webbrowser
+            webbrowser.open(f"{url}/settings")
+        except Exception:
+            pass
+    else:
+        print(f"\nStart it with: {APP} serve   Then open {url}/settings")
+    print("Add your mailbox on the settings page" + (" (or run: setup --terminal)" if "--terminal" not in args else "")
+          + ". Then connect your AI app: see docs/connect-your-ai.md, or for Claude Code run:\n"
+          f"  claude mcp add -s user mail -- {APP} stdio")
+
+
+# ---------------------------------------------------------------- the web version in the background (computer)
+
+SERVICE_LABEL = "com.selfhost-remote-mail-mcp"   # the name the Mac and Linux steps in the docs use too
+
+
+def local_url(cfg: dict | None = None) -> str:
+    return f"http://localhost:{int((cfg or read_env()).get('PORT') or 8765)}"
+
+
+def pages_url(cfg: dict | None = None) -> str:
+    """Where the user opens the settings and upload pages: this server's address on the web version; for an AI
+    app's copy on this computer, the web version running in the background, if it answers. "" when none runs."""
+    cfg = cfg or read_env()
+    if PROVIDER is not None or MODE == "serve":   # this is the web version
+        return getattr(PROVIDER, "public_url", "") or public_url(cfg)
+    return local_url(cfg) if local_health(int(cfg.get("PORT") or 8765), timeout=0.5) else ""
+
+
+def local_health(port: int, timeout: float = 1.0) -> bool:
+    """True when a copy of this server answers on this computer's port."""
+    try:
+        with urllib.request.urlopen(f"http://127.0.0.1:{port}/health", timeout=timeout) as resp:
+            return resp.read(10).strip() == b"ok"
+    except Exception:
+        return False
+
+
+def port_free(port: int) -> bool:
+    import socket
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+        if os.name != "nt":   # a port left in TIME_WAIT by a server that just stopped is free for the next one
+            sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        try:
+            sock.bind(("127.0.0.1", port))
+            return True
+        except OSError:
+            return False
+
+
+def service_file() -> Path | None:
+    """Where the start-at-login file goes: a LaunchAgent on a Mac, a user service on Linux. None elsewhere."""
+    if sys.platform == "darwin":
+        return Path.home() / "Library" / "LaunchAgents" / f"{SERVICE_LABEL}.plist"
+    if sys.platform.startswith("linux"):
+        return Path.home() / ".config" / "systemd" / "user" / f"{APP}.service"
+    return None
+
+
+def service_command() -> list[str]:
+    import shutil
+    exe = shutil.which(APP)
+    return [exe, "serve"] if exe else [sys.executable, "-m", "selfhost_remote_mail_mcp", "serve"]
+
+
+def service_env() -> dict[str, str]:
+    """The folders this copy uses, so the background one uses the same ones. No secrets: those stay in the
+    settings file and the keychain."""
+    return {k: os.environ[k] for k in ("MAIL_CONFIG_DIR", "DATA_DIR", "MAIL_ENV_FILE") if os.environ.get(k)}
+
+
+def _run(*cmd: str) -> int:
+    import subprocess
+    return subprocess.run(list(cmd), capture_output=True).returncode
+
+
+def service_installed() -> bool:
+    path = service_file()
+    return bool(path and path.exists())
+
+
+def service_write() -> Path:
+    path = service_file()
+    command, env = service_command(), service_env()
+    if sys.platform == "darwin":
+        import plistlib
+        log = Path.home() / "Library" / "Logs" / f"{APP}.log"
+        text = plistlib.dumps({"Label": SERVICE_LABEL, "ProgramArguments": command, "RunAtLoad": True,
+                               "KeepAlive": {"SuccessfulExit": False}, "ThrottleInterval": 30,
+                               "StandardOutPath": str(log), "StandardErrorPath": str(log),
+                               **({"EnvironmentVariables": env} if env else {})}).decode()
+    else:
+        quote = lambda part: '"' + part.replace("\\", "\\\\").replace('"', '\\"') + '"'
+        text = "\n".join(["[Unit]", "Description=Selfhost-Remote-Mail-MCP web version", "", "[Service]",
+                          "ExecStart=" + " ".join(quote(p) for p in command), "Restart=on-failure", "RestartSec=30",
+                          *[f"Environment={quote(f'{k}={v}')}" for k, v in env.items()],
+                          "", "[Install]", "WantedBy=default.target", ""])
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(text)
+    return path
+
+
+def service_start() -> bool:
+    if sys.platform == "darwin":
+        domain = f"gui/{os.getuid()}"
+        if _run("launchctl", "print", f"{domain}/{SERVICE_LABEL}") == 0:
+            return _run("launchctl", "kickstart", "-k", f"{domain}/{SERVICE_LABEL}") == 0
+        return _run("launchctl", "bootstrap", domain, str(service_file())) == 0
+    _run("systemctl", "--user", "daemon-reload")
+    return _run("systemctl", "--user", "enable", "--now", f"{APP}.service") == 0 and \
+        _run("systemctl", "--user", "restart", f"{APP}.service") == 0
+
+
+def service_stop() -> bool:
+    """Stops it and waits until it no longer answers, so its port is free for whatever comes next."""
+    if sys.platform == "darwin":
+        done = _run("launchctl", "bootout", f"gui/{os.getuid()}/{SERVICE_LABEL}") == 0
+    else:
+        done = _run("systemctl", "--user", "stop", f"{APP}.service") == 0
+    port, end = int(read_env().get("PORT") or 8765), time.time() + 10
+    while local_health(port, timeout=0.5) and time.time() < end:
+        time.sleep(0.3)
+    return done
+
+
+def wait_for_server(port: int, seconds: float = 20) -> bool:
+    end = time.time() + seconds
+    while time.time() < end:
+        if local_health(port):
+            return True
+        time.sleep(0.5)
+    return False
+
+
+def service_install() -> bool:
+    """Makes the web version start by itself at login and starts it now. Returns True once it answers."""
+    cfg = read_env()
+    if service_file() is None:
+        print("On this system, start-at-login isn't automatic yet. Follow 'Keep it running in the background' "
+              "in docs/setup-computer.md.")
+        return False
+    if not (cfg.get("LOGIN_HASH") or len(cfg.get("LOGIN_PASSPHRASE", "")) >= 12):
+        print(f"Choose a passphrase first: {APP} set-passphrase")   # without one the web version won't start
+        return False
+    port = int(cfg.get("PORT") or 8765)
+    if not service_installed() and not port_free(port):
+        if local_health(port):
+            print(f"Something already answers like this server on port {port} (Docker, or one you started). "
+                  "Using a different port for this one.")
+        new = next((p for p in range(8766, 8800) if port_free(p)), None)
+        if new is None:
+            print("No free port between 8766 and 8799. Set PORT in the settings file and run setup again.")
+            return False
+        write_settings({"PORT": str(new)})
+        print(f"Port {port} is taken, so this one uses {new}.")
+        port = new
+    path = service_write()
+    if not service_start():
+        print(f"Couldn't start it in the background ({path}). Start it by hand: {APP} serve")
+        return False
+    print(f"The web version starts by itself when you log in ({path}).")
+    if not wait_for_server(port):
+        print(f"It doesn't answer yet. Check with: {APP} service status")
+        return False
+    return True
+
+
+def run_service(args: list[str]) -> None:
+    """The `service` command: install, start, stop, restart, status or remove the web version in the background."""
+    what = (args or ["status"])[0]
+    cfg = read_env()
+    port, url = int(cfg.get("PORT") or 8765), local_url(cfg)
+    if what not in ("install", "start", "stop", "restart", "status", "remove"):
+        sys.exit(f"Use: {APP} service install|start|stop|restart|status|remove")
+    if what == "install":
+        if service_install():
+            print(f"Running. Settings page: {local_url()}/settings")   # read again: install may change the port
+        return
+    if service_file() is None:
+        sys.exit("On this system it isn't automatic yet: see 'Keep it running in the background' in docs/setup-computer.md.")
+    if what != "status" and not service_installed():
+        sys.exit(f"It isn't installed. Run: {APP} service install")
+    if what in ("start", "restart"):
+        if not service_start():
+            sys.exit(f"Couldn't start it. The log: {Path.home() / 'Library' / 'Logs' / (APP + '.log')}"
+                     if sys.platform == "darwin" else f"Couldn't start it. The log: journalctl --user -u {APP}")
+        print(f"Running at {url}" if wait_for_server(port) else f"Started, but it doesn't answer yet at {url}")
+    elif what == "stop":
+        service_stop()
+        print("Stopped. It starts again at your next login (remove stops that).")
+    elif what == "remove":
+        service_stop()
+        if sys.platform.startswith("linux"):
+            _run("systemctl", "--user", "disable", f"{APP}.service")
+        service_file().unlink(missing_ok=True)
+        if sys.platform.startswith("linux"):
+            _run("systemctl", "--user", "daemon-reload")
+        print("Removed. The web version no longer starts by itself. Your settings and mailboxes are kept.")
+    else:
+        print(("Installed, starts at login. " if service_installed() else "Not installed. ")
+              + (f"Running at {url}" if local_health(port) else "Not running."))
 
 
 # ---------------------------------------------------------------- updates (opt-in, official releases only)
@@ -5228,7 +5464,9 @@ def run_update() -> None:
     result = subprocess.run([uv, "tool", "install", "--force", source])
     if result.returncode:
         sys.exit("The update failed; the version you had is still installed.")
-    print(f"Updated to {tag}. Restart your AI app, or the web version (serve), to use it. What's new: {latest['url']}")
+    restarted = service_installed() and service_start()
+    print(f"Updated to {tag}. " + ("The web version restarted with it. " if restarted else "")
+          + f"Restart your AI app to use it. What's new: {latest['url']}")
 
 
 HELP = __doc__
@@ -5238,7 +5476,9 @@ def main() -> None:
     if MODE == "set-passphrase":
         set_passphrase()
     elif MODE == "setup":
-        setup()
+        setup(sys.argv[2:])
+    elif MODE == "service":
+        run_service(sys.argv[2:])
     elif MODE == "update":
         run_update()
     elif MODE == "version":

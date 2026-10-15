@@ -300,7 +300,7 @@
  "The device log is turned off in the server settings (DEVICE_LOG=off).": "Log perangkat dinonaktifkan di setelan server (DEVICE_LOG=off).",
  "Turn {name} on first, then test it.": "Aktifkan {name} dulu, lalu uji.",
  "{value} isn't a time zone: pick one from the list.": "{value} bukan zona waktu: pilih salah satu dari daftar.",
- "{name} is on. Start a new chat in your AI app to use it. Some add-ons need settings first: see Details.": "{name} aktif. Mulai chat baru di aplikasi AI Anda untuk menggunakannya. Beberapa add-on perlu disetel dulu: lihat Detail.",
+ "{name} is on. Start a new chat in your AI app to use it (an AI app on this computer: restart it first). Some add-ons need settings first: see Details.": "{name} aktif. Mulai chat baru di aplikasi AI Anda untuk menggunakannya (aplikasi AI di komputer ini: mulai ulang dulu). Beberapa add-on perlu disetel dulu: lihat Detail.",
  "{name} is off.": "{name} nonaktif.",
  "There are two SPF records; there must be only one. Merge them into one.": "Ada dua data SPF; seharusnya hanya satu. Gabungkan menjadi satu.",
  "Set to p=none: fake emails using your name are only watched, not stopped. Once SPF and DKIM are good, change it to p=quarantine.": "Disetel ke p=none: email palsu yang memakai nama Anda hanya dipantau, tidak dihentikan. Setelah SPF dan DKIM baik, ubah ke p=quarantine.",

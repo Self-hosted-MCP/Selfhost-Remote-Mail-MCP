@@ -29,7 +29,7 @@ Give mailboxes short names like **Work**, **Personal** or **Archive 2019**. You 
 
 <p align="center"><img src="images/settings-page.png" alt="The settings page lists each mailbox with its name, address and mode" width="520"></p>
 
-**1. The settings page** (web version only, the easiest). Open `https://your-address/settings` and type your passphrase. You can then:
+**1. The settings page** (the easiest). Open `https://your-address/settings`, or on a computer `http://localhost:8765/settings`, and type your passphrase. You can then:
 
 - add a mailbox: the server names fill in for known providers, the login is tested before it's saved, and you pick a mode and a name,
 - test any mailbox's login (nothing is sent),
@@ -49,7 +49,7 @@ The settings page has a bar at the top with its sections:
 | **AI changes** | Settings an AI app changed because you asked, in the last 30 days |
 | **About** | Your version, the add-ons that are on, update status and what's new |
 
-**2. The setup command** (on a computer). Run `selfhost-remote-mail-mcp setup` again and choose **add**. It asks for the address, a name, the mode and the password, and tests the login.
+**2. The setup command** (on a computer). Run `selfhost-remote-mail-mcp setup --terminal` and choose **add**. It asks for the address, a name, the mode and the password, and tests the login.
 
 **3. The settings file or hosting variables.** Mailbox 1 uses the `MAIL_*` settings. Number the others:
 

@@ -97,7 +97,7 @@ The AI always tells you what it changed, and the settings page lists every chang
 
 **schedule_send** saves a send time on a draft, for example `send_at="2026-10-15T09:00:00+01:00"`. The time must include a time zone, and your AI should ask you if it isn't sure. Every minute, the web server (`serve`) sends what is due. Things to know:
 
-- **Only `serve` sends scheduled emails.** On option 1 without the web server, nothing goes out by itself.
+- **Only `serve` sends scheduled emails.** On option 1, that's the server `setup` runs in the background, so scheduled emails go out while your computer is on.
 - **Change the time** by scheduling again. **Cancel** with `cancel=true`. The draft stays.
 - **Late:** if the server was down and an email is more than 2 hours late, it is **held**, not sent, and `scheduled` shows why. Schedule it again or send it now.
 - **Failure:** if sending fails (limit reached, mail server error), the email is held with the reason. It is not retried over and over.

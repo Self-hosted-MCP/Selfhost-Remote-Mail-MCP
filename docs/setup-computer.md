@@ -1,11 +1,11 @@
 # Option 1: run it on your computer
 
-Free, about 5 minutes. Your AI app on the same computer starts the server by itself whenever it needs it. Phone access is an optional extra at the end.
+Free, about 5 minutes. You get the same settings page as on a server, at `http://localhost:8765/settings`, and you add your mailbox there. Phone access is an optional extra at the end.
 
 ```mermaid
 flowchart LR
     A["Step 1<br/>Install uv"] --> B["Step 2<br/>Install the server"] --> C["Step 3<br/>App password"]
-    C --> D["Step 4<br/>Run setup"] --> E["Step 5<br/>Connect your AI app"] --> F["Step 6<br/>Make it safer"]
+    C --> D["Step 4<br/>Run setup"] --> E["Step 5<br/>Add your mailbox"] --> F["Step 6<br/>Connect your AI app"] --> G["Step 7<br/>Make it safer"]
 ```
 
 ## Before you start
@@ -59,39 +59,52 @@ This adds one command, `selfhost-remote-mail-mcp`. To check, run `selfhost-remot
 selfhost-remote-mail-mcp setup
 ```
 
-It asks for:
+It asks for two things:
 
-1. your email address,
-2. your name as people should see it,
-3. the server names, filled in for you for well-known providers,
-4. your login name, only if it isn't your email address,
-5. a short name for the mailbox, like *Work* (Enter to skip),
-6. your password or app password (hidden while you type).
+1. **A passphrase**, 12 or more characters. It locks your settings page. Only a scrambled version (hash) is saved. Save it in your password manager (Apple Passwords, Google Password Manager, 1Password ...).
+2. **Whether another copy of this server already uses the same mailboxes**, for example on a server or in Docker. Most people answer no. If you answer yes, this copy leaves scheduled emails and add-ons to the other one, so nothing happens twice.
 
-From the second mailbox on, it also asks what the AI may do there: `full`, `draft` (the suggested answer) or `read`.
-
-Then it tests the login and asks: **"Keep the password in your system keychain (encrypted) instead of the settings file?"** Press Enter for yes. Your Mac, Windows or Linux computer then keeps it encrypted, and the settings file holds no password at all. (On a Mac, the first time the server reads it, macOS may ask whether it may use the keychain: choose **Always Allow**.)
-
-Everything else is saved in one private folder. Nothing is sent during the test. When it works, you see:
+Then setup starts the server in the background, makes it start by itself every time you log in, and opens your settings page in the browser:
 
 ```
-Testing the login (nothing is sent)...
-Logins work.
+The web version starts by itself when you log in (/Users/you/Library/LaunchAgents/com.selfhost-remote-mail-mcp.plist).
 
-Saved as mailbox 1. Optional extras in /Users/you/.config/selfhost-remote-mail-mcp: signature.html (or signature.md) and templates/*.md.
-Add another mailbox: run setup again. Next: connect your AI app. ...
+Your settings page: http://localhost:8765/settings (type your passphrase).
+Add your mailbox on the settings page (or run: setup --terminal). Then connect your AI app: ...
 ```
 
-If the login fails, setup tells you what went wrong and asks whether to save anyway. The usual fix is an app password; see [troubleshooting.md](troubleshooting.md).
+If port 8765 is already taken (for example by Docker), setup picks the next free one and tells you, like `http://localhost:8766`.
 
-The folder is:
+> [!NOTE]
+> Starting by itself works on a Mac and on Linux. On Windows, setup tells you to start it by hand for now: see [Keep it running in the background](#keep-it-running-in-the-background).
+
+## 5. Add your mailbox
+
+On the settings page, type your passphrase, then use **Add a mailbox**:
+
+1. your email address and your name as people should see it,
+2. the server names, filled in for you for well-known providers,
+3. your password or app password.
+
+The login is tested before anything is saved (nothing is sent). Your password is stored encrypted on your computer. Add more mailboxes the same way, up to 5, each with its own mode and a short name like *Work* ([mailboxes.md](mailboxes.md)).
+
+The same page also turns on add-ons, sets privacy options and shows which devices signed in.
+
+<details>
+<summary><b>Prefer the terminal?</b></summary>
+
+`selfhost-remote-mail-mcp setup --terminal` asks for the mailbox in the terminal instead, then does the same as above. It can keep the password in your computer's keychain (Mac Keychain, Windows Credential Manager, Linux Secret Service), so the settings file holds no password. On a Mac, the first time the server reads it, macOS may ask whether it may use the keychain: choose **Always Allow**. Run it again to add another mailbox.
+
+</details>
+
+Your settings are kept in one private folder:
 
 | System | Folder |
 |---|---|
 | Mac and Linux | `~/.config/selfhost-remote-mail-mcp/` |
 | Windows | `C:\Users\<you>\.config\selfhost-remote-mail-mcp\` |
 
-To test again later: `selfhost-remote-mail-mcp check`. Besides the logins, it checks your domain's anti-spam records (if you use your own domain) and marks each line:
+To test the logins again later: `selfhost-remote-mail-mcp check`. Besides the logins, it checks your domain's anti-spam records (if you use your own domain) and marks each line:
 
 ```
 Testing you@yourname.com (full, nothing is sent)...
@@ -118,11 +131,7 @@ cp -r examples/templates ~/.config/selfhost-remote-mail-mcp/
 
 (Run that from a downloaded copy of this project, or copy the files by hand from GitHub.)
 
-### More mailboxes
-
-Run `selfhost-remote-mail-mcp setup` again and choose **add**. Each extra mailbox gets a mode (full, draft only or read only) and a name like *Personal*. Up to 5 in all; see [mailboxes.md](mailboxes.md).
-
-## 5. Connect your AI app
+## 6. Connect your AI app
 
 Most common apps are below. Every app is covered in [connect-your-ai.md](connect-your-ai.md).
 
@@ -130,9 +139,11 @@ Most common apps are below. Every app is covered in [connect-your-ai.md](connect
 - **Codex:** `codex mcp add mail -- selfhost-remote-mail-mcp stdio`
 - **Claude Desktop:** see [connect-your-ai.md](connect-your-ai.md#claude-desktop).
 
+Your AI app starts its own small copy of the server when it needs it. It uses the same settings and mailboxes as the one in the background, so you don't log in again.
+
 Then ask: *"Use the mail tools: what's new in my inbox today?"* The AI should list your newest emails.
 
-## 6. Make it safer (2 minutes)
+## 7. Make it safer (2 minutes)
 
 1. In your AI app's settings, set the tools `send_email` and `schedule_send` to **Always ask**. Then nothing is sent without your yes.
 2. Trying it for the first time? Add `MAIL_READ_ONLY=on` to the settings file. The AI can then only read. Change it to `off` when you're ready. To open the settings file:
@@ -144,29 +155,18 @@ More options, such as only allowing certain recipients: [safety.md](safety.md#pi
 
 ## Optional: use it from your phone too
 
-Your phone can't reach your computer directly. Two pieces make it work:
-
-1. the server runs in **web mode** (`serve`) with a login passphrase, and
-2. a free **tunnel** gives it a public `https://` address.
+Your phone can't reach `localhost` on your computer. A free **tunnel** gives your computer a public `https://` address. The server and passphrase are already set up.
 
 ```
  Your phone          the internet           your computer
- (Claude app)  ──►  https://your-   ──►   tunnel  ──►  selfhost-remote-mail-mcp serve  ──►  your mailbox
+ (Claude app)  ──►  https://your-   ──►   tunnel  ──►  the server in the background  ──►  your mailbox
                     address/mcp                          (asks for your passphrase once)
 ```
 
 > [!WARNING]
 > Your computer must stay on and awake for the phone to work. If that's a problem, use [option 2](setup-hosting.md) instead.
 
-### a. Choose a passphrase
-
-```bash
-selfhost-remote-mail-mcp set-passphrase
-```
-
-Use 12 or more characters. Only a scrambled version (hash) is saved. You type the passphrase once when your AI app connects. Save it in your password manager (Apple Passwords, Google Password Manager, 1Password ...) with your server's address, so your phone fills it in for you.
-
-### b. Get a fixed public address
+### a. Get a fixed public address
 
 Pick one. Both are free.
 
@@ -182,7 +182,7 @@ It prints an address like `https://your-computer.your-tailnet.ts.net`. That addr
 
 > Cloudflare's no-account "quick tunnel" (`cloudflared tunnel --url ...`) gets a new random address every time it starts. That's fine for a quick try, but your AI app would need reconnecting each time.
 
-### c. Tell the server its address and start it
+### b. Tell the server its address
 
 Add one line to `~/.config/selfhost-remote-mail-mcp/.env`:
 
@@ -190,51 +190,39 @@ Add one line to `~/.config/selfhost-remote-mail-mcp/.env`:
 PUBLIC_URL=https://your-computer.your-tailnet.ts.net
 ```
 
-Then start it:
+Then restart it:
 
 ```bash
-selfhost-remote-mail-mcp serve
+selfhost-remote-mail-mcp service restart
 ```
 
-To check it works, open `https://your-address/health` in a browser: it shows `ok`. The settings page is at `http://localhost:8765/settings`. It keeps running while the window is open. To start it automatically, see [Keep it running](#keep-it-running-in-the-background) below.
+To check it works, open `https://your-address/health` in a browser: it shows `ok`.
 
-### d. Add it to your AI app
+### c. Add it to your AI app
 
 Add `https://your-address/mcp` as a custom connector. On Claude, add it on the website (claude.ai), and it then shows up in the phone app too. See [connect-your-ai.md](connect-your-ai.md#claude-website-and-phone-app). When asked, type your passphrase.
 
 ## Keep it running in the background
 
-Only needed for phone access or **scheduled send**. Scheduled emails go out only while `serve` is running.
+On a Mac and on Linux, `setup` already did this. The server starts by itself when you log in and starts again if it stops. Control it with:
 
-<details>
-<summary><b>Mac</b></summary>
+| Command | What it does |
+|---|---|
+| `selfhost-remote-mail-mcp service status` | Is it set to start at login, and is it running |
+| `selfhost-remote-mail-mcp service restart` | Restart it, for example after changing the settings file |
+| `selfhost-remote-mail-mcp service stop` | Stop it until your next login |
+| `selfhost-remote-mail-mcp service start` | Start it again |
+| `selfhost-remote-mail-mcp service remove` | It no longer starts by itself. Your settings and mailboxes are kept |
+| `selfhost-remote-mail-mcp service install` | Set it up again, for example if you installed before this existed |
 
-Save this as `~/Library/LaunchAgents/com.selfhost-remote-mail-mcp.plist`, replacing `YOU` with your Mac user name (run `which selfhost-remote-mail-mcp` to check the path):
+Its log: on a Mac `~/Library/Logs/selfhost-remote-mail-mcp.log`, on Linux `journalctl --user -u selfhost-remote-mail-mcp`.
 
-```xml
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-  <key>Label</key><string>com.selfhost-remote-mail-mcp</string>
-  <key>ProgramArguments</key>
-  <array>
-    <string>/Users/YOU/.local/bin/selfhost-remote-mail-mcp</string>
-    <string>serve</string>
-  </array>
-  <key>RunAtLoad</key><true/>
-  <key>KeepAlive</key><true/>
-  <key>StandardErrorPath</key><string>/tmp/selfhost-remote-mail-mcp.log</string>
-</dict>
-</plist>
-```
-
-Start it with `launchctl load ~/Library/LaunchAgents/com.selfhost-remote-mail-mcp.plist`. Stop it with `launchctl unload` and the same path.
-
-</details>
+While it runs, you have the settings page, the upload page, scheduled send and add-ons that work by themselves (follow-ups, webhooks, out of office). When your computer is off, those pause until it's back.
 
 <details>
 <summary><b>Windows</b></summary>
+
+Not automatic yet. Start it by hand with `selfhost-remote-mail-mcp serve` (it runs while the window is open), or let it start at login:
 
 1. Open **Task Scheduler** from the Start menu and click **Create Basic Task**.
 2. Name it "Mail MCP" and choose **When I log on**.
@@ -243,32 +231,12 @@ Start it with `launchctl load ~/Library/LaunchAgents/com.selfhost-remote-mail-mc
 
 </details>
 
-<details>
-<summary><b>Linux</b></summary>
-
-Save this as `~/.config/systemd/user/selfhost-remote-mail-mcp.service`:
-
-```ini
-[Unit]
-Description=Selfhost-Remote-Mail-MCP
-
-[Service]
-ExecStart=%h/.local/bin/selfhost-remote-mail-mcp serve
-Restart=always
-
-[Install]
-WantedBy=default.target
-```
-
-Then run `systemctl --user enable --now selfhost-remote-mail-mcp`.
-
-</details>
-
 ## What we tested
 
 | Step | Tested |
 |---|---|
-| Install with uv, `setup`, `check`, `stdio` against a real mailbox | Yes (macOS) |
+| Install with uv, `setup --terminal`, `check`, `stdio` against a real mailbox | Yes (macOS) |
+| `setup` starting the server at login, the settings page sign-in, `service` status, restart, stop, start and remove, a taken port | Yes (macOS). Linux: tested with the system commands faked, not yet on a real Linux login |
 | `serve` with the full passphrase login, as an AI app does it | Yes (macOS) |
 | Claude Code and Codex accepting the server | Yes |
 | Cloudflare quick tunnel | Tried: the link was created and connected, but its address didn't appear on the internet within 2.5 minutes. Quick tunnels have no uptime promise, which is one more reason to use Tailscale Funnel or a named tunnel |

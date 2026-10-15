@@ -21,9 +21,9 @@ There's no database and no other service. Your mailbox holds the emails, the dra
 
 ## Two ways to connect
 
-**On the same computer (`stdio`).** Your AI app starts the program itself and talks to it through a direct pipe. No network, no login. When you close the app, the program stops.
+**On the same computer (`stdio`).** Your AI app starts its own copy of the program and talks to it through a direct pipe. No network, no login. When you close the app, that copy stops. On a computer, `setup` also runs the web server below in the background, on `http://localhost:8765`, for the settings page, the upload page, scheduled emails and add-ons. Both copies share the same settings and mailboxes.
 
-**Over the internet (`serve`).** The program runs as a small web server and listens at `/mcp`. AI apps on the web or on your phone reach it through an `https://` address. A login protects it (next section). This mode also runs the scheduler for scheduled emails.
+**Over the internet (`serve`).** The program runs as a small web server and listens at `/mcp`. AI apps on the web or on your phone reach it through an `https://` address. A login protects it (next section). This mode also runs the scheduler for scheduled emails and the add-ons that work in the background.
 
 ## What happens when you ask something
 

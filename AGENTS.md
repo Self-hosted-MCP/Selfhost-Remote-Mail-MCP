@@ -9,6 +9,7 @@ Notes for AI coding agents (Claude Code, Codex, Cursor, Copilot and others) and 
 A Model Context Protocol (MCP) server that gives AI apps up to 5 mailboxes over plain IMAP/SMTP, each with a mode (full, draft, read) and an optional name. Each web-connected app only gets the mailboxes ticked for it. It runs two ways:
 
 - `stdio`: started by a local AI app, no auth.
+- On a computer, `setup` also installs `serve` as a background service on `127.0.0.1:8765` (a LaunchAgent on macOS, a systemd user unit on Linux; `service` command), so every computer gets the settings page, uploads, scheduled send and add-on jobs. The stdio copies and that service share the config and state folders: read-modify-write of a shared file goes through `editing()`, and `private_write()` uses a unique temporary file. `ADDON_JOBS=off` and `SCHEDULED_SEND=off` keep a second copy sharing the mailboxes from doing background work twice.
 - `serve`: streamable HTTP at `/mcp`, with a built-in single-user OAuth server (dynamic client registration, PKCE, passphrase login page with mailbox ticks). This is what lets claude.ai, the Claude phone app, ChatGPT and others connect. It also serves `/login`, `/settings` (mailboxes, apps, privacy, devices, AI changes), `/upload` and `/settings/upload`, `/health`, `/icon.svg` and `/favicon.ico`.
 
 There is no database. The mailbox is the source of truth, including the scheduled-send queue.
@@ -34,6 +35,7 @@ tests/test_settings_tool.py              settings / change_setting: the six allo
 tests/test_addons.py                     add-ons: loading, the api, checks that still apply, the examples
 tests/test_languages.py                  page languages: picking, fallback, translate command, unmarked texts
 tests/test_shared_files.py               files two copies change at once: locks, temporary files, one secret key
+tests/test_service.py                    setup on a computer, the background service (system commands faked), local pages
 src/selfhost_remote_mail_mcp/i18n.py     page languages: _(), picking a language, the translate command's helpers
 src/selfhost_remote_mail_mcp/locales/    one JSON file per language: English text -> translation
 examples/addons/                         hello.py, the smallest add-on, to copy when writing your own
@@ -57,7 +59,7 @@ uv run selfhost-remote-mail-mcp help      # CLI
 uv run selfhost-remote-mail-mcp stdio     # needs real settings (see docs/settings.md)
 ```
 
-User commands: `setup`, `check` (logins and domain records), `stdio`, `serve`, `set-passphrase`, `update`, `version`, `addons` (load and list add-ons), `translate <code>` (make or check a page translation).
+User commands: `setup` (passphrase, background service, opens the settings page; `--terminal` asks for a mailbox), `service` (install, start, stop, restart, status, remove the background service), `check` (logins and domain records), `stdio`, `serve`, `set-passphrase`, `update`, `version`, `addons` (load and list add-ons), `translate <code>` (make or check a page translation).
 
 The tests never touch a real mailbox: `conftest.py` replaces `server.connect` and `smtplib.SMTP_SSL`, and points `MAIL_CONFIG_DIR` at a temporary folder. Never write a test that needs real credentials or sends real email.
 
@@ -131,7 +133,7 @@ When a person asks you to set this server up for them (on their computer, a host
 
 1. `GET https://their-address/health` returns `ok`.
 2. `GET https://their-address/.well-known/oauth-authorization-server` returns JSON whose `issuer` is their address.
-3. On a computer: `selfhost-remote-mail-mcp check` passes for every mailbox (it sends nothing).
+3. On a computer: `selfhost-remote-mail-mcp service status` says it runs, `http://localhost:8765/health` returns `ok`, and `selfhost-remote-mail-mcp check` passes for every mailbox (it sends nothing).
 4. Help them connect their AI app ([docs/connect-your-ai.md](docs/connect-your-ai.md)) and suggest "Always ask" for `send_email` and `schedule_send`.
 5. Never send a test email unless they ask for one, and then only to their own address.
 6. Tell them what you verified and what you couldn't (for example the phone app, if you have no way to open it).

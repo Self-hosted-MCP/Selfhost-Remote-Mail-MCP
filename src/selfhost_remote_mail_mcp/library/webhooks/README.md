@@ -22,7 +22,7 @@ For each new email in the Inbox, one small JSON message:
 2. Make a signing secret: at least 24 random characters, for example from your password manager.
 3. On the settings page, open the **Add-ons** tab, press **Set up** next to **Webhooks**, paste the address and the secret, and press **Save**. Then **Turn on**, and **Test connection** to send a test message (`{"type": "test", ...}`) to your receiver.
 
-It checks for new mail every 5 minutes, so messages arrive within about 5 minutes. Mail that was already there when you turned it on isn't sent. It works on the web version only (it runs in the background).
+It checks for new mail every 5 minutes, so messages arrive within about 5 minutes. Mail that was already there when you turned it on isn't sent. It runs in the background, so on a computer it works while the computer is on.
 
 ## Checking it really came from your server
 
@@ -55,4 +55,4 @@ Fill these in on the add-on's **Set up** page. The names below are for the setti
 - Extra packages: none
 - Outside services: the address you choose
 - Sends email by itself: no
-- The web version (it runs in the background)
+- The server running in the background (on a computer, `setup` starts it)

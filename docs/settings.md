@@ -57,7 +57,8 @@ Mailboxes 2 to 5 use the same settings with their number: `MAIL_2_...`, `MAIL_3_
 |---|---|---|
 | `SEND_DAILY_LIMIT` | `40` | Most emails **each mailbox** sends per day (now and scheduled together). Resets at midnight |
 | `SEND_MINUTE_LIMIT` | `3` | Most emails sent per minute, **all mailboxes together** |
-| `SCHEDULED_SEND` | `on` | `off` stops this copy from sending scheduled emails (`serve` only) |
+| `SCHEDULED_SEND` | `on` | `off` stops this copy from sending scheduled emails (`serve` only). Use it on a second copy that shares the mailboxes |
+| `ADDON_JOBS` | `on` | `off` stops this copy's add-ons from working in the background (follow-ups, out of office, webhooks). Use it on a second copy that shares the mailboxes |
 
 ## Safety and privacy
 

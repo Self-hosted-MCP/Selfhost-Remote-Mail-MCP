@@ -25,15 +25,15 @@ More are added with new versions. Ideas are welcome in the [Share an add-on](htt
 
 ## Turn one on and set it up
 
-Everything happens on the settings page of the web version:
+Everything happens on the settings page (on a computer: `http://localhost:8765/settings`):
 
 1. Open the **Add-ons** tab and press **Turn on**. It works right away.
 2. If the add-on needs details (like your business name for invoices), its row says **Needs setting up**. Press **Set up**, fill in the form and press **Save**. The details are saved on your server, encrypted.
-3. Start a new chat in your AI app to use it.
+3. Start a new chat in your AI app to use it (an AI app on your computer: restart the app).
 
 You can also just ask your AI app, for example *"I want to make invoices"*. It can't turn add-ons on or type your details itself (so an email can never trick it into changing your bank details), but it gives you the link to the right setup page.
 
-**Without the web version** (the server only on your computer, started by your AI app): use the command line instead. `selfhost-remote-mail-mcp addons list` shows them, `addons enable invoices` turns one on, and its details go in your settings file (each add-on's page lists the names, like `INVOICES_SELLER_NAME`).
+**Prefer the terminal?** `selfhost-remote-mail-mcp addons list` shows them, `addons enable invoices` turns one on, and its details go in your settings file (each add-on's page lists the names, like `INVOICES_SELLER_NAME`).
 
 Settings in the settings file or your host's variables still work and win over the setup page. Most people never need them.
 

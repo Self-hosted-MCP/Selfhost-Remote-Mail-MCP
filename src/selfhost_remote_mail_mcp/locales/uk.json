@@ -300,7 +300,7 @@
  "The device log is turned off in the server settings (DEVICE_LOG=off).": "Журнал пристроїв вимкнено в налаштуваннях сервера (DEVICE_LOG=off).",
  "Turn {name} on first, then test it.": "Спершу увімкніть {name}, потім перевірте.",
  "{value} isn't a time zone: pick one from the list.": "{value} — не часовий пояс: виберіть його зі списку.",
- "{name} is on. Start a new chat in your AI app to use it. Some add-ons need settings first: see Details.": "{name} увімкнено. Почніть новий чат у ШІ-застосунку, щоб ним користуватися. Деяким доповненням спершу потрібні налаштування: див. «Докладніше».",
+ "{name} is on. Start a new chat in your AI app to use it (an AI app on this computer: restart it first). Some add-ons need settings first: see Details.": "{name} увімкнено. Почніть новий чат у ШІ-застосунку, щоб ним користуватися (ШІ-застосунок на цьому комп'ютері: спершу перезапустіть його). Деяким доповненням спершу потрібні налаштування: див. «Докладніше».",
  "{name} is off.": "{name} вимкнено.",
  "There are two SPF records; there must be only one. Merge them into one.": "Знайдено два SPF-записи, а має бути лише один. Об’єднайте їх.",
  "Set to p=none: fake emails using your name are only watched, not stopped. Once SPF and DKIM are good, change it to p=quarantine.": "Задано p=none: підроблені листи від вашого імені лише відстежуються, але не блокуються. Коли SPF і DKIM будуть у порядку, змініть на p=quarantine.",

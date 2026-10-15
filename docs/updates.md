@@ -75,7 +75,7 @@ In Task Scheduler, create a weekly task that runs `selfhost-remote-mail-mcp` wit
 
 </details>
 
-If you run `serve` in the background, restart it after an update (Mac: `launchctl kickstart -k gui/$(id -u)/com.selfhost-remote-mail-mcp`).
+`update` restarts the server running in the background by itself (Mac and Linux). Otherwise run `selfhost-remote-mail-mcp service restart`.
 
 ### On a hosting company (Railway, Render, Fly.io …)
 

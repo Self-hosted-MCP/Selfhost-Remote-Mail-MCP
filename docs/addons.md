@@ -36,9 +36,9 @@ Nothing new opens to the internet. Add-on tools live at the same address, behind
 
 The server comes with ready-made add-ons, all off by default. Each one has a page that says what it does, what to ask your AI app, its settings, and whether it talks to an outside service or sends email by itself: **[the add-on library](../src/selfhost_remote_mail_mcp/library/README.md)**.
 
-To turn one on in the web version, open the settings page, go to the **Add-ons** tab and press **Turn on**. It works right away, without a restart: start a new chat in your AI app to see the new tools. **Turn off** works the same way. If it needs details (like your business name), press **Set up** and fill them in there. Your AI app can give you the link to any add-on's setup page.
+To turn one on, open the settings page (on a computer: `http://localhost:8765/settings`), go to the **Add-ons** tab and press **Turn on**. It works right away, without a restart: start a new chat in your AI app to see the new tools (an AI app on your computer: restart the app). **Turn off** works the same way. If it needs details (like your business name), press **Set up** and fill them in there. Your AI app can give you the link to any add-on's setup page.
 
-On your computer:
+Or in the terminal:
 
 ```bash
 selfhost-remote-mail-mcp addons list
@@ -68,7 +68,7 @@ Where the files go:
 | On a hosting company | The `addons/` folder of your fork on GitHub. The host rebuilds with it |
 | On your own server (Docker) | The `addons/` folder of your copy, then `docker compose up -d --build` |
 
-Then restart the server (on a computer: restart your AI app). The `accounts` tool and the settings page (the **Add-ons** tab) list the add-ons that are on.
+Then restart the server (on a computer: `selfhost-remote-mail-mcp service restart`, and restart your AI app). The `accounts` tool and the settings page (the **Add-ons** tab) list the add-ons that are on.
 
 If an add-on has a problem, the server stops at start-up and says which add-on and why, instead of running half-working.
 
@@ -196,7 +196,7 @@ For add-ons that read mail, remember things or work in the background:
 | `api.new_draft(to, subject, body, cc, reply_to_id, headers, no_signature, account, quote)` | Saves a new draft and returns its ID. A reply quotes the original unless `quote=False`. Nothing is sent |
 | `api.mailboxes()` | The mailboxes the AI app calling your tool may use. Save them with anything a background job does later |
 | `with api.store() as data:` | Your add-on's own saved data, a dict, encrypted on disk. Changes are saved when the block ends. 1 MB at most |
-| `api.every(minutes, function)` | Runs `function()` in the background every few minutes (5 at least), on the web version only. In it, `api.new_mail(folder)` gives the emails that arrived since the last run |
+| `api.every(minutes, function)` | Runs `function()` in the background every few minutes (5 at least), in the web server (`serve`), which on a computer `setup` runs in the background. In it, `api.new_mail(folder)` gives the emails that arrived since the last run |
 | `api.http(method, url, json_body=..., headers=...)` | A web request, https only, to a host in your add-on's `HOSTS` list or in one of its own `*_URL` settings. Returns `(status, headers, body)` |
 | `api.send(draft_id, account)` | Sends a draft, from a background job only, for add-ons whose whole job is sending (they say `SENDS = True`). The mailbox must be in full mode, and the daily limits and send log apply |
 

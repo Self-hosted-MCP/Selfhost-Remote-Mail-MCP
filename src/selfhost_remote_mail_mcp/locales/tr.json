@@ -300,7 +300,7 @@
  "The device log is turned off in the server settings (DEVICE_LOG=off).": "Cihaz kaydı sunucu ayarlarında kapalı (DEVICE_LOG=off).",
  "Turn {name} on first, then test it.": "Önce {name} eklentisini açın, sonra test edin.",
  "{value} isn't a time zone: pick one from the list.": "{value} bir saat dilimi değil: listeden birini seçin.",
- "{name} is on. Start a new chat in your AI app to use it. Some add-ons need settings first: see Details.": "{name} açık. Kullanmak için yapay zeka uygulamanızda yeni bir sohbet başlatın. Bazı eklentiler önce ayar gerektirir: Ayrıntılar'a bakın.",
+ "{name} is on. Start a new chat in your AI app to use it (an AI app on this computer: restart it first). Some add-ons need settings first: see Details.": "{name} açık. Kullanmak için yapay zeka uygulamanızda yeni bir sohbet başlatın (bu bilgisayardaki bir yapay zeka uygulaması: önce yeniden başlatın). Bazı eklentiler önce ayar gerektirir: Ayrıntılar'a bakın.",
  "{name} is off.": "{name} kapalı.",
  "There are two SPF records; there must be only one. Merge them into one.": "İki SPF kaydı var; yalnızca bir tane olmalı. Bunları tek bir kayıtta birleştirin.",
  "Set to p=none: fake emails using your name are only watched, not stopped. Once SPF and DKIM are good, change it to p=quarantine.": "p=none olarak ayarlı: adınızı kullanan sahte e-postalar yalnızca izleniyor, durdurulmuyor. SPF ve DKIM düzgün çalışınca bunu p=quarantine olarak değiştirin.",

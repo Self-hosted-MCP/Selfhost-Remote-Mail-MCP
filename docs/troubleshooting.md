@@ -144,7 +144,7 @@ The server couldn't unlock its password, usually because `MAIL_SECRET_KEY` chang
 <details>
 <summary>The settings page says 404</summary>
 
-`SETTINGS_PAGE=off` is set, or you're on the computer version (`stdio`), which has no web pages. Use `setup` or the settings file instead.
+`SETTINGS_PAGE=off` is set. On a computer, also check that the server runs in the background: `selfhost-remote-mail-mcp service status`, and if it isn't, `selfhost-remote-mail-mcp service install`.
 
 </details>
 
@@ -167,10 +167,10 @@ The limits are working. Wait, or raise `SEND_DAILY_LIMIT` or `SEND_MINUTE_LIMIT`
 <details>
 <summary>A scheduled email didn't go out</summary>
 
-- Is `serve` running? Only the web server sends scheduled emails.
+- Is `serve` running? Only the web server sends scheduled emails. On a computer: `selfhost-remote-mail-mcp service status`.
 - Ask for the `scheduled` list. A **HELD** email shows the reason. Schedule it again or send it now.
 - Not in the list? The draft was probably edited in another mail app, which dropped the hidden send time. Schedule it again.
-- Is `SCHEDULED_SEND=off` set?
+- Is `SCHEDULED_SEND=off` set? (setup sets it when another copy of the server uses the same mailboxes, because that copy sends them.)
 
 </details>
 

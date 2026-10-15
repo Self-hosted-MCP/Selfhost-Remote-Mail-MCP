@@ -63,7 +63,7 @@ The server is a small program. Your AI app talks to it through **MCP** (Model Co
 |---|---|
 | **IMAP** and **SMTP** | The standard ways mail apps read (IMAP) and send (SMTP) email. Your provider lists its IMAP and SMTP server names. |
 | **App password** | A separate password your provider makes for one app. You can delete it any time without changing your real password. Gmail, iCloud and Yahoo need one. |
-| **Passphrase** | A long password you make up for the web version of this server. You type it once when you connect an AI app. |
+| **Passphrase** | A long password you make up for your server. It locks the settings page, and you type it once when you connect an AI app over the internet. |
 | **MCP** | How AI apps plug into tools like this one. |
 | **Draft** | An email saved in your Drafts folder. The AI writes drafts. Sending is a separate step. |
 | **Settings file** | A small text file with your settings, `~/.config/selfhost-remote-mail-mcp/.env` on a computer. `setup` writes it. Hosting companies use their own "Variables" page instead |
@@ -73,7 +73,7 @@ The server is a small program. Your AI app talks to it through **MCP** (Model Co
 
 |  | Where it runs | Works on your phone | Cost | Time | Guide |
 |---|---|---|---|---|---|
-| **1. Your computer** | Your Mac, Windows or Linux computer | Only while the computer is on, with an extra step | Free | 5 minutes | [setup-computer.md](docs/setup-computer.md) |
+| **1. Your computer** | Your Mac, Windows or Linux computer, settings page at `localhost:8765` | Only while the computer is on, with a free tunnel | Free | 5 minutes | [setup-computer.md](docs/setup-computer.md) |
 | **2. A hosting company** | Railway, Render, Fly.io or others, in the cloud | Always | About $5 to $8 a month | 10 minutes, no terminal needed | [setup-hosting.md](docs/setup-hosting.md) |
 | **3. Your own server** | Any server with Docker | Always | Free to cheap | 15 minutes, for people used to servers | [setup-own-server.md](docs/setup-own-server.md) |
 
@@ -106,7 +106,7 @@ The server is a small program. Your AI app talks to it through **MCP** (Model Co
 
 **Several mailboxes.** Up to 5, at any providers, each with its own mode (full, draft only or read only) and a short name like *Work*. Each AI app gets only the mailboxes you tick for it. See [docs/mailboxes.md](docs/mailboxes.md).
 
-**A settings page.** In the web version, open `/settings` to add mailboxes, test logins, rename them, choose or disconnect AI apps, switch privacy options, turn add-ons on, see which devices signed in and what AI apps changed. It also shows your version and what's new. No terminal needed. Section by section: [docs/mailboxes.md](docs/mailboxes.md#three-ways-to-add-mailboxes).
+**A settings page.** On every option, open `/settings` (on a computer: `http://localhost:8765/settings`) to add mailboxes, test logins, rename them, choose or disconnect AI apps, switch privacy options, turn add-ons on, see which devices signed in and what AI apps changed. It also shows your version and what's new. No terminal needed. Section by section: [docs/mailboxes.md](docs/mailboxes.md#three-ways-to-add-mailboxes).
 
 **Privacy for your files.** Photos you attach lose their location, and documents lose the author's name, before they're sent. Both are on by default and can be turned off on the settings page. The server never loads pictures or links inside emails, so senders can't track when you read them.
 
@@ -147,9 +147,9 @@ Extra features that come with the server. **All of them are off** until you turn
 
 1. Open the settings page, **Add-ons** tab, and press **Turn on**.
 2. If it needs details (like your calendar login), press **Set up**, fill them in and press **Test connection** where there is one.
-3. Start a new chat in your AI app.
+3. Start a new chat in your AI app (an AI app on your computer: restart the app).
 
-No web version? Use `selfhost-remote-mail-mcp addons enable caldav`, or add the name to `MAIL_ADDONS`.
+Prefer the terminal? Use `selfhost-remote-mail-mcp addons enable caldav`, or add the name to `MAIL_ADDONS`.
 
 **Make your own.** An add-on is one small Python file. Ask an AI coding agent like Claude Code or Codex to build one for you: [AGENTS.md](AGENTS.md#add-ons-for-a-user) gives it the steps, and the [add-ons guide](docs/addons.md) explains the rules every add-on follows. Built something useful? Share it with the [Share an add-on](https://github.com/s17sh70x2jfl031ag/Selfhost-Remote-Mail-MCP/issues/new?template=addon.yml) form.
 
@@ -183,13 +183,15 @@ More in [docs/safety.md](docs/safety.md) (risks and good settings) and [docs/pri
    uv tool install git+https://github.com/s17sh70x2jfl031ag/Selfhost-Remote-Mail-MCP
    ```
 
-3. Answer a few questions. It finds the server names for well-known providers and tests your login without sending anything:
+3. Run setup. It asks you to choose a passphrase, starts the server in the background and opens your settings page:
 
    ```bash
    selfhost-remote-mail-mcp setup
    ```
 
-4. Connect your AI app. For Claude Code:
+4. On the settings page (`http://localhost:8765/settings`), add your mailbox. The server names fill in for well-known providers, and the login is tested without sending anything.
+
+5. Connect your AI app. For Claude Code:
 
    ```bash
    claude mcp add -s user mail -- selfhost-remote-mail-mcp stdio
@@ -199,7 +201,7 @@ More in [docs/safety.md](docs/safety.md) (risks and good settings) and [docs/pri
 
    Tip: in your AI app, set `send_email` and `schedule_send` to **Always ask**. Then nothing is sent without your yes.
 
-5. Ask your AI: *"Use the mail tools: what's new in my inbox today?"* More ideas in [docs/examples.md](docs/examples.md).
+6. Ask your AI: *"Use the mail tools: what's new in my inbox today?"* More ideas in [docs/examples.md](docs/examples.md).
 
 ## All the guides
 

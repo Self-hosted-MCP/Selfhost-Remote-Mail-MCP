@@ -13,7 +13,7 @@ While you're away, answers new emails with your message, once per person.
 2. Write your away message and, if you like, the first and last day you're away. Press **Save**.
 3. Press **Turn on**.
 
-Your AI app can tell you whether it's on (*"Is my out of office on?"*) and give you the setup link, but it can't change it. Other ways: [the library page](../README.md#turn-one-on-and-set-it-up). It works on the web version only, because it checks for new mail every 5 minutes in the background.
+Your AI app can tell you whether it's on (*"Is my out of office on?"*) and give you the setup link, but it can't change it. Other ways: [the library page](../README.md#turn-one-on-and-set-it-up). It checks for new mail every 5 minutes in the background, so on a computer it works while the computer is on.
 
 ## Who gets an answer
 
@@ -53,4 +53,4 @@ Fill these in on the add-on's **Set up** page. The names below are for the setti
 - Extra packages: none
 - Outside services: none
 - Sends email by itself: **yes**, your away message only
-- The web version (it runs in the background)
+- The server running in the background (on a computer, `setup` starts it)
