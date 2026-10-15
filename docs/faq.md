@@ -108,7 +108,7 @@ Not when you attach them through this server. It removes the location from jpg, 
 <details>
 <summary><b>Can I drop a file into the chat and have it emailed?</b></summary>
 
-Yes, on the web version. Drop it in and say *"email this to Sam"*. Claude uploads it to your server with a one-time link and attaches it. Claude needs **Settings → Capabilities → Code execution and file creation** on; if it can't upload, it gives you the link to pick the file yourself. See [attachments.md](attachments.md#drop-a-file-in-the-chat).
+Yes, on the web version, in AI apps that can run code. Drop it in and say *"email this to Sam"*. Your AI app uploads it to your server with a one-time link and attaches it. Some apps need their code tool turned on first (in Claude: **Settings → Capabilities → Code execution and file creation**). If your app can't upload, it gives you the link to pick the file yourself. See [attachments.md](attachments.md#drop-a-file-in-the-chat).
 
 </details>
 

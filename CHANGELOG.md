@@ -2,6 +2,10 @@
 
 All notable changes to this project. Versions follow [semantic versioning](https://semver.org).
 
+## 0.8.1 (2026-10-14)
+
+- Docs: dropping a file in the chat is described for any AI app that can run code, with Claude as one example.
+
 ## 0.8.0 (2026-10-14)
 
 - **Drop a file in the chat, it goes in the email:** the new `upload_link` tool gives the AI a one-time link (one file, 10 minutes, 25 MB), and its code tool uploads the file you dropped into the chat. If it can't, the AI gives you the link to pick the file yourself, with no passphrase. Works in Claude (web, desktop, phone) with code execution on, and in coding apps.
