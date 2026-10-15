@@ -22,4 +22,3 @@ What might come next. Nothing here has a date. If you want one of these, say so 
 
 - **A hosted service run by us.** This project is for running your own copy; holding other people's mail passwords is a responsibility we don't want to take on.
 - **Permanent deletion.** The AI can move emails to Trash, never delete them for good.
-- **Calendars.** Other tools do this well.
