@@ -46,7 +46,7 @@ tests/test_addon_library.py              the library and the add-on toolbox (fin
 addons/                                  where a Docker-based copy keeps its own add-ons
 tests/test_examples.py                   every file in examples/ loads and fills in
 docs/                                    user docs, plain language
-Dockerfile, docker-compose.yml, Caddyfile, render.yaml   the three ways to host it (Railway needs no file: it finds the Dockerfile)
+Dockerfile, docker-compose.yml, Caddyfile, render.yaml   the three ways to host it (Railway needs no file: it finds the Dockerfile, or use the one-click template at railway.com/deploy/selfhost-remote-mail-mcp; render.yaml runs the ready-made image)
 ```
 
 `server.py` holds all logic on purpose: it is easy to read top to bottom. Sections are marked with `# ----` banners. Keep new code in the matching section. HTML belongs in `pages.py`, which must stay free of logic and must escape every value with `esc()`.

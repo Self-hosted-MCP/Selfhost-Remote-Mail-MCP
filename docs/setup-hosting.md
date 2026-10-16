@@ -10,14 +10,26 @@ You need:
 
 ```mermaid
 flowchart LR
-    A["Fork on GitHub<br/>(your own copy)"] --> B["Railway or Render<br/>builds and runs it"]
+    A["Click Deploy<br/>(or fork on GitHub)"] --> B["Railway or Render<br/>runs it"]
     B --> C["Your address<br/>https://...app/mcp"]
     C --> D["Claude, ChatGPT ...<br/>on phone and web"]
 ```
 
-First, click **Fork** at the top of this project's GitHub page. That gives you your own copy, which the hosting company builds from.
+Railway and Render each have a button that does it all in one click. For the Railway steps by hand, first click **Fork** at the top of this project's GitHub page. That gives you your own copy, which Railway builds from.
 
-## Railway (about $5 a month)
+## One click: Railway or Render
+
+<a href="https://railway.com/deploy/selfhost-remote-mail-mcp"><img src="https://railway.com/button.svg" alt="Deploy on Railway"></a> <a href="https://render.com/deploy?repo=https://github.com/s17sh70x2jfl031ag/Selfhost-Remote-Mail-MCP"><img src="https://render.com/images/deploy-to-render-button.svg" alt="Deploy to Render"></a>
+
+1. Click a button and sign in. Railway needs the **Hobby** plan ($5 a month, including $5 of usage, which this server stays well within). Render uses its smallest paid instance (about $7 a month plus $0.25 for the disk).
+2. Type your **LOGIN_PASSPHRASE**, a long passphrase only you know. It locks your settings page. The secret key, the public address and the storage disk at `/data` are made for you.
+3. Click **Deploy** (Railway) or **Apply** (Render) and wait for it to turn green. Your address looks like `https://your-mail.up.railway.app` or `https://your-mail.onrender.com`.
+4. Open your address plus `/health`. It should say `ok`.
+5. **Add your mailbox:** open your address plus `/settings`, type your passphrase, and use **Add a mailbox** ([below](#add-your-mailbox)).
+
+No fork needed: both run the [ready-made image](setup-own-server.md#ready-made-image-no-build), built from official releases only.
+
+## Railway by hand (about $5 a month)
 
 1. Sign up at [railway.com](https://railway.com) with your GitHub account and choose the **Hobby** plan ($5 a month, including $5 of usage, which this server stays well within).
 2. **New Project → Deploy from GitHub repo →** pick your fork. Railway finds the `Dockerfile` by itself and starts building. The first build fails or waits until step 3 is done; that's normal.
@@ -38,7 +50,7 @@ First, click **Fork** at the top of this project's GitHub page. That gives you y
 ## Render (about $7 a month plus $0.25 for the disk)
 
 1. Sign up at [render.com](https://render.com) with your GitHub account.
-2. **New → Blueprint →** pick your fork. Render reads `render.yaml` and sets up a web service with a 1 GB disk at `/data`.
+2. **New → Blueprint →** pick this project (or your fork). Render reads `render.yaml` and sets up a web service with a 1 GB disk at `/data`.
 3. Fill in the one blank it asks for: `LOGIN_PASSPHRASE`, a long passphrase only you know. It locks your settings page.
 4. Click **Apply**. The address (like `https://selfhost-remote-mail-mcp.onrender.com`) is picked up by itself.
 5. Open `https://your-address.onrender.com/health`. It should say `ok`.
@@ -109,7 +121,7 @@ When the app opens the login page, tick the mailboxes it may use (if you have mo
 
 ## Update to a newer version
 
-Turn on the **Update from official releases** action in your fork, and new releases come in by themselves once a week; the host rebuilds. Or run it by hand from the Actions tab. See [updates.md](updates.md#on-a-hosting-company-railway-render-flyio-).
+Used a button? On Railway, open the service's **Settings → Source** and turn on auto updates for the image. On Render, click **Manual Deploy → Deploy latest reference** to get the newest release. Railway by hand, from a fork: turn on the **Update from official releases** action in your fork, and new releases come in by themselves once a week; the host rebuilds. Or run it by hand from the Actions tab. See [updates.md](updates.md#on-a-hosting-company-railway-render-flyio-).
 
 ## Stop or remove it
 

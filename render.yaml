@@ -1,9 +1,12 @@
-# Option 2 on Render: "New > Blueprint", pick your copy of this repo, fill in the blanks.
+# Option 2 on Render: the "Deploy to Render" button in the README, or "New > Blueprint" with this repo. Fill in the blank.
+# Runs the ready-made image of the newest official release, so nothing is built and unreleased code never runs.
 # Guide: docs/setup-hosting.md
 services:
   - type: web
     name: selfhost-remote-mail-mcp
-    runtime: docker
+    runtime: image
+    image:
+      url: ghcr.io/s17sh70x2jfl031ag/selfhost-remote-mail-mcp:latest
     # no plan line: Render then uses its smallest paid instance (0.5 CPU, 512 MB), which can keep a disk.
     # The free plan can't keep a disk and falls asleep, which would break scheduled send.
     healthCheckPath: /health

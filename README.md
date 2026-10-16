@@ -79,6 +79,10 @@ The server is a small program. Your AI app talks to it through **MCP** (Model Co
 | **2. A hosting company** | Railway, Render, Fly.io or others, in the cloud | Always | About $5 to $8 a month | 10 minutes, no terminal needed | [setup-hosting.md](docs/setup-hosting.md) |
 | **3. Your own server** | Any server with Docker | Always | Free to cheap | 15 minutes, for people used to servers | [setup-own-server.md](docs/setup-own-server.md) |
 
+<a href="https://railway.com/deploy/selfhost-remote-mail-mcp"><img src="https://railway.com/button.svg" alt="Deploy on Railway"></a> <a href="https://render.com/deploy?repo=https://github.com/s17sh70x2jfl031ag/Selfhost-Remote-Mail-MCP"><img src="https://render.com/images/deploy-to-render-button.svg" alt="Deploy to Render"></a>
+
+Option 2 in one click: Railway or Render sets everything up and asks you for one passphrase. [Steps](docs/setup-hosting.md#one-click-railway-or-render).
+
 > [!TIP]
 > Not sure? Start with **1** to try it for free. Move to **2** when you want it on your phone all the time. Option 2 works with [any hosting company that runs Docker](docs/setup-hosting.md#any-other-hosting-company), not only Railway and Render.
 >

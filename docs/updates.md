@@ -79,7 +79,9 @@ In Task Scheduler, create a weekly task that runs `selfhost-remote-mail-mcp` wit
 
 ### On a hosting company (Railway, Render, Fly.io …)
 
-Your fork contains a ready-made GitHub Action, **Update from official releases**. Once a week it merges the newest release into your fork, and your hosting company rebuilds by itself.
+Deployed with the Railway or Render button? Railway: turn on auto updates in the service's **Settings → Source**. Render: **Manual Deploy → Deploy latest reference**. Both then run the newest official release.
+
+Deployed from a fork on Railway? Your fork contains a ready-made GitHub Action, **Update from official releases**. Once a week it merges the newest release into your fork, and your hosting company rebuilds by itself.
 
 1. In your fork on GitHub, open **Actions** and click **I understand my workflows, go ahead and enable them**.
 2. Open **Settings → Secrets and variables → Actions → Variables** and add a variable `AUTO_UPDATE` with the value `on`.
