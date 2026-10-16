@@ -38,6 +38,8 @@ Your provider names its folders unusually. Run the `folders` tool and look for y
 
 ## The server on your computer
 
+If you installed the [Claude Desktop extension](claude-desktop-extension.md#if-something-doesnt-work), start with its own checks.
+
 On a computer, `setup` runs the server in the background, so you have the settings page at `http://localhost:8765/settings`. Start with `selfhost-remote-mail-mcp service status`: it says whether it's set to start at login and whether it runs.
 
 <details>

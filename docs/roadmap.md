@@ -7,7 +7,6 @@ What might come next. Nothing here has a date. If you want one of these, say so 
 - **Outlook.com, Hotmail and Microsoft 365**, through Microsoft's own sign-in (OAuth).
 - **Proton Mail** through Proton Bridge (needs support for its local, self-signed certificate).
 - **Gmail without app passwords**, through Google's own sign-in.
-- **A Claude Desktop extension** (`.mcpb` file) for a double-click install.
 
 ## Maybe
 

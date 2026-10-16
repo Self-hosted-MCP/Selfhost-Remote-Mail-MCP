@@ -2,6 +2,9 @@
 
 Free, about 5 minutes. You get the same settings page as on a server, at `http://localhost:8765/settings`, and you add your mailbox there. Phone access is an optional extra at the end.
 
+> [!TIP]
+> If you only use Claude Desktop, the [Claude Desktop extension](claude-desktop-extension.md) installs the same thing with a double-click, no terminal.
+
 ```mermaid
 flowchart LR
     A["Step 1<br/>Install uv"] --> B["Step 2<br/>Install the server"] --> C["Step 3<br/>App password"]

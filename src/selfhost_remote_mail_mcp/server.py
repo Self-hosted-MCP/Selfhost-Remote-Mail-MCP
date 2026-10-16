@@ -17,6 +17,7 @@ Commands (see `selfhost-remote-mail-mcp help`):
     check           test the logins and your domain's anti-spam records (sends nothing)
     stdio           run for one AI app on this computer (Claude Desktop, Claude Code, Codex, ...)
     serve           run as a web server with a passphrase login (phone, claude.ai, ChatGPT, ...)
+    extension       what the Claude Desktop extension (.mcpb) runs: stdio, plus the settings page (not for typing)
     set-passphrase  choose the passphrase for the settings page and logins (only its hash is stored)
     update          install the newest official release (on a computer, needs uv)
     version         show the installed version
@@ -414,6 +415,14 @@ def app_may_send() -> bool:
 def active_accounts(cfg: dict | None = None) -> list[Account]:
     accounts = all_accounts(cfg)
     if not accounts:
+        if EXTENSION:   # nothing to run in a terminal: the settings page is the way in
+            saved = read_env_file()
+            if saved.get("LOGIN_HASH") or len(saved.get("LOGIN_PASSPHRASE", "")) >= 12:   # the page starts with one
+                raise ToolError(f"No mailbox is set up yet. Add one on the settings page: {local_url(cfg)}/settings "
+                                "(if it doesn't open yet, wait a few seconds: it's starting).")
+            raise ToolError("No mailbox is set up yet, and the settings page needs a passphrase first. In Claude "
+                            "Desktop, open Settings > Extensions > Selfhost Remote Mail MCP, type one of 12 or more "
+                            "characters and restart Claude Desktop.")
         raise ToolError("No mailbox is set up yet. Run `selfhost-remote-mail-mcp setup`, or add one on the settings page.")
     grant = current_grant()
     if grant is not None:
@@ -3327,6 +3336,7 @@ def build_server(remote: bool) -> MCPServer:
 
 MODE = sys.argv[1] if len(sys.argv) > 1 else "help"
 REMOTE = MODE == "serve"
+EXTENSION = MODE == "extension"   # the Claude Desktop extension: stdio, with its own way to update
 mcp = build_server(REMOTE)
 
 READ = ToolAnnotations(read_only_hint=True, open_world_hint=False)
@@ -5004,7 +5014,7 @@ def load_startup_addons() -> None:
             print(f"add-on {name} (turned on on the settings page) didn't load: {exc}", file=sys.stderr, flush=True)
 
 
-if MODE in ("stdio", "serve"):
+if MODE in ("stdio", "serve", "extension"):
     load_startup_addons()
 
 
@@ -5469,8 +5479,25 @@ def running_elsewhere() -> bool:
     return not service_installed() and local_health(int(read_env().get("PORT") or 8765), same=True)
 
 
-def service_install() -> bool:
-    """Makes the web version start by itself at login and starts it now. Returns True once it answers."""
+def service_program() -> str:
+    """The program the start-at-login file runs, or "" when there's none or it can't be read."""
+    path = service_file()
+    if not (path and path.exists()):
+        return ""
+    try:
+        if sys.platform == "darwin":
+            import plistlib
+            return plistlib.loads(path.read_bytes())["ProgramArguments"][0]
+        import shlex
+        line = next(l for l in path.read_text().splitlines() if l.startswith("ExecStart="))
+        return shlex.split(line[len("ExecStart="):])[0].replace("%%", "%").replace("$$", "$")
+    except Exception:
+        return ""
+
+
+def service_install(wait: bool = True) -> bool:
+    """Makes the web version start by itself at login and starts it now. Returns True once it answers
+    (wait=False: once it's started, without waiting for the answer)."""
     cfg = read_env_file()   # what the background copy will see: not this terminal's own variables
     if running_elsewhere():
         print(f"This server's web version already runs at {local_url()}, started another way. Nothing installed.")
@@ -5502,7 +5529,7 @@ def service_install() -> bool:
         print(f"Couldn't start it in the background ({path}). Start it by hand: {APP} serve")
         return False
     print(f"The web version starts by itself when you log in ({path}).")
-    if not wait_for_server(port):
+    if wait and not wait_for_server(port):
         print(f"It doesn't answer yet. Check with: {APP} service status")
         return False
     return True
@@ -5602,7 +5629,8 @@ def update_line() -> str:
     status = update_status()
     if status and status["newer"]:
         return (f"Update available: {status['latest']} (this server runs {status['current']}). "
-                f"What's new: {status['url']}")
+                f"What's new: {status['url']}"
+                + (" To update, download the new .mcpb file from that page and open it." if EXTENSION else ""))
     return ""
 
 
@@ -5635,6 +5663,60 @@ def run_update() -> None:
           + f"Restart your AI app to use it. What's new: {latest['url']}")
 
 
+# ---------------------------------------------------------------- the Claude Desktop extension (.mcpb)
+
+_settings_page = None   # the web version started for the extension while Claude Desktop is open
+
+
+def extension_start() -> None:
+    """Before the extension talks to Claude: saves the passphrase typed in Claude Desktop's form (only when none
+    is saved yet, so one chosen in setup stays), then makes sure the settings page runs. Ticked "keep running":
+    in the background at login, the same way setup does it. Otherwise, or where that isn't automatic (Windows):
+    only while Claude Desktop is open. Prints go to stderr, because stdout is Claude's."""
+    global _settings_page
+    passphrase = os.environ.pop("MAIL_EXTENSION_PASSPHRASE", "")   # not passed on to anything started here
+    keep = is_on(os.environ.pop("MAIL_EXTENSION_BACKGROUND", "") or "true")
+    import contextlib
+    with contextlib.redirect_stdout(sys.stderr):
+        secret_box()   # the key exists before two copies could each make one
+        cfg = read_env_file()
+        if not (cfg.get("LOGIN_HASH") or len(cfg.get("LOGIN_PASSPHRASE", "")) >= 12):
+            if len(passphrase) < 12:
+                print("extension: the passphrase in Claude Desktop's settings for this extension needs 12 or more "
+                      "characters. The settings page starts once it has one.", flush=True)
+                return
+            write_settings({"LOGIN_HASH": hash_passphrase(passphrase)}, drop=("LOGIN_PASSPHRASE",))
+        if not keep and "Claude Extensions" in service_program():   # unticked: the login item this extension
+            service_stop()                                          # added goes (one from setup stays)
+            service_file().unlink(missing_ok=True)
+            if sys.platform.startswith("linux"):
+                _run("systemctl", "--user", "daemon-reload")
+        if local_health(int(read_env().get("PORT") or 8765), timeout=0.5, same=True):
+            return   # already runs: from setup, the background, or another chat
+        if keep and service_file() is not None:
+            program = service_program()
+            if service_installed() and program and Path(program).exists():
+                service_start()   # installed and fine, only not running yet (just after logging in)
+            else:   # not installed, or it points to an extension version Claude Desktop has since replaced
+                service_install(wait=False)   # waiting would hold up Claude; the page answers a moment later
+            return
+        import subprocess
+        _settings_page = subprocess.Popen(   # stops with this copy: see stop_with_parent
+            [sys.executable, "-m", "selfhost_remote_mail_mcp", "serve"], stdin=subprocess.PIPE,
+            stdout=subprocess.DEVNULL, env={**os.environ, "MAIL_STOP_WITH_PARENT": "1"})
+        import atexit
+        atexit.register(_settings_page.terminate)
+
+
+def stop_with_parent() -> None:
+    """For the settings page the extension starts: ends it when the extension's copy ends, even when that copy
+    is killed without cleaning up (its end of the pipe closes, so this read returns)."""
+    try:
+        sys.stdin.buffer.read()
+    finally:
+        os._exit(0)
+
+
 HELP = __doc__
 
 
@@ -5657,6 +5739,9 @@ def main() -> None:
         check()
     elif MODE == "stdio":
         mcp.run()
+    elif MODE == "extension":
+        extension_start()
+        mcp.run()
     elif MODE == "serve":
         env = read_env()
         if not env.get("LOGIN_HASH"):
@@ -5667,6 +5752,8 @@ def main() -> None:
         public = public_url(env)
         if public.startswith("http://localhost"):
             print(f"Note: PUBLIC_URL isn't set, so only this computer can log in ({public}).", file=sys.stderr)
+        if os.environ.get("MAIL_STOP_WITH_PARENT"):
+            threading.Thread(target=stop_with_parent, name="parent", daemon=True).start()
         if (env.get("SCHEDULED_SEND") or "on").lower() not in ("off", "false", "0", "no"):
             threading.Thread(target=scheduler_loop, name="scheduler", daemon=True).start()
         threading.Thread(target=upload_cleaner, name="uploads", daemon=True).start()

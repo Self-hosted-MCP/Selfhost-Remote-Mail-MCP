@@ -2,6 +2,11 @@
 
 All notable changes to this project. Versions follow [semantic versioning](https://semver.org).
 
+## 0.19.0 (2026-10-15)
+
+- **Claude Desktop extension:** download one file (`selfhost-remote-mail-mcp.mcpb`), double-click it and type a passphrase. Claude Desktop installs and runs the server, with the same settings page at `localhost:8765/settings`, with no terminal and nothing else to install. A tick box chooses whether the settings page keeps running when Claude is closed. The file is attached to each release. Guide: [claude-desktop-extension.md](docs/claude-desktop-extension.md).
+- **One-click deploy on Railway and Render:** buttons in the README. Both run the ready-made Docker image, `ghcr.io/s17sh70x2jfl031ag/selfhost-remote-mail-mcp`, now built for each release (amd64 and arm64).
+
 ## 0.18.1 (2026-10-15)
 
 - **Tidier mailbox rows on the settings page:** each mailbox has one row of buttons. Test login, Check domain and Make default work right away; Mode, Signature, Rename, Server and password, and Remove open a panel below the row, one at a time. No more stack of folds and empty space.

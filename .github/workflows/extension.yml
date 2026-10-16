@@ -1,0 +1,41 @@
+# Builds the Claude Desktop extension (selfhost-remote-mail-mcp-<version>.mcpb) for each release, checks it with
+# Anthropic's own validator, and attaches it to the release, where the README's download link points.
+# Only official releases are built, never unreleased code. Runs only in the original project, not in forks.
+name: Claude Desktop extension
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag to build, like v0.19.0"
+        required: true
+
+permissions:
+  contents: write   # to attach the file to the release
+
+jobs:
+  mcpb:
+    if: github.repository == 's17sh70x2jfl031ag/Selfhost-Remote-Mail-MCP'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      TAG: ${{ github.event.release.tag_name || inputs.tag }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1   # v7.0.1, pinned
+        with:
+          ref: ${{ env.TAG }}
+      - name: Build
+        run: python3 scripts/build_mcpb.py
+      - name: Check it with the official validator
+        run: |
+          mkdir -p /tmp/mcpb && cd /tmp/mcpb
+          unzip -q "$GITHUB_WORKSPACE"/dist/*.mcpb
+          npx --yes @anthropic-ai/mcpb@2.1.2 validate manifest.json
+      - name: Attach to the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cp dist/*.mcpb dist/selfhost-remote-mail-mcp.mcpb   # a fixed name, so one link always gets the newest
+          gh release upload "$TAG" dist/*.mcpb --clobber

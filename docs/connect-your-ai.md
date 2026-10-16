@@ -22,7 +22,7 @@ Menus in these apps change often. If a label below doesn't match what you see, l
 | App | Same computer | Over the internet | Tested by us |
 |---|---|---|---|
 | [Claude Code](#claude-code) | Yes | Yes | Configuration accepted (same computer); the login was tested with an equivalent client |
-| [Claude Desktop](#claude-desktop) | Yes | Yes, via claude.ai | Not yet |
+| [Claude Desktop](#claude-desktop) | Yes | Yes, via claude.ai | The [extension](claude-desktop-extension.md): installed and started for real (macOS) |
 | [Claude website and phone app](#claude-website-and-phone-app) | No | Yes | The login steps, with Claude's real return address, tested locally |
 | [Codex](#codex) | Yes | Yes | Configuration accepted (both ways) |
 | [ChatGPT](#chatgpt) | No | Yes | The login steps, with ChatGPT's real return address, tested locally |
@@ -62,7 +62,9 @@ Then run `/mcp` inside Claude Code, choose `mail` and log in.
 
 ## Claude Desktop
 
-Settings → Developer → **Edit Config** opens `claude_desktop_config.json`. Add:
+The easiest way is the [Claude Desktop extension](claude-desktop-extension.md). Double-click one file, type a passphrase, and Claude Desktop runs it for you, no terminal and no settings file.
+
+Already installed the command ([option 1](setup-computer.md))? Settings → Developer → **Edit Config** opens `claude_desktop_config.json`. Add:
 
 ```json
 {

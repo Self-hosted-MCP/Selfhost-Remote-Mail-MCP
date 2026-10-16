@@ -37,6 +37,9 @@ tests/test_languages.py                  page languages: picking, fallback, tran
 tests/test_shared_files.py               files two copies change at once: locks, temporary files, one secret key
 tests/test_service.py                    setup on a computer, the background service (system commands faked), local pages
 tests/test_mailbox_page.py               make default, mode, a signature per mailbox, remove with its clean-up
+tests/test_extension.py                  the Claude Desktop extension: its passphrase, the settings page it starts, the .mcpb file
+extension/                               the Claude Desktop extension: manifest.json (version filled in at build) and icon.png
+scripts/build_mcpb.py                    builds dist/selfhost-remote-mail-mcp-<version>.mcpb from extension/ and the package
 src/selfhost_remote_mail_mcp/i18n.py     page languages: _(), picking a language, the translate command's helpers
 src/selfhost_remote_mail_mcp/locales/    one JSON file per language: English text -> translation
 examples/addons/                         hello.py, the smallest add-on, to copy when writing your own
@@ -101,7 +104,7 @@ These are the product. A change that weakens one needs a very good reason and a 
 - Add or change behaviour → add or change a test in `tests/`. Run `uv run pytest -q` before you finish.
 - New tool → choose `READ`, `WRITE` or (for deleting) `DELETE` annotations honestly. Anything that sends is never `WRITE`.
 - Changing user-visible behaviour → update the matching page in `docs/` in the same change. The docs are written in plain, everyday language: short sentences, no jargon, no em dashes.
-- Updates only ever follow published releases (`releases/latest`): the `update` command, `.github/workflows/update-from-releases.yml` (forks, opt-in via `AUTO_UPDATE=on`) and `scripts/update.sh`. `.github/workflows/docker-image.yml` publishes the Docker image to ghcr.io only for published releases (or a release tag run by hand), only in the original repository. Keep it that way, keep third-party actions pinned to a commit, and keep `UPDATE_CHECK` off by default. The changelog HTML on the settings page comes from our own `CHANGELOG.md` and is the one page part that isn't escaped.
+- Updates only ever follow published releases (`releases/latest`): the `update` command, `.github/workflows/update-from-releases.yml` (forks, opt-in via `AUTO_UPDATE=on`) and `scripts/update.sh`. `.github/workflows/docker-image.yml` publishes the Docker image to ghcr.io and `.github/workflows/extension.yml` attaches the Claude Desktop extension (`.mcpb`) to the release, both only for published releases (or a release tag run by hand), only in the original repository. Keep it that way, keep third-party actions pinned to a commit, and keep `UPDATE_CHECK` off by default. The changelog HTML on the settings page comes from our own `CHANGELOG.md` and is the one page part that isn't escaped.
 - Hosting files (`Dockerfile`, `render.yaml`, `docker-compose.yml`) are user setup paths. If you change one, re-check the steps in the matching `docs/setup-*.md`.
 - Don't add a database, a web UI or new runtime dependencies without a strong reason; "no database, your mailbox is the database" is a feature.
 

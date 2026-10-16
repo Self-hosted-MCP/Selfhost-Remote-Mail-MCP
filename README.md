@@ -83,6 +83,8 @@ The server is a small program. Your AI app talks to it through **MCP** (Model Co
 
 Option 2 in one click: Railway or Render sets everything up and asks you for one passphrase. [Steps](docs/setup-hosting.md#one-click-railway-or-render).
 
+On **Claude Desktop**, option 1 takes one click: [download the extension](https://github.com/s17sh70x2jfl031ag/Selfhost-Remote-Mail-MCP/releases/latest/download/selfhost-remote-mail-mcp.mcpb), double-click it and type a passphrase, with no terminal. [Steps](docs/claude-desktop-extension.md).
+
 > [!TIP]
 > Not sure? Start with **1** to try it for free. Move to **2** when you want it on your phone all the time. Option 2 works with [any hosting company that runs Docker](docs/setup-hosting.md#any-other-hosting-company), not only Railway and Render.
 >

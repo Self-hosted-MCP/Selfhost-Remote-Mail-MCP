@@ -77,6 +77,10 @@ In Task Scheduler, create a weekly task that runs `selfhost-remote-mail-mcp` wit
 
 `update` restarts the server running in the background by itself (Mac and Linux). Otherwise run `selfhost-remote-mail-mcp service restart`.
 
+### Claude Desktop extension
+
+Claude Desktop doesn't update an extension you downloaded. When there's a new release, [download the file again](claude-desktop-extension.md#update-it) and double-click it. Your settings and mailboxes stay.
+
 ### On a hosting company (Railway, Render, Fly.io …)
 
 Deployed with the Railway or Render button? Railway: turn on auto updates in the service's **Settings → Source**. Render: **Manual Deploy → Deploy latest reference**. Both then run the newest official release.

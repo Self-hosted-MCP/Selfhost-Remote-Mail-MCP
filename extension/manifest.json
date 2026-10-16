@@ -1,0 +1,77 @@
+{
+  "manifest_version": "0.4",
+  "name": "selfhost-remote-mail-mcp",
+  "display_name": "Selfhost Remote Mail MCP",
+  "version": "0.0.0",
+  "description": "Your own email inside Claude: search, read, draft and sort, in any mailbox that supports IMAP.",
+  "long_description": "Puts your own mailboxes inside Claude Desktop. Claude can search and read your email, write drafts, sort, archive and, if you allow it, send. It runs on this computer. Your passwords stay here, encrypted.\n\n**After installing:** open the settings page at http://localhost:8765/settings, type the passphrase you chose here, and add your mailbox (any mailbox that supports IMAP; most need an app password). Then start a new chat.\n\nThe same settings page adds more mailboxes (up to 5, each full, draft only or read only), signatures, add-ons such as Calendar, and privacy options.\n\nGuides: https://github.com/s17sh70x2jfl031ag/Selfhost-Remote-Mail-MCP/blob/main/docs/claude-desktop-extension.md",
+  "author": {
+    "name": "s17sh70x2jfl031ag",
+    "url": "https://github.com/s17sh70x2jfl031ag"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/s17sh70x2jfl031ag/Selfhost-Remote-Mail-MCP.git"
+  },
+  "homepage": "https://github.com/s17sh70x2jfl031ag/Selfhost-Remote-Mail-MCP",
+  "documentation": "https://github.com/s17sh70x2jfl031ag/Selfhost-Remote-Mail-MCP/blob/main/docs/claude-desktop-extension.md",
+  "support": "https://github.com/s17sh70x2jfl031ag/Selfhost-Remote-Mail-MCP/issues",
+  "icon": "icon.png",
+  "server": {
+    "type": "uv",
+    "entry_point": "src/selfhost_remote_mail_mcp/__main__.py",
+    "mcp_config": {
+      "command": "uv",
+      "args": ["run", "--directory", "${__dirname}", "--frozen", "--no-dev", "--extra", "addons", "--quiet",
+               "selfhost-remote-mail-mcp", "extension"],
+      "env": {
+        "MAIL_EXTENSION_PASSPHRASE": "${user_config.passphrase}",
+        "MAIL_EXTENSION_BACKGROUND": "${user_config.keep_running}"
+      }
+    }
+  },
+  "tools": [
+    {"name": "accounts", "description": "Lists your mailboxes, their modes and the settings page address"},
+    {"name": "folders", "description": "Lists a mailbox's folders"},
+    {"name": "emails", "description": "Lists emails in a folder"},
+    {"name": "search", "description": "Searches emails with simple filters like from:sam is:unread"},
+    {"name": "thread", "description": "Opens a whole conversation"},
+    {"name": "attachment", "description": "Opens an attachment: pictures, PDFs and text"},
+    {"name": "draft", "description": "Writes a draft: new email, reply, reply to all or forward"},
+    {"name": "action", "description": "Archives, moves, deletes to Trash, marks read or unread, pins"},
+    {"name": "send_email", "description": "Sends an email, only in mailboxes set to full"},
+    {"name": "schedule_send", "description": "Sends an email later"},
+    {"name": "scheduled", "description": "Lists or cancels scheduled emails"},
+    {"name": "contacts", "description": "Lists the people you write to"},
+    {"name": "contact", "description": "Shows one person's details"},
+    {"name": "templates", "description": "Lists your saved email templates"},
+    {"name": "template", "description": "Fills in a saved template"},
+    {"name": "upload_link", "description": "Gives a one-time link to upload a file to attach"},
+    {"name": "settings", "description": "Shows the settings and the settings page address"},
+    {"name": "change_setting", "description": "Changes a setting, like a mailbox's signature"}
+  ],
+  "tools_generated": true,
+  "keywords": ["email", "imap", "smtp", "self-hosted", "privacy"],
+  "license": "AGPL-3.0-only",
+  "compatibility": {
+    "platforms": ["darwin", "win32", "linux"],
+    "runtimes": {
+      "python": ">=3.11"
+    }
+  },
+  "user_config": {
+    "passphrase": {
+      "type": "string",
+      "title": "Passphrase for your settings page (12+ characters)",
+      "description": "Make one up: 12 or more characters. It locks your settings page at http://localhost:8765/settings, where you add your mailbox. Save it in your password manager. If you set one up with this server before, type that one.",
+      "sensitive": true,
+      "required": true
+    },
+    "keep_running": {
+      "type": "boolean",
+      "title": "Keep the settings page running when Claude is closed",
+      "description": "On: it starts when you log in, so scheduled emails go out and add-ons work even when Claude Desktop is closed (Mac and Linux). Off: it only runs while Claude Desktop is open.",
+      "default": true
+    }
+  }
+}
