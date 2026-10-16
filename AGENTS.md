@@ -124,7 +124,7 @@ When a person asks you to set this server up for them (on their computer, a host
 
 **The host must have** (check each one; say clearly if a host can't do one)
 
-- a Docker build from the `Dockerfile`, with traffic to port 8765 (`PORT=8765`),
+- a Docker build from the `Dockerfile` (or the ready-made image `ghcr.io/s17sh70x2jfl031ag/selfhost-remote-mail-mcp:latest`), with traffic to port 8765 (`PORT=8765`),
 - HTTPS and `PUBLIC_URL` set to the exact public address, without `/mcp`,
 - a persistent volume at `/data`,
 - always on (no scale to zero) and exactly one instance,

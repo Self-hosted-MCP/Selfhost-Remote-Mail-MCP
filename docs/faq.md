@@ -216,7 +216,7 @@ Yes. The settings page lists the browsers signed in to it, and every sign-in of 
 
 - Computer: `selfhost-remote-mail-mcp update`
 - Hosting company: the **Update from official releases** action in your fork
-- Own server: `./scripts/update.sh`
+- Own server: `./scripts/update.sh`, or with the ready-made image `docker compose pull && docker compose up -d`
 
 Each only installs official releases. Turn on `UPDATE_CHECK=on` (or ask your AI: *"Tell me when there's a new version"*) to be told when there's one, or let it update by itself: [updates.md](updates.md).
 

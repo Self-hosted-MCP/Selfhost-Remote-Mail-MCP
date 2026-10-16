@@ -6,7 +6,7 @@
 # Full guide: docs/setup-own-server.md
 services:
   mail:
-    build: .
+    build: .   # or skip the build: image: ghcr.io/s17sh70x2jfl031ag/selfhost-remote-mail-mcp:latest  (docs/setup-own-server.md)
     restart: unless-stopped
     env_file: .env
     environment:

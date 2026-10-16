@@ -57,7 +57,7 @@ Railway and Render have step-by-step instructions above, but you can use any ser
 
 | Need | Why | Usually called |
 |---|---|---|
-| Build from the `Dockerfile` | That's the server | "Deploy from GitHub" or "Dockerfile build" |
+| Build from the `Dockerfile`, or run the ready-made image | That's the server | "Deploy from GitHub", "Dockerfile build", or "Deploy an image": `ghcr.io/s17sh70x2jfl031ag/selfhost-remote-mail-mcp:latest` |
 | Web traffic to port **8765** | Where the server listens | `PORT=8765`, "internal port" or "target port" |
 | HTTPS with a public address | AI apps only connect over HTTPS | Usually automatic. Set `PUBLIC_URL` to that address |
 | A **persistent volume** at `/data` | Keeps logins, the send log and mailboxes added on the settings page | "Volume", "disk" or "persistent storage" |

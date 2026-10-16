@@ -94,7 +94,7 @@ How it stays safe:
 
 ### On your own server (Docker Compose)
 
-`scripts/update.sh` moves your copy to the newest release and runs `docker compose up -d --build`. Using the ready-made image instead ([how](setup-own-server.md#ready-made-image-no-build))? Then updating is `docker compose pull && docker compose up -d`. It refuses to run if you changed any of the project's files (your `.env` doesn't count). To run it weekly, add to `crontab -e`:
+`scripts/update.sh` moves your copy to the newest release and runs `docker compose up -d --build`. It refuses to run if you changed any of the project's files (your `.env` doesn't count). Using the ready-made image instead ([how](setup-own-server.md#ready-made-image-no-build))? Then updating is `docker compose pull && docker compose up -d`, no script needed. To run the script weekly, add to `crontab -e`:
 
 ```
 0 4 * * 1 /path/to/Selfhost-Remote-Mail-MCP/scripts/update.sh >> /var/log/mail-mcp-update.log 2>&1
