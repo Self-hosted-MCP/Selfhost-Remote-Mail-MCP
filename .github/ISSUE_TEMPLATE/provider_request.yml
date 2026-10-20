@@ -6,7 +6,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Check [Email providers](https://github.com/s17sh70x2jfl031ag/Selfhost-Remote-Mail-MCP/blob/main/docs/email-providers.md) first: it lists settings and app password steps for over 40 providers, and which ones can't work yet (Outlook.com, Microsoft 365, Proton, Tuta, HEY).
+        Check [Email providers](https://github.com/Self-hosted-MCP/Selfhost-Remote-Mail-MCP/blob/main/docs/email-providers.md) first: it lists settings and app password steps for over 40 providers, and which ones can't work yet (Outlook.com, Microsoft 365, Proton, Tuta, HEY).
   - type: checkboxes
     id: privacy
     attributes:

@@ -2,7 +2,7 @@
 """selfhost-remote-mail-mcp: your own mailbox for AI assistants, over plain IMAP/SMTP.
 
 Copyright (C) 2026 s17sh70x2jfl031ag and Selfhost-Remote-Mail-MCP contributors.
-Original project: https://github.com/s17sh70x2jfl031ag/Selfhost-Remote-Mail-MCP
+Original project: https://github.com/Self-hosted-MCP/Selfhost-Remote-Mail-MCP
 Licensed under the GNU Affero General Public License v3.0 only, with additional terms under its section 7 (the
 author credit in the page footers, marking changed versions, the project's names): see LICENSE and NOTICE.
 
@@ -5573,7 +5573,7 @@ def run_service(args: list[str]) -> None:
 
 # ---------------------------------------------------------------- updates (opt-in, official releases only)
 
-REPO = "s17sh70x2jfl031ag/Selfhost-Remote-Mail-MCP"
+REPO = "Self-hosted-MCP/Selfhost-Remote-Mail-MCP"
 RELEASES_API = f"https://api.github.com/repos/{REPO}/releases/latest"
 UPDATE_FILE = STATE_DIR / "update.json"   # the last check: when, and which release was newest
 CHECK_EVERY = 24 * 3600

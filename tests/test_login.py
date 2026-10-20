@@ -66,7 +66,7 @@ def test_login_page_names_the_app_and_is_locked_down(monkeypatch):
     html = page.body.decode()
     assert "Claude &lt;script&gt;" in html and "claude.ai" in html and "<script>" not in html
     assert page.headers["x-frame-options"] == "DENY" and page.headers["cache-control"] == "no-store"
-    assert "s17sh70x2jfl031ag" in html
+    assert "Self-hosted MCP" in html
     assert "expired" in server.login_page(p, "unknown").body.decode()
     assert p.complete_login(req, "wrong", ["me@example.com"]) is None
     assert p.complete_login(req, "a good long passphrase", ["me@example.com"]).startswith("https://claude.ai/")

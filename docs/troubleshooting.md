@@ -283,6 +283,6 @@ Times in the send log and in tool answers use the server's time zone. Set `TZ`, 
 
 ## Still stuck?
 
-Open an issue with the [**Something doesn't work**](https://github.com/s17sh70x2jfl031ag/Selfhost-Remote-Mail-MCP/issues/new?template=bug_report.yml) form. It asks for what's needed. Remove passwords and addresses first: issues are public.
+Open an issue with the [**Something doesn't work**](https://github.com/Self-hosted-MCP/Selfhost-Remote-Mail-MCP/issues/new?template=bug_report.yml) form. It asks for what's needed. Remove passwords and addresses first: issues are public.
 
-Provider trouble? Use the [**My email provider doesn't work**](https://github.com/s17sh70x2jfl031ag/Selfhost-Remote-Mail-MCP/issues/new?template=provider_request.yml) form.
+Provider trouble? Use the [**My email provider doesn't work**](https://github.com/Self-hosted-MCP/Selfhost-Remote-Mail-MCP/issues/new?template=provider_request.yml) form.

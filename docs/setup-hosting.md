@@ -19,7 +19,7 @@ Railway and Render each have a button that does it all in one click. For the Rai
 
 ## One click: Railway or Render
 
-<a href="https://railway.com/deploy/selfhost-remote-mail-mcp"><img src="https://railway.com/button.svg" alt="Deploy on Railway"></a> <a href="https://render.com/deploy?repo=https://github.com/s17sh70x2jfl031ag/Selfhost-Remote-Mail-MCP"><img src="https://render.com/images/deploy-to-render-button.svg" alt="Deploy to Render"></a>
+<a href="https://railway.com/deploy/selfhost-remote-mail-mcp"><img src="https://railway.com/button.svg" alt="Deploy on Railway"></a> <a href="https://render.com/deploy?repo=https://github.com/Self-hosted-MCP/Selfhost-Remote-Mail-MCP"><img src="https://render.com/images/deploy-to-render-button.svg" alt="Deploy to Render"></a>
 
 1. Click a button and sign in. Railway needs the **Hobby** plan ($5 a month, including $5 of usage, which this server stays well within). Render uses its smallest paid instance (about $7 a month plus $0.25 for the disk).
 2. Type your **LOGIN_PASSPHRASE**, a long passphrase only you know. It locks your settings page. The secret key, the public address and the storage disk at `/data` are made for you.
@@ -69,7 +69,7 @@ Railway and Render have step-by-step instructions above, but you can use any ser
 
 | Need | Why | Usually called |
 |---|---|---|
-| Build from the `Dockerfile`, or run the ready-made image | That's the server | "Deploy from GitHub", "Dockerfile build", or "Deploy an image": `ghcr.io/s17sh70x2jfl031ag/selfhost-remote-mail-mcp:latest` |
+| Build from the `Dockerfile`, or run the ready-made image | That's the server | "Deploy from GitHub", "Dockerfile build", or "Deploy an image": `ghcr.io/self-hosted-mcp/selfhost-remote-mail-mcp:latest` |
 | Web traffic to port **8765** | Where the server listens | `PORT=8765`, "internal port" or "target port" |
 | HTTPS with a public address | AI apps only connect over HTTPS | Usually automatic. Set `PUBLIC_URL` to that address |
 | A **persistent volume** at `/data` | Keeps logins, the send log and mailboxes added on the settings page | "Volume", "disk" or "persistent storage" |
@@ -143,4 +143,4 @@ Used a button? On Railway, open the service's **Settings → Source** and turn o
 | Render's and Railway's ports and addresses | Yes, by faking their environment |
 | `render.yaml` and the Railway steps | Checked against Render's and Railway's current docs and against other projects' working setups (October 2026) |
 | The passphrase login over HTTPS, as Claude and ChatGPT do it | Yes, locally |
-| A real deploy on Railway or Render | Not yet: needs an account. Please [report it](https://github.com/s17sh70x2jfl031ag/Selfhost-Remote-Mail-MCP/issues/new?template=bug_report.yml) if a step doesn't match what you see |
+| A real deploy on Railway or Render | Not yet: needs an account. Please [report it](https://github.com/Self-hosted-MCP/Selfhost-Remote-Mail-MCP/issues/new?template=bug_report.yml) if a step doesn't match what you see |

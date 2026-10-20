@@ -148,4 +148,4 @@ def test_every_page_text_is_marked_for_translation():
         chunk = htmllib.unescape(chunk).strip(" .·,")
         plain = [re.sub(r"<[^>]+>", "", t) for t in texts]
         assert (any(chunk in t for t in plain) or any(p.search(chunk) for p in patterns)
-                or chunk in ("s17sh70x2jfl031ag", "Claude", "Work", "Mac", "decks", "a.pdf", "1 MB")), chunk
+                or chunk in ("Self-hosted MCP", "Claude", "Work", "Mac", "decks", "a.pdf", "1 MB")), chunk

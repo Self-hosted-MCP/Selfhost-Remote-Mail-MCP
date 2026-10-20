@@ -16,8 +16,9 @@ import string
 from .i18n import LANG, LANGUAGES, N_, _
 
 PROJECT = "Selfhost-Remote-Mail-MCP"
-PROJECT_URL = "https://github.com/s17sh70x2jfl031ag/Selfhost-Remote-Mail-MCP"
-AUTHOR = "s17sh70x2jfl031ag"
+PROJECT_URL = "https://github.com/Self-hosted-MCP/Selfhost-Remote-Mail-MCP"
+AUTHOR = "Self-hosted MCP"
+AUTHOR_URL = "https://github.com/Self-hosted-MCP"
 
 # Never cached, never shown inside another site, never telling other sites where you came from.
 HEADERS = {
@@ -888,7 +889,7 @@ def settings(csrf: str, mailboxes: list[dict], apps: list[dict], flash: tuple[st
         parts.append(f'<p class="hint">{esc(_("Free and open source software under the GNU Affero General Public License v3.0, with no warranty."))} '
                      f'<a href="{esc(source)}">{esc(_("Source code"))}</a> · '
                      f'<a href="https://www.gnu.org/licenses/agpl-3.0.html">{esc(_("License"))}</a></p>')
-        profile = f"https://github.com/{AUTHOR}"
+        profile = AUTHOR_URL
         parts.append(f'<div class="list maker"><div class="item"><img src="{profile}.png?size=112" alt="" width="56" '
                      f'height="56" loading="lazy" referrerpolicy="no-referrer"><div><b>'
                      + _("Made by {author}", author=f'<a href="{profile}">{esc(AUTHOR)}</a>') + '</b><span class="muted">'

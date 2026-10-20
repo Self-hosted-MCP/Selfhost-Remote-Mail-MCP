@@ -30,7 +30,7 @@ Turns text into a clean PDF and attaches it to a draft: a proposal, a summary, m
 > **On a computer**, it needs the extra package `fpdf2`. Install it once, then restart the server in the background:
 >
 > ```bash
-> uv tool install --force "selfhost-remote-mail-mcp[addons] @ git+https://github.com/s17sh70x2jfl031ag/Selfhost-Remote-Mail-MCP"
+> uv tool install --force "selfhost-remote-mail-mcp[addons] @ git+https://github.com/Self-hosted-MCP/Selfhost-Remote-Mail-MCP"
 > ```
 >
 > ```bash

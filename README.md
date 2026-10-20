@@ -8,16 +8,16 @@ https://github.com/user-attachments/assets/db89f629-66b8-4f5f-8ecd-3bbc2a51d134
 
 <p align="center">
 <a href="#credits"><img src="https://img.shields.io/badge/-open%20source-brightgreen" alt="Open source"></a>
-<a href="https://github.com/s17sh70x2jfl031ag/Selfhost-Remote-Mail-MCP/stargazers"><img src="https://img.shields.io/github/stars/s17sh70x2jfl031ag/Selfhost-Remote-Mail-MCP?style=flat" alt="GitHub stars"></a>
+<a href="https://github.com/Self-hosted-MCP/Selfhost-Remote-Mail-MCP/stargazers"><img src="https://img.shields.io/github/stars/Self-hosted-MCP/Selfhost-Remote-Mail-MCP?style=flat" alt="GitHub stars"></a>
 <a href="LICENSE"><img src="https://img.shields.io/badge/license-AGPL--3.0-blue" alt="License: AGPL-3.0"></a>
 <a href="pyproject.toml"><img src="https://img.shields.io/badge/python-3.11%2B-blue" alt="Python 3.11+"></a>
 <a href="https://modelcontextprotocol.io"><img src="https://img.shields.io/badge/MCP-server-black" alt="MCP server"></a>
 <a href="docs/connect-your-ai.md"><img src="https://img.shields.io/badge/works%20with-Claude%20%C2%B7%20ChatGPT%20%C2%B7%20Codex-orange" alt="Works with Claude, ChatGPT, Codex"></a>
 <a href="#choose-how-to-run-it"><img src="https://img.shields.io/badge/self--hosted-computer%20%C2%B7%20cloud%20%C2%B7%20server-green" alt="Self-hosted"></a>
 <br>
-<a href="https://github.com/s17sh70x2jfl031ag/Selfhost-Remote-Mail-MCP/actions/workflows/tests.yml"><img src="https://github.com/s17sh70x2jfl031ag/Selfhost-Remote-Mail-MCP/actions/workflows/tests.yml/badge.svg" alt="Tests"></a>
-<a href="https://github.com/s17sh70x2jfl031ag/Selfhost-Remote-Mail-MCP/releases/latest"><img src="https://img.shields.io/github/v/release/s17sh70x2jfl031ag/Selfhost-Remote-Mail-MCP" alt="Latest release"></a>
-<a href="https://github.com/s17sh70x2jfl031ag/Selfhost-Remote-Mail-MCP/commits/main"><img src="https://img.shields.io/github/last-commit/s17sh70x2jfl031ag/Selfhost-Remote-Mail-MCP" alt="Last commit"></a>
+<a href="https://github.com/Self-hosted-MCP/Selfhost-Remote-Mail-MCP/actions/workflows/tests.yml"><img src="https://github.com/Self-hosted-MCP/Selfhost-Remote-Mail-MCP/actions/workflows/tests.yml/badge.svg" alt="Tests"></a>
+<a href="https://github.com/Self-hosted-MCP/Selfhost-Remote-Mail-MCP/releases/latest"><img src="https://img.shields.io/github/v/release/Self-hosted-MCP/Selfhost-Remote-Mail-MCP" alt="Latest release"></a>
+<a href="https://github.com/Self-hosted-MCP/Selfhost-Remote-Mail-MCP/commits/main"><img src="https://img.shields.io/github/last-commit/Self-hosted-MCP/Selfhost-Remote-Mail-MCP" alt="Last commit"></a>
 <a href="docs/languages.md"><img src="https://img.shields.io/badge/languages-20-6a5cff" alt="20 languages"></a>
 <a href="src/selfhost_remote_mail_mcp/library/README.md"><img src="https://img.shields.io/badge/add--ons-library-c8f53a" alt="Add-on library"></a>
 </p>
@@ -79,11 +79,11 @@ The server is a small program. Your AI app talks to it through **MCP** (Model Co
 | **2. A hosting company** | Railway, Render, Fly.io or others, in the cloud | Always | About $5 to $8 a month | 10 minutes, no terminal needed | [setup-hosting.md](docs/setup-hosting.md) |
 | **3. Your own server** | Any server with Docker | Always | Free to cheap | 15 minutes, for people used to servers | [setup-own-server.md](docs/setup-own-server.md) |
 
-<a href="https://railway.com/deploy/selfhost-remote-mail-mcp"><img src="https://railway.com/button.svg" alt="Deploy on Railway"></a> <a href="https://render.com/deploy?repo=https://github.com/s17sh70x2jfl031ag/Selfhost-Remote-Mail-MCP"><img src="https://render.com/images/deploy-to-render-button.svg" alt="Deploy to Render"></a>
+<a href="https://railway.com/deploy/selfhost-remote-mail-mcp"><img src="https://railway.com/button.svg" alt="Deploy on Railway"></a> <a href="https://render.com/deploy?repo=https://github.com/Self-hosted-MCP/Selfhost-Remote-Mail-MCP"><img src="https://render.com/images/deploy-to-render-button.svg" alt="Deploy to Render"></a>
 
 Option 2 in one click: Railway or Render sets everything up and asks you for one passphrase. [Steps](docs/setup-hosting.md#one-click-railway-or-render).
 
-On **Claude Desktop**, option 1 takes one click: [download the extension](https://github.com/s17sh70x2jfl031ag/Selfhost-Remote-Mail-MCP/releases/latest/download/selfhost-remote-mail-mcp.mcpb), double-click it and type a passphrase, with no terminal. [Steps](docs/claude-desktop-extension.md).
+On **Claude Desktop**, option 1 takes one click: [download the extension](https://github.com/Self-hosted-MCP/Selfhost-Remote-Mail-MCP/releases/latest/download/selfhost-remote-mail-mcp.mcpb), double-click it and type a passphrase, with no terminal. [Steps](docs/claude-desktop-extension.md).
 
 > [!TIP]
 > Not sure? Start with **1** to try it for free. Move to **2** when you want it on your phone all the time. Option 2 works with [any hosting company that runs Docker](docs/setup-hosting.md#any-other-hosting-company), not only Railway and Render.
@@ -159,7 +159,7 @@ Extra features that come with the server. **All of them are off** until you turn
 
 Prefer the terminal? Use `selfhost-remote-mail-mcp addons enable caldav`, or add the name to `MAIL_ADDONS`.
 
-**Make your own.** An add-on is one small Python file. Ask an AI coding agent like Claude Code or Codex to build one for you: [AGENTS.md](AGENTS.md#add-ons-for-a-user) gives it the steps, and the [add-ons guide](docs/addons.md) explains the rules every add-on follows. Built something useful? Share it with the [Share an add-on](https://github.com/s17sh70x2jfl031ag/Selfhost-Remote-Mail-MCP/issues/new?template=addon.yml) form.
+**Make your own.** An add-on is one small Python file. Ask an AI coding agent like Claude Code or Codex to build one for you: [AGENTS.md](AGENTS.md#add-ons-for-a-user) gives it the steps, and the [add-ons guide](docs/addons.md) explains the rules every add-on follows. Built something useful? Share it with the [Share an add-on](https://github.com/Self-hosted-MCP/Selfhost-Remote-Mail-MCP/issues/new?template=addon.yml) form.
 
 All the details: [the add-on library](src/selfhost_remote_mail_mcp/library/README.md).
 
@@ -188,7 +188,7 @@ More in [docs/safety.md](docs/safety.md) (risks and good settings) and [docs/pri
 2. Install the server:
 
    ```bash
-   uv tool install git+https://github.com/s17sh70x2jfl031ag/Selfhost-Remote-Mail-MCP
+   uv tool install git+https://github.com/Self-hosted-MCP/Selfhost-Remote-Mail-MCP
    ```
 
 3. Run setup. It asks you to choose a passphrase, starts the server in the background and opens your settings page:
@@ -249,22 +249,22 @@ More in [docs/safety.md](docs/safety.md) (risks and good settings) and [docs/pri
 | You want to | Go to |
 |---|---|
 | Fix a problem yourself | [Troubleshooting](docs/troubleshooting.md) |
-| Report a bug | [Something doesn't work](https://github.com/s17sh70x2jfl031ag/Selfhost-Remote-Mail-MCP/issues/new?template=bug_report.yml) |
-| Get a provider working | [My email provider doesn't work](https://github.com/s17sh70x2jfl031ag/Selfhost-Remote-Mail-MCP/issues/new?template=provider_request.yml) |
-| Ask a question or share an idea | [Question](https://github.com/s17sh70x2jfl031ag/Selfhost-Remote-Mail-MCP/issues/new?template=question.yml) |
-| Report a security problem, privately | [Private report](https://github.com/s17sh70x2jfl031ag/Selfhost-Remote-Mail-MCP/security/advisories/new) ([SECURITY.md](SECURITY.md)) |
+| Report a bug | [Something doesn't work](https://github.com/Self-hosted-MCP/Selfhost-Remote-Mail-MCP/issues/new?template=bug_report.yml) |
+| Get a provider working | [My email provider doesn't work](https://github.com/Self-hosted-MCP/Selfhost-Remote-Mail-MCP/issues/new?template=provider_request.yml) |
+| Ask a question or share an idea | [Question](https://github.com/Self-hosted-MCP/Selfhost-Remote-Mail-MCP/issues/new?template=question.yml) |
+| Report a security problem, privately | [Private report](https://github.com/Self-hosted-MCP/Selfhost-Remote-Mail-MCP/security/advisories/new) ([SECURITY.md](SECURITY.md)) |
 
 Issues are public, so leave out passwords, email addresses and email content.
 
 ## Credits
 
-Selfhost-Remote-Mail-MCP was made by [s17sh70x2jfl031ag](https://github.com/s17sh70x2jfl031ag).
+Selfhost-Remote-Mail-MCP was made by [Self-hosted MCP](https://github.com/Self-hosted-MCP).
 
 You're welcome to use, fork, change and build on it under the [GNU Affero General Public License v3.0](LICENSE) (AGPL-3.0-only) and the additional terms in [NOTICE](NOTICE). In short:
 
 - Keep [LICENSE](LICENSE), [NOTICE](NOTICE) and the copyright lines.
 - If you share a changed version, or run one that other people use over the internet, offer them its source code under the same license. Set `SOURCE_URL` to where it is, and the pages link to it.
-- Keep the credit in the page footers (*"Selfhost-Remote-Mail-MCP by s17sh70x2jfl031ag"*), and mark your version as changed.
+- Keep the credit in the page footers (*"Selfhost-Remote-Mail-MCP by Self-hosted MCP"*), and mark your version as changed.
 
 GitHub's "Cite this repository" button uses [CITATION.cff](CITATION.cff).
 

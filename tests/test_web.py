@@ -319,7 +319,7 @@ def test_pages_show_the_license_and_a_changed_versions_source(web, monkeypatch):
     monkeypatch.setenv("SOURCE_URL", "https://git.example.org/my-fork")
     page = client.get("/settings").text
     assert '<a href="https://git.example.org/my-fork">Source code</a>' in page.split("<footer>")[1]
-    assert "Selfhost-Remote-Mail-MCP</a> by s17sh70x2jfl031ag" in page
+    assert "Selfhost-Remote-Mail-MCP</a> by Self-hosted MCP" in page
     monkeypatch.setenv("SOURCE_URL", "javascript:alert(1)")
     assert "javascript:" not in client.get("/settings").text
 

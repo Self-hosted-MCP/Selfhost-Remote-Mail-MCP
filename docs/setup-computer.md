@@ -46,7 +46,7 @@ Close the window and open a new one afterwards. To check it worked, run `uv --ve
 ## 2. Install the mail server
 
 ```bash
-uv tool install git+https://github.com/s17sh70x2jfl031ag/Selfhost-Remote-Mail-MCP
+uv tool install git+https://github.com/Self-hosted-MCP/Selfhost-Remote-Mail-MCP
 ```
 
 This adds one command, `selfhost-remote-mail-mcp`. To check, run `selfhost-remote-mail-mcp help`. You should see a short list of commands. To update later, run `selfhost-remote-mail-mcp update` ([updates.md](updates.md)). To remove it, run `uv tool uninstall selfhost-remote-mail-mcp`.

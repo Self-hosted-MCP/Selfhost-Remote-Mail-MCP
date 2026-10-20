@@ -2,6 +2,12 @@
 
 All notable changes to this project. Versions follow [semantic versioning](https://semver.org).
 
+## 0.19.1 (2026-10-20)
+
+- The project moved to the [Self-hosted MCP](https://github.com/Self-hosted-MCP) organisation on GitHub. Old links to the repository redirect to the new one.
+- The ready-made Docker image is now `ghcr.io/self-hosted-mcp/selfhost-remote-mail-mcp`. If you run the old image name, switch to this one to keep getting updates.
+- `scripts/update.sh` follows GitHub's redirects.
+
 ## 0.19.0 (2026-10-15)
 
 - **Claude Desktop extension:** download one file (`selfhost-remote-mail-mcp.mcpb`), double-click it and type a passphrase. Claude Desktop installs and runs the server, with the same settings page at `localhost:8765/settings`, with no terminal and nothing else to install. A tick box chooses whether the settings page keeps running when Claude is closed. The file is attached to each release. Guide: [claude-desktop-extension.md](docs/claude-desktop-extension.md).

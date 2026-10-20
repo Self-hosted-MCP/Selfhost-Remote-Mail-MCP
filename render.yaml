@@ -6,7 +6,7 @@ services:
     name: selfhost-remote-mail-mcp
     runtime: image
     image:
-      url: ghcr.io/s17sh70x2jfl031ag/selfhost-remote-mail-mcp:latest
+      url: ghcr.io/self-hosted-mcp/selfhost-remote-mail-mcp:latest
     # no plan line: Render then uses its smallest paid instance (0.5 CPU, 512 MB), which can keep a disk.
     # The free plan can't keep a disk and falls asleep, which would break scheduled send.
     healthCheckPath: /health

@@ -4,18 +4,18 @@
   "display_name": "Selfhost Remote Mail MCP",
   "version": "0.0.0",
   "description": "Your own email inside Claude: search, read, draft and sort, in any mailbox that supports IMAP.",
-  "long_description": "Puts your own mailboxes inside Claude Desktop. Claude can search and read your email, write drafts, sort, archive and, if you allow it, send. It runs on this computer. Your passwords stay here, encrypted.\n\n**After installing:** open the settings page at http://localhost:8765/settings, type the passphrase you chose here, and add your mailbox (any mailbox that supports IMAP; most need an app password). Then start a new chat.\n\nThe same settings page adds more mailboxes (up to 5, each full, draft only or read only), signatures, add-ons such as Calendar, and privacy options.\n\nGuides: https://github.com/s17sh70x2jfl031ag/Selfhost-Remote-Mail-MCP/blob/main/docs/claude-desktop-extension.md",
+  "long_description": "Puts your own mailboxes inside Claude Desktop. Claude can search and read your email, write drafts, sort, archive and, if you allow it, send. It runs on this computer. Your passwords stay here, encrypted.\n\n**After installing:** open the settings page at http://localhost:8765/settings, type the passphrase you chose here, and add your mailbox (any mailbox that supports IMAP; most need an app password). Then start a new chat.\n\nThe same settings page adds more mailboxes (up to 5, each full, draft only or read only), signatures, add-ons such as Calendar, and privacy options.\n\nGuides: https://github.com/Self-hosted-MCP/Selfhost-Remote-Mail-MCP/blob/main/docs/claude-desktop-extension.md",
   "author": {
-    "name": "s17sh70x2jfl031ag",
-    "url": "https://github.com/s17sh70x2jfl031ag"
+    "name": "Self-hosted MCP",
+    "url": "https://github.com/Self-hosted-MCP"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/s17sh70x2jfl031ag/Selfhost-Remote-Mail-MCP.git"
+    "url": "https://github.com/Self-hosted-MCP/Selfhost-Remote-Mail-MCP.git"
   },
-  "homepage": "https://github.com/s17sh70x2jfl031ag/Selfhost-Remote-Mail-MCP",
-  "documentation": "https://github.com/s17sh70x2jfl031ag/Selfhost-Remote-Mail-MCP/blob/main/docs/claude-desktop-extension.md",
-  "support": "https://github.com/s17sh70x2jfl031ag/Selfhost-Remote-Mail-MCP/issues",
+  "homepage": "https://github.com/Self-hosted-MCP/Selfhost-Remote-Mail-MCP",
+  "documentation": "https://github.com/Self-hosted-MCP/Selfhost-Remote-Mail-MCP/blob/main/docs/claude-desktop-extension.md",
+  "support": "https://github.com/Self-hosted-MCP/Selfhost-Remote-Mail-MCP/issues",
   "icon": "icon.png",
   "server": {
     "type": "uv",

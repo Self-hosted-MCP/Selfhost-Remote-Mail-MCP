@@ -1,4 +1,4 @@
-# Publishes the ready-made Docker image to ghcr.io/s17sh70x2jfl031ag/selfhost-remote-mail-mcp for each release,
+# Publishes the ready-made Docker image to ghcr.io/self-hosted-mcp/selfhost-remote-mail-mcp for each release,
 # for both amd64 and arm64 servers. Tags: the version (0.18.1), major.minor (0.18) and latest.
 # Only official releases are built, never unreleased code. Runs only in the original project, not in forks.
 name: Docker image
@@ -18,7 +18,7 @@ permissions:
 
 jobs:
   image:
-    if: github.repository == 's17sh70x2jfl031ag/Selfhost-Remote-Mail-MCP'
+    if: github.repository == 'Self-hosted-MCP/Selfhost-Remote-Mail-MCP'
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
@@ -35,7 +35,7 @@ jobs:
       - id: meta
         uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302   # v6.2.0, pinned
         with:
-          images: ghcr.io/s17sh70x2jfl031ag/selfhost-remote-mail-mcp
+          images: ghcr.io/self-hosted-mcp/selfhost-remote-mail-mcp
           tags: |
             type=semver,pattern={{version}},value=${{ github.event.release.tag_name || inputs.tag }}
             type=semver,pattern={{major}}.{{minor}},value=${{ github.event.release.tag_name || inputs.tag }}

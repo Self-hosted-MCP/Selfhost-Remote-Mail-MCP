@@ -292,7 +292,7 @@ docker compose exec mail selfhost-remote-mail-mcp addons
 
 ## Share it
 
-If you built something others could use, share it with the **[Share an add-on](https://github.com/s17sh70x2jfl031ag/Selfhost-Remote-Mail-MCP/issues/new?template=addon.yml)** form. The maintainer gets notified, and good add-ons can join the official version in `examples/addons`, credited to you. Remove names, keys, addresses and other private details first.
+If you built something others could use, share it with the **[Share an add-on](https://github.com/Self-hosted-MCP/Selfhost-Remote-Mail-MCP/issues/new?template=addon.yml)** form. The maintainer gets notified, and good add-ons can join the official version in `examples/addons`, credited to you. Remove names, keys, addresses and other private details first.
 
 Ideas without code are welcome too, in the same form.
 
@@ -301,7 +301,7 @@ Ideas without code are welcome too, in the same form.
 | The server says | What to do |
 |---|---|
 | `add-on x: ... doesn't exist` | There's no library add-on of that name and no file in the add-ons folder, or the name in `MAIL_ADDONS` is spelled differently. `addons list` shows the library |
-| `add-on x needs the Python package ...` | Install the add-on extras. On a computer: `uv tool install --force "selfhost-remote-mail-mcp[addons] @ git+https://github.com/s17sh70x2jfl031ag/Selfhost-Remote-Mail-MCP"`. In a copy of the project: `uv sync --extra addons`. The Docker image has them |
+| `add-on x needs the Python package ...` | Install the add-on extras. On a computer: `uv tool install --force "selfhost-remote-mail-mcp[addons] @ git+https://github.com/Self-hosted-MCP/Selfhost-Remote-Mail-MCP"`. In a copy of the project: `uv sync --extra addons`. The Docker image has them |
 | `its saved data can't be read` | `MAIL_SECRET_KEY` changed since the add-on saved its data. Put the old key back. The data file was left untouched |
 | `it needs a setup(api) function` | Add `def setup(api):` to the file |
 | `a tool called ... already exists` | Rename your tool: that name is taken |

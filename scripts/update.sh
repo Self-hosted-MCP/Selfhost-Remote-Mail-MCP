@@ -3,13 +3,13 @@
 # Run it by hand, or weekly from cron (see docs/updates.md). Only published releases are used.
 set -euo pipefail
 cd "$(dirname "$0")/.."
-REPO="s17sh70x2jfl031ag/Selfhost-Remote-Mail-MCP"
+REPO="Self-hosted-MCP/Selfhost-Remote-Mail-MCP"
 
 if [ -n "$(git status --porcelain --untracked-files=no)" ]; then
   echo "This copy has local changes to tracked files; not updating. Undo them or update by hand."
   exit 1
 fi
-latest=$(curl -fsS "https://api.github.com/repos/$REPO/releases/latest" | sed -n 's/.*"tag_name": *"\([^"]*\)".*/\1/p')
+latest=$(curl -fsSL "https://api.github.com/repos/$REPO/releases/latest" | sed -n 's/.*"tag_name": *"\([^"]*\)".*/\1/p')
 if ! [[ "$latest" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
   echo "No official release found."
   exit 1

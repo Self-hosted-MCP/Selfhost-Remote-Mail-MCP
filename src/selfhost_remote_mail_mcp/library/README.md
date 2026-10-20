@@ -34,7 +34,7 @@ Ready-made add-ons that come with the server. **All of them are off** until you 
 | [caldav](caldav/README.md) | Reads your calendar, finds free times, adds, changes and deletes events (iCloud, Fastmail, Nextcloud…) | No | No | Your calendar server | `caldav` |
 | [webhooks](webhooks/README.md) | Tells a web address of yours when new mail arrives (sender, subject, date) | Yes, every 5 minutes | No | The address you choose | No |
 
-More are added with new versions. Ideas are welcome in the [Share an add-on](https://github.com/s17sh70x2jfl031ag/Selfhost-Remote-Mail-MCP/issues/new?template=addon.yml) form.
+More are added with new versions. Ideas are welcome in the [Share an add-on](https://github.com/Self-hosted-MCP/Selfhost-Remote-Mail-MCP/issues/new?template=addon.yml) form.
 
 ## Turn one on and set it up
 
@@ -58,7 +58,7 @@ Everything happens on your settings page. It's the same page on every kind of se
 > **Calendar, PDF maker and Invoices need extra packages.** The Docker image has them all. On a computer, install them once, then restart the server in the background:
 >
 > ```bash
-> uv tool install --force "selfhost-remote-mail-mcp[addons] @ git+https://github.com/s17sh70x2jfl031ag/Selfhost-Remote-Mail-MCP"
+> uv tool install --force "selfhost-remote-mail-mcp[addons] @ git+https://github.com/Self-hosted-MCP/Selfhost-Remote-Mail-MCP"
 > ```
 >
 > ```bash

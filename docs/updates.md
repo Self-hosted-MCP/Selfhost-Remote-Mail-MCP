@@ -110,8 +110,8 @@ Already using **Coolify, Dokploy** or similar? Point it at a release tag instead
 
 ## Going back
 
-- **Computer:** `uv tool install --force git+https://github.com/s17sh70x2jfl031ag/Selfhost-Remote-Mail-MCP@vX.Y.Z` (the version you want, for example `v0.6.0`), then `selfhost-remote-mail-mcp service restart`.
-- **Own server:** `git checkout vX.Y.Z && docker compose up -d --build` (the version you want). With the ready-made image: set `image: ghcr.io/s17sh70x2jfl031ag/selfhost-remote-mail-mcp:X.Y.Z`, then `docker compose up -d`.
+- **Computer:** `uv tool install --force git+https://github.com/Self-hosted-MCP/Selfhost-Remote-Mail-MCP@vX.Y.Z` (the version you want, for example `v0.6.0`), then `selfhost-remote-mail-mcp service restart`.
+- **Own server:** `git checkout vX.Y.Z && docker compose up -d --build` (the version you want). With the ready-made image: set `image: ghcr.io/self-hosted-mcp/selfhost-remote-mail-mcp:X.Y.Z`, then `docker compose up -d`.
 - **Hosting company:** revert the update commit in your fork; the host rebuilds.
 
 Your settings, mailboxes and logins live in the data folder, which updates never touch.

@@ -8,14 +8,14 @@ Only the newest release gets security fixes. Every update path (the `update` com
 
 | Version | Security fixes |
 |---|---|
-| Latest release ([see Releases](https://github.com/s17sh70x2jfl031ag/Selfhost-Remote-Mail-MCP/releases/latest)) | Yes |
+| Latest release ([see Releases](https://github.com/Self-hosted-MCP/Selfhost-Remote-Mail-MCP/releases/latest)) | Yes |
 | Any older version | No, please update |
 
 ## Reporting a problem
 
 Please **don't** open a public issue, discussion or pull request for a security problem.
 
-1. Go to the **Security** tab of this repository and click **[Report a vulnerability](https://github.com/s17sh70x2jfl031ag/Selfhost-Remote-Mail-MCP/security/advisories/new)**. Only the maintainer sees it.
+1. Go to the **Security** tab of this repository and click **[Report a vulnerability](https://github.com/Self-hosted-MCP/Selfhost-Remote-Mail-MCP/security/advisories/new)**. Only the maintainer sees it.
 2. Tell me:
    - the version (from the settings page, or `selfhost-remote-mail-mcp version`) and how you run it (computer, Docker, hosting company, own server)
    - what you found and which part of the code it's in, if you know

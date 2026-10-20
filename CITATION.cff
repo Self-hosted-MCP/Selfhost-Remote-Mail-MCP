@@ -3,9 +3,9 @@ message: "If you use or build on this project, please credit it like this."
 title: "Selfhost-Remote-Mail-MCP"
 type: software
 authors:
-  - alias: "s17sh70x2jfl031ag"
-repository-code: "https://github.com/s17sh70x2jfl031ag/Selfhost-Remote-Mail-MCP"
+  - name: "Self-hosted MCP"
+repository-code: "https://github.com/Self-hosted-MCP/Selfhost-Remote-Mail-MCP"
 license: AGPL-3.0-only
-version: 0.19.0
-date-released: "2026-10-15"
+version: 0.19.1
+date-released: "2026-10-20"
 keywords: [mcp, email, imap, smtp, self-hosted]

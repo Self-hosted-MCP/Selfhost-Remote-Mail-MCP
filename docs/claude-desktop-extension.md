@@ -2,26 +2,26 @@
 
 Use Claude Desktop on a Mac, Windows or Linux computer? Install the server as a Claude Desktop extension: download one file, double-click it and type a passphrase, with no terminal and nothing else to install. About 3 minutes.
 
-**[Download the extension](https://github.com/s17sh70x2jfl031ag/Selfhost-Remote-Mail-MCP/releases/latest/download/selfhost-remote-mail-mcp.mcpb)** (`selfhost-remote-mail-mcp.mcpb`, from the newest release)
+**[Download the extension](https://github.com/Self-hosted-MCP/Selfhost-Remote-Mail-MCP/releases/latest/download/selfhost-remote-mail-mcp.mcpb)** (`selfhost-remote-mail-mcp.mcpb`, from the newest release)
 
 Or paste one line in a terminal. It downloads the file and opens it in Claude Desktop, so you go straight to step 1 below.
 
 Mac:
 
 ```bash
-curl -fsSL -o /tmp/selfhost-remote-mail-mcp.mcpb https://github.com/s17sh70x2jfl031ag/Selfhost-Remote-Mail-MCP/releases/latest/download/selfhost-remote-mail-mcp.mcpb && open -a Claude /tmp/selfhost-remote-mail-mcp.mcpb
+curl -fsSL -o /tmp/selfhost-remote-mail-mcp.mcpb https://github.com/Self-hosted-MCP/Selfhost-Remote-Mail-MCP/releases/latest/download/selfhost-remote-mail-mcp.mcpb && open -a Claude /tmp/selfhost-remote-mail-mcp.mcpb
 ```
 
 Windows (PowerShell):
 
 ```powershell
-iwr https://github.com/s17sh70x2jfl031ag/Selfhost-Remote-Mail-MCP/releases/latest/download/selfhost-remote-mail-mcp.mcpb -OutFile "$env:TEMP\selfhost-remote-mail-mcp.mcpb"; start "$env:TEMP\selfhost-remote-mail-mcp.mcpb"
+iwr https://github.com/Self-hosted-MCP/Selfhost-Remote-Mail-MCP/releases/latest/download/selfhost-remote-mail-mcp.mcpb -OutFile "$env:TEMP\selfhost-remote-mail-mcp.mcpb"; start "$env:TEMP\selfhost-remote-mail-mcp.mcpb"
 ```
 
 Linux:
 
 ```bash
-curl -fsSL -o /tmp/selfhost-remote-mail-mcp.mcpb https://github.com/s17sh70x2jfl031ag/Selfhost-Remote-Mail-MCP/releases/latest/download/selfhost-remote-mail-mcp.mcpb && xdg-open /tmp/selfhost-remote-mail-mcp.mcpb
+curl -fsSL -o /tmp/selfhost-remote-mail-mcp.mcpb https://github.com/Self-hosted-MCP/Selfhost-Remote-Mail-MCP/releases/latest/download/selfhost-remote-mail-mcp.mcpb && xdg-open /tmp/selfhost-remote-mail-mcp.mcpb
 ```
 
 You get the same server as [option 1](setup-computer.md), with the same settings page, but Claude Desktop installs and starts it for you.

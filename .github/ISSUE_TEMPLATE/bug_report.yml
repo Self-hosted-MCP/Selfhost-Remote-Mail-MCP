@@ -6,9 +6,9 @@ body:
   - type: markdown
     attributes:
       value: |
-        Thanks for reporting this. Before you start, have a look at [Troubleshooting](https://github.com/s17sh70x2jfl031ag/Selfhost-Remote-Mail-MCP/blob/main/docs/troubleshooting.md): many problems have a quick fix there.
+        Thanks for reporting this. Before you start, have a look at [Troubleshooting](https://github.com/Self-hosted-MCP/Selfhost-Remote-Mail-MCP/blob/main/docs/troubleshooting.md): many problems have a quick fix there.
 
-        **Security problem?** Don't post it here. Use [private reporting](https://github.com/s17sh70x2jfl031ag/Selfhost-Remote-Mail-MCP/security/advisories/new) instead.
+        **Security problem?** Don't post it here. Use [private reporting](https://github.com/Self-hosted-MCP/Selfhost-Remote-Mail-MCP/security/advisories/new) instead.
   - type: checkboxes
     id: privacy
     attributes:
