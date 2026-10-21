@@ -2,6 +2,10 @@
 
 All notable changes to this project. Versions follow [semantic versioning](https://semver.org).
 
+## 0.19.4 (2026-10-21)
+
+- Security: Pillow, the library that handles photos you attach, is updated to 13.0.0. It fixes 9 known problems with damaged or crafted image files (JPEG, TIFF, GIF, EPS and PDF).
+
 ## 0.19.3 (2026-10-21)
 
 - Clearer tool descriptions for AI apps: each says what the tool does and returns, whether it changes anything, and which tool to use instead.
