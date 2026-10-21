@@ -2,6 +2,11 @@
 
 All notable changes to this project. Versions follow [semantic versioning](https://semver.org).
 
+## 0.19.2 (2026-10-21)
+
+- Every tool input now has a short description, so AI apps know what to pass (for example a mailbox, a folder or a search filter).
+- AI apps see the server's version number when they connect.
+
 ## 0.19.1 (2026-10-20)
 
 - The project moved to the [Self-hosted MCP](https://github.com/Self-hosted-MCP) organisation on GitHub. Old links to the repository redirect to the new one.
