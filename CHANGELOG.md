@@ -2,6 +2,10 @@
 
 All notable changes to this project. Versions follow [semantic versioning](https://semver.org).
 
+## 0.19.3 (2026-10-21)
+
+- Clearer tool descriptions for AI apps: each says what the tool does and returns, whether it changes anything, and which tool to use instead.
+
 ## 0.19.2 (2026-10-21)
 
 - Every tool input now has a short description, so AI apps know what to pass (for example a mailbox, a folder or a search filter).
