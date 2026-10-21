@@ -17,7 +17,8 @@ jobs:
     if: github.repository != 'Self-hosted-MCP/Selfhost-Remote-Mail-MCP' && vars.AUTO_UPDATE == 'on'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1   # v7.0.1, pinned
+      # This job pushes the merged release to the fork, so it keeps the checkout token.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1   # v7.0.1, pinned  # zizmor: ignore[artipacked]
         with:
           fetch-depth: 0
       - name: Merge the newest official release
