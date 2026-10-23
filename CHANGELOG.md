@@ -2,6 +2,13 @@
 
 All notable changes to this project. Versions follow [semantic versioning](https://semver.org).
 
+## 0.19.5 (2026-10-23)
+
+- Security: pypdf, the library that reads and cleans the PDFs you attach, is updated to 6.21.2. It fixes 7 known problems with damaged or crafted PDF files.
+- Releases now come with a signature file next to the Claude Desktop extension (`selfhost-remote-mail-mcp.mcpb.sigstore.json`), so you can check the download is the one this project built. How: [docs/updates.md](docs/updates.md#check-a-downloads-signature).
+- The phishing-alert add-on listed two brands twice. The duplicates are removed; the alerts work the same.
+- A new automatic bug check runs on every change. Repository: code scanning, an OpenSSF Scorecard check, a pull request template and the community files (code of conduct, governance, support, contributors).
+
 ## 0.19.4 (2026-10-21)
 
 - Security: Pillow, the library that handles photos you attach, is updated to 13.0.0. It fixes 9 known problems with damaged or crafted image files (JPEG, TIFF, GIF, EPS and PDF).
