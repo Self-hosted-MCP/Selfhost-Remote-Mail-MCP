@@ -23,6 +23,8 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
       - run: uv sync --frozen --extra addons
+      - name: Lint (ruff)
+        run: uvx --from ruff==0.17.2 ruff check .
       - run: uv run pytest -q
       - name: Shell scripts are valid
         run: bash -n scripts/update.sh

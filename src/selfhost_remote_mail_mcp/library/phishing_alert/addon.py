@@ -38,8 +38,6 @@ BRANDS = {
     "ledger": {"ledger"},
     "trust wallet": {"trustwallet"},
     "cpanel": {"cpanel"},
-    "instagram": {"instagram", "facebookmail", "meta"},
-    "binance": {"binance"},
 }
 WORDS = {"apple", "amazon", "adobe", "spotify", "dropbox", "ledger", "trust wallet"}   # brands that are also ordinary words: exact matches only
 SERVICES = {"zoho", "zohomail", "google", "messagingengine", "fastmail", "cloudflare", "namecheap", "godaddy",

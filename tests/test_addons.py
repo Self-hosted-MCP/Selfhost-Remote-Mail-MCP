@@ -42,7 +42,7 @@ def setup(api):
     assert server.load_addons(name, tmp_path) == [name]
     assert f"{name}_ping" in server.TOOL_NAMES and server.LOADED_ADDONS[name] == "Test add-on."
     assert call(f"{name}_ping") == "pong"
-    assert f"Add-ons: " in server.accounts() and f"{name} (Test add-on.)" in server.accounts()
+    assert "Add-ons: " in server.accounts() and f"{name} (Test add-on.)" in server.accounts()
 
 
 @pytest.mark.parametrize("body,error", [

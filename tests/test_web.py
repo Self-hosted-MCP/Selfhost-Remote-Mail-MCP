@@ -264,7 +264,7 @@ def test_connected_apps_only_lists_apps_that_logged_in(web):
                                        redirect_uris=[AnyUrl("https://claude.ai/api/mcp/auth_callback")])
         asyncio.run(provider.register_client(c))
         return c
-    tried = register("tried", int(time.time()))
+    register("tried", int(time.time()))
     done = register("done", int(time.time()))
     params = AuthorizationParams(state="s", scopes=["mail"], code_challenge="x" * 43,
                                  redirect_uri=AnyUrl("https://claude.ai/api/mcp/auth_callback"),
