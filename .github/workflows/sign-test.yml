@@ -1,0 +1,48 @@
+# Manual test of release signing. Builds the extension file from main, signs it with Sigstore (keyless, no secret),
+# checks the signature, and keeps the signature file as a workflow artifact. It never touches a release.
+# Run it from the Actions tab: "Sign test", Run workflow.
+name: Sign test
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  sign:
+    if: github.repository == 'Self-hosted-MCP/Selfhost-Remote-Mail-MCP'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      id-token: write   # Sigstore proves who is signing: this workflow, in this repository
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1   # v7.0.1, pinned
+        with:
+          persist-credentials: false
+      - name: Build
+        run: python3 scripts/build_mcpb.py
+      - uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6   # v4.1.2, pinned
+      - name: Sign
+        run: |
+          set -euo pipefail
+          for f in dist/*.mcpb; do
+            cosign sign-blob --yes --bundle "$f.sigstore.json" "$f"
+          done
+      - name: Check the signature the way a user would
+        run: |
+          set -euo pipefail
+          for f in dist/*.mcpb; do
+            cosign verify-blob \
+              --bundle "$f.sigstore.json" \
+              --certificate-identity-regexp '^https://github.com/Self-hosted-MCP/Selfhost-Remote-Mail-MCP/' \
+              --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+              "$f"
+          done
+          ls -l dist
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9   # v7.0.2, pinned
+        with:
+          name: signature-test
+          path: dist/*.sigstore.json
+          retention-days: 7
