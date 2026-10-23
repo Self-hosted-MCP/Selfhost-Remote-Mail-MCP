@@ -10,12 +10,14 @@ on:
   workflow_dispatch:       # or run it by hand from the Actions tab
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   update:
     if: github.repository != 'Self-hosted-MCP/Selfhost-Remote-Mail-MCP' && vars.AUTO_UPDATE == 'on'
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       # This job pushes the merged release to the fork, so it keeps the checkout token.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1   # v7.0.1, pinned  # zizmor: ignore[artipacked]

@@ -13,12 +13,14 @@ on:
         required: true
 
 permissions:
-  contents: write   # to attach the file to the release
+  contents: read
 
 jobs:
   mcpb:
     if: github.repository == 'Self-hosted-MCP/Selfhost-Remote-Mail-MCP'
     runs-on: ubuntu-latest
+    permissions:
+      contents: write   # to attach the file to the release
     timeout-minutes: 15
     env:
       TAG: ${{ github.event.release.tag_name || inputs.tag }}

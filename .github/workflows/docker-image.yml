@@ -14,12 +14,14 @@ on:
 
 permissions:
   contents: read
-  packages: write
 
 jobs:
   image:
     if: github.repository == 'Self-hosted-MCP/Selfhost-Remote-Mail-MCP'
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1   # v7.0.1, pinned
