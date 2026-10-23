@@ -21,6 +21,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write   # to attach the file to the release
+      id-token: write   # Sigstore proves who is signing: this workflow, in this repository
     timeout-minutes: 15
     env:
       TAG: ${{ github.event.release.tag_name || inputs.tag }}
@@ -36,9 +37,20 @@ jobs:
           mkdir -p /tmp/mcpb && cd /tmp/mcpb
           unzip -q "$GITHUB_WORKSPACE"/dist/*.mcpb
           npx --yes @anthropic-ai/mcpb@2.1.2 validate manifest.json
+      - name: Name a copy with a fixed name
+        run: cp dist/*.mcpb dist/selfhost-remote-mail-mcp.mcpb   # a fixed name, so one link always gets the newest
+      - uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6   # v4.1.2, pinned
+      # Keyless (Sigstore): no secret is stored. If signing fails the release still gets its file, unsigned, and the log says so.
+      - name: Sign the files
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          for f in dist/*.mcpb; do
+            cosign sign-blob --yes --bundle "$f.sigstore.json" "$f"
+          done
       - name: Attach to the release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          cp dist/*.mcpb dist/selfhost-remote-mail-mcp.mcpb   # a fixed name, so one link always gets the newest
-          gh release upload "$TAG" dist/*.mcpb --clobber
+          shopt -s nullglob
+          gh release upload "$TAG" dist/*.mcpb dist/*.sigstore.json --clobber

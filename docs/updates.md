@@ -115,3 +115,15 @@ Already using **Coolify, Dokploy** or similar? Point it at a release tag instead
 - **Hosting company:** revert the update commit in your fork; the host rebuilds.
 
 Your settings, mailboxes and logins live in the data folder, which updates never touch.
+
+## Check a download's signature
+
+Releases from the next one on carry a signature file next to the Claude Desktop extension: `selfhost-remote-mail-mcp.mcpb.sigstore.json`. It shows the file was built by this project's release workflow on GitHub and was not changed afterwards. Older releases have no signature file.
+
+To check one you need the free [cosign](https://docs.sigstore.dev/cosign/system_config/installation/) tool. Download both files into one folder, then run:
+
+```bash
+cosign verify-blob --bundle selfhost-remote-mail-mcp.mcpb.sigstore.json --certificate-identity-regexp '^https://github.com/Self-hosted-MCP/Selfhost-Remote-Mail-MCP/' --certificate-oidc-issuer https://token.actions.githubusercontent.com selfhost-remote-mail-mcp.mcpb
+```
+
+You should see: `Verified OK`. Any other answer means the file is not the one this project built: don't use it, and report it as a [security problem](../SECURITY.md).
