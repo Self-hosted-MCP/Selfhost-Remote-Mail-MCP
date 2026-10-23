@@ -1,0 +1,16 @@
+# Weekly update checks. Each update arrives as a pull request and goes through the full CI before anyone merges it.
+# A new version waits 7 days first, so a bad release is usually caught and pulled before it gets here.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+  - package-ecosystem: uv
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
