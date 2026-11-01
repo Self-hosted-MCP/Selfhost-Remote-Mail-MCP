@@ -119,7 +119,7 @@ CRLF = POLICY.clone(linesep="\r\n")
 # ---------------------------------------------------------------- settings
 
 SETTINGS = ("MAIL_ADDRESS", "MAIL_NAME", "MAIL_USERNAME", "SMTP_USERNAME", "MAIL_PASSWORD", "IMAP_HOST", "IMAP_PORT", "SMTP_HOST",
-            "SMTP_PORT", "PUBLIC_URL", "HOST", "PORT", "ALLOWED_REDIRECT_HOSTS", "SEND_DAILY_LIMIT",
+            "SMTP_PORT", "PUBLIC_URL", "HOST", "PORT", "ALLOWED_REDIRECT_HOSTS", "ALLOW_LOCALHOST_REDIRECTS", "SEND_DAILY_LIMIT",
             "SEND_MINUTE_LIMIT", "SCHEDULED_SEND", "ADDON_JOBS", "LOGIN_HASH", "LOGIN_PASSPHRASE", "MAIL_SIGNATURE",
             "MAIL_READ_ONLY", "SEND_ALLOWED_RECIPIENTS", "SEND_LOG_DETAILS", "MAIL_MODE", "MAX_MAILBOXES",
             "MAIL_SECRET_KEY", "SETTINGS_PAGE", "MAIL_LABEL", "UPDATE_CHECK", "MAIL_DEFAULT",
@@ -2307,9 +2307,10 @@ class PassphraseOAuth:
     REFRESH_TTL = 90 * 24 * 3600
     MAX_CLIENTS = 50   # registering is open to anyone, so keep the list from growing forever
 
-    def __init__(self, public_url: str, redirect_hosts: list[str]):
+    def __init__(self, public_url: str, redirect_hosts: list[str], allow_localhost: bool = True):
         self.public_url = public_url.rstrip("/")
         self.redirect_hosts = [h.lower() for h in redirect_hosts]
+        self.allow_localhost = allow_localhost
         self.lock = threading.Lock()
         self.pending: dict[str, tuple[float, str, AuthorizationParams]] = {}
         self.codes: dict[str, AuthorizationCode] = {}
@@ -2338,7 +2339,7 @@ class PassphraseOAuth:
         p = urlparse(str(uri))
         host = (p.hostname or "").lower()
         if host in ("localhost", "127.0.0.1", "::1"):
-            return p.scheme in ("http", "https")
+            return self.allow_localhost and p.scheme in ("http", "https")
         return p.scheme == "https" and any(host == h or host.endswith("." + h) for h in self.redirect_hosts)
 
     async def get_client(self, client_id: str):
@@ -3024,7 +3025,7 @@ INSTRUCTIONS = (
 )
 
 
-# AI apps that may receive the login code (localhost is always allowed, for desktop and command-line apps)
+# AI apps that may receive the login code (localhost too, for desktop and command-line apps, unless ALLOW_LOCALHOST_REDIRECTS=off)
 DEFAULT_REDIRECT_HOSTS = "claude.ai,claude.com,chatgpt.com,openai.com,vscode.dev"
 
 
@@ -3054,7 +3055,7 @@ def build_server(remote: bool) -> MCPServer:
     public = public_url(cfg)
     hosts = [h.strip() for h in (cfg.get("ALLOWED_REDIRECT_HOSTS") or DEFAULT_REDIRECT_HOSTS).split(",") if h.strip()]
     global PROVIDER
-    provider = PROVIDER = PassphraseOAuth(public, hosts)
+    provider = PROVIDER = PassphraseOAuth(public, hosts, is_on(cfg.get("ALLOW_LOCALHOST_REDIRECTS") or "on"))
     server = MCPServer(
         "mail",
         instructions=INSTRUCTIONS,

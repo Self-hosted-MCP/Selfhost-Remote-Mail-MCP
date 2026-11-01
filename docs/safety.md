@@ -120,7 +120,7 @@ If you or a mail app edit the draft in a way that drops the saved time, the emai
 - **One user: you.** AI apps register themselves, then you type your passphrase once on the server's own page. The app gets a login key that lasts an hour and renews itself for up to 90 days. Each renewal gives a new renewal key and cancels the old one.
 - **The login page tells you who is asking.** It shows the app's name and the website it will send you back to. If you didn't just start a connection yourself, close the page.
 - **Wrong passphrases:** after 5 wrong tries in 15 minutes, login is locked for 15 minutes.
-- **Only known apps can log in:** Claude, ChatGPT and VS Code on the web, plus apps on your own computer. Others must be added to `ALLOWED_REDIRECT_HOSTS`.
+- **Only known apps can log in:** Claude, ChatGPT and VS Code on the web, plus apps on your own computer (turn those off with `ALLOW_LOCALHOST_REDIRECTS=off`). Others must be added to `ALLOWED_REDIRECT_HOSTS`.
 - **Use a long passphrase**, 12 characters or more (shorter ones are refused). Four or five random words work well.
 - **Login keys are stored only as fingerprints,** so a stolen copy of the data folder can't be used to log in.
 - **The page can't be embedded in other websites or cached,** which blocks tricks that show it inside a fake page.

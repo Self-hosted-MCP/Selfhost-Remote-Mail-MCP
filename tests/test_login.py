@@ -4,7 +4,8 @@ import asyncio
 import json
 import time
 
-from mcp.server.auth.provider import AuthorizationParams
+import pytest
+from mcp.server.auth.provider import AuthorizationParams, AuthorizeError, RegistrationError
 from mcp.shared.auth import OAuthClientInformationFull
 from pydantic import AnyUrl
 
@@ -98,6 +99,31 @@ def test_send_permission_is_saved_at_login(monkeypatch):
         p.complete_login(req, "a good long passphrase", ["me@example.com"], allow_send=allow)
     assert p.senders == {"a"}
     assert server.PassphraseOAuth("https://mail.example.com", ["claude.ai"]).senders == {"a"}   # saved
+
+
+def test_localhost_apps_can_be_switched_off():
+    on = new_provider()
+    assert on.redirect_ok("http://localhost:8765/cb") and on.redirect_ok("http://127.0.0.1/cb")
+    off = server.PassphraseOAuth("https://mail.example.com", ["claude.ai"], allow_localhost=False)
+    assert not off.redirect_ok("http://localhost:8765/cb") and not off.redirect_ok("http://127.0.0.1/cb")
+    assert not off.redirect_ok("http://[::1]/cb") and off.redirect_ok("https://claude.ai/api/mcp/auth_callback")
+    local = OAuthClientInformationFull(client_id="local", client_name="App", client_id_issued_at=1,
+                                       redirect_uris=[AnyUrl("http://localhost:8765/cb")])
+    with pytest.raises(RegistrationError):
+        asyncio.run(off.register_client(local))
+    params = AuthorizationParams(state="s", scopes=None, code_challenge="x" * 43, redirect_uri=AnyUrl("http://localhost:8765/cb"),
+                                 redirect_uri_provided_explicitly=True, resource=None)
+    with pytest.raises(AuthorizeError):
+        asyncio.run(off.authorize(local, params))      # an app that signed up before the switch can't log in either
+
+
+def test_localhost_setting_reaches_the_server(monkeypatch):
+    monkeypatch.setenv("LOGIN_PASSPHRASE", "a long enough passphrase")
+    server.build_server(True)
+    assert server.PROVIDER.allow_localhost is True
+    monkeypatch.setenv("ALLOW_LOCALHOST_REDIRECTS", "off")
+    server.build_server(True)
+    assert server.PROVIDER.allow_localhost is False
 
 
 def test_login_page_warns_about_localhost_apps():

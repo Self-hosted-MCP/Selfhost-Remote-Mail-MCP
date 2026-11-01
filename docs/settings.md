@@ -3,7 +3,7 @@
 Settings come from **environment variables** (what hosting dashboards call "Variables") and/or a **settings file**. When both have a value, the environment variable wins.
 
 > [!NOTE]
-> Most changes to the settings file count from the next request, no restart needed. These need a restart: `PORT`, `HOST`, `PUBLIC_URL`, `ALLOWED_REDIRECT_HOSTS`, `SETTINGS_PAGE`, `UPLOAD_PAGE`, `SCHEDULED_SEND`, `MAIL_ADDONS` and `MAIL_ADDONS_DIR`. On a hosting company, changing a variable restarts the server by itself.
+> Most changes to the settings file count from the next request, no restart needed. These need a restart: `PORT`, `HOST`, `PUBLIC_URL`, `ALLOWED_REDIRECT_HOSTS`, `ALLOW_LOCALHOST_REDIRECTS`, `SETTINGS_PAGE`, `UPLOAD_PAGE`, `SCHEDULED_SEND`, `MAIL_ADDONS` and `MAIL_ADDONS_DIR`. On a hosting company, changing a variable restarts the server by itself.
 
 The settings file is `~/.config/selfhost-remote-mail-mcp/.env`, or whatever `MAIL_ENV_FILE` points to. `selfhost-remote-mail-mcp setup` writes it for you. One `KEY=value` per line, `#` for comments, no quotes needed.
 
@@ -78,7 +78,8 @@ Mailboxes 2 to 5 use the same settings with their number: `MAIL_2_...`, `MAIL_3_
 | `PUBLIC_URL` | see below | The public `https://` address, without `/mcp` |
 | `HOST` | `127.0.0.1` | Network address to listen on. Docker images use `0.0.0.0` |
 | `PORT` | `8765` | Port to listen on. Railway and Render set it themselves |
-| `ALLOWED_REDIRECT_HOSTS` | `claude.ai,claude.com,chatgpt.com,openai.com,vscode.dev` | Web apps allowed to receive the login. Apps on your own computer (localhost) are always allowed |
+| `ALLOWED_REDIRECT_HOSTS` | `claude.ai,claude.com,chatgpt.com,openai.com,vscode.dev` | Web apps allowed to receive the login. Apps on your own computer (localhost) are allowed too, unless `ALLOW_LOCALHOST_REDIRECTS` is off |
+| `ALLOW_LOCALHOST_REDIRECTS` | `on` | `off` refuses apps on a computer (localhost), when they sign up and when they log in. Use it when only web apps reach your server, for example through a gateway |
 | `SOURCE_URL` | empty | Only for a changed version that other people use: the address of its source code. The page footers and the settings page link to it, as the AGPL license asks. Leave it empty if you run the project unchanged |
 
 `serve` refuses to start without a passphrase. If `PUBLIC_URL` isn't set, it uses the address Render (`RENDER_EXTERNAL_URL`) or Railway (`RAILWAY_PUBLIC_DOMAIN`) provides, and otherwise `http://localhost:PORT`, which only works on the same computer.

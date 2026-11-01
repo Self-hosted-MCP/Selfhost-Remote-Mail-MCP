@@ -95,7 +95,7 @@ These are the product. A change that weakens one needs a very good reason and a 
 - **Rewriting a draft:** IMAP can't edit a message, so `replace_draft()` appends the new version and deletes the old one. `schedule_send`, `hold` and `draft(edit=...)` all use this.
 - **Scheduled send:** the send time is the `X-Mail-MCP-Send-At` header on the draft (ISO 8601 with offset). `scheduler_loop()` runs only in `serve` (and not when `SCHEDULED_SEND=off`), wakes just after each minute and calls `run_scheduled_once()`.
 - **Locking:** `send_lock()` uses `fcntl.flock` (or `msvcrt` on Windows) on `DATA_DIR/send.lock`, so threads and two containers sharing a volume never send at once.
-- **OAuth:** `PassphraseOAuth` implements the MCP SDK's auth provider. State (clients, token fingerprints, `grants` = mailboxes per app) lives in `DATA_DIR/oauth.json`. Redirects are allowed only to localhost and `ALLOWED_REDIRECT_HOSTS`. Five wrong passphrases in 15 minutes lock the login.
+- **OAuth:** `PassphraseOAuth` implements the MCP SDK's auth provider. State (clients, token fingerprints, `grants` = mailboxes per app) lives in `DATA_DIR/oauth.json`. Redirects are allowed only to localhost (unless `ALLOW_LOCALHOST_REDIRECTS=off`) and `ALLOWED_REDIRECT_HOSTS`. Five wrong passphrases in 15 minutes lock the login.
 - **Public URL:** `public_url()` uses `PUBLIC_URL`, then Render's `RENDER_EXTERNAL_URL`, then Railway's `RAILWAY_PUBLIC_DOMAIN`, then localhost.
 - **MCP SDK:** this uses `mcp>=2.3` (`mcp.server.mcpserver.MCPServer`, `mcp_types`). Tool docstrings are what the AI reads: keep them short, exact and honest about side effects.
 

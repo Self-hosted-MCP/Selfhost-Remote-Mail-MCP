@@ -2,6 +2,11 @@
 
 All notable changes to this project. Versions follow [semantic versioning](https://semver.org).
 
+## 0.19.6 (2026-11-01)
+
+- New setting `ALLOW_LOCALHOST_REDIRECTS`. Set it to `off` to refuse apps on a computer (localhost), when they sign up and when they log in, including apps that signed up before. Use it when only web apps reach your server, for example through a gateway. It stays `on` by default, so nothing changes unless you set it. More in [docs/settings.md](docs/settings.md).
+- Updated libraries: caldav 3.5.0 (calendar add-on) and markdown 3.11.2.
+
 ## 0.19.5 (2026-10-23)
 
 - Security: pypdf, the library that reads and cleans the PDFs you attach, is updated to 6.21.2. It fixes 7 known problems with damaged or crafted PDF files.
