@@ -6,6 +6,6 @@ authors:
   - name: "Self-hosted MCP"
 repository-code: "https://github.com/Self-hosted-MCP/Selfhost-Remote-Mail-MCP"
 license: AGPL-3.0-only
-version: 0.19.6
+version: 0.19.7
 date-released: "2026-11-01"
 keywords: [mcp, email, imap, smtp, self-hosted]
