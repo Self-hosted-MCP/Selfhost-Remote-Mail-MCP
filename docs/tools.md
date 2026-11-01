@@ -78,7 +78,7 @@ These come with the server, all off until you turn them on in the settings page'
 
 | Tool | Add-on | What it does | Changes anything? |
 |---|---|---|---|
-| `calendar_events` | [Calendar](../src/selfhost_remote_mail_mcp/library/caldav/README.md) | Your events for up to 31 days, each with an ID | No |
+| `calendar_events` | [Calendar](../src/selfhost_remote_mail_mcp/library/caldav/README.md) | Your events for up to a year, with an optional search word, each with an ID | No |
 | `calendar_free` | Calendar | Free times in your working hours for up to 14 days | No |
 | `add_event` | Calendar | Adds an event; with several calendars, asks you which one | Your calendar |
 | `edit_event` | Calendar | Changes an event's title, time, length, place or notes | Your calendar |

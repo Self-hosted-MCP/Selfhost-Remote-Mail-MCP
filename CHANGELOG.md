@@ -5,6 +5,7 @@ All notable changes to this project. Versions follow [semantic versioning](https
 ## 0.19.6 (2026-11-01)
 
 - New setting `ALLOW_LOCALHOST_REDIRECTS`. Set it to `off` to refuse apps on a computer (localhost), when they sign up and when they log in, including apps that signed up before. Use it when only web apps reach your server, for example through a gateway. It stays `on` by default, so nothing changes unless you set it. More in [docs/settings.md](docs/settings.md).
+- Calendar add-on: `calendar_events` now covers up to a year in one call (it was 31 days), past dates too, and takes a search word for the title or place. For example "birthday" over a year lists every birthday at once.
 - Updated libraries: caldav 3.5.0 (calendar add-on) and markdown 3.11.2.
 
 ## 0.19.5 (2026-10-23)

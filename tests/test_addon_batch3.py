@@ -120,6 +120,28 @@ def cal(monkeypatch):
     return day, calendars
 
 
+def test_events_search_a_whole_year(cal):
+    day, calendars = cal
+    later = day + dt.timedelta(days=200)
+    calendars[1].items.append(FakeEvent(summary="Ana's Birthday", dtstart=later, dtend=later + dt.timedelta(days=1)))
+    calendars[1].items[-1].calendar = calendars[1]
+    out = tool("calendar_events", start_date=day.isoformat(), days=366, search="BIRTHDAY")
+    assert "Ana's Birthday" in out and "Piano" not in out and "Lunch" not in out
+    assert "No events matching 'dentist'" in tool("calendar_events", start_date=day.isoformat(), days=366, search="dentist")
+    assert "Ana's Birthday" not in tool("calendar_events", start_date=day.isoformat(), days=31)   # outside the dates
+    assert "Zoom" in tool("calendar_events", start_date=day.isoformat(), days=1, search="zoom")    # the place counts too
+
+
+def test_events_say_when_the_list_is_cut(cal):
+    day, calendars = cal
+    tz = dt.timezone.utc
+    for n in range(105):
+        calendars[0].items.append(FakeEvent(summary=f"Standup {n}", dtstart=dt.datetime.combine(day, dt.time(6), tz)
+                                            + dt.timedelta(minutes=n), dtend=dt.datetime.combine(day, dt.time(7), tz)))
+        calendars[0].items[-1].calendar = calendars[0]
+    assert "(first 100 of 111 events" in tool("calendar_events", start_date=day.isoformat(), days=1)
+
+
 def test_events_free_times_and_adding(cal, monkeypatch):
     day, calendars = cal
     out = tool("calendar_events", start_date=day.isoformat(), days=1)

@@ -67,7 +67,7 @@ On a computer, install the extra package once (see [the library page](../README.
 
 | Tool | What it does |
 |---|---|
-| `calendar_events` | Your events for up to 31 days, repeating ones included. Each line ends with the event's ID, which the other tools use |
+| `calendar_events` | Your events for up to a year, past or future, repeating ones included. Add a search word (like "birthday") to see only matching events. Each line ends with the event's ID, which the other tools use |
 | `calendar_free` | Free times on weekdays inside your working hours, for up to 14 days. Every calendar you use counts as busy, except events marked "free" |
 | `add_event` | Adds an event, within the next year. With several calendars and none named, the AI asks you which one |
 | `edit_event` | Changes the title, time, length, place or notes. Only what you ask for changes; a new start time keeps the same length |

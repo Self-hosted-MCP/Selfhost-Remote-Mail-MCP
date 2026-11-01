@@ -199,7 +199,7 @@ def setup(api):
             return (value if value.tzinfo else value.replace(tzinfo=tz)).astimezone(tz)
         return dt.datetime.combine(value, dt.time(0), tz)
 
-    def events(start: dt.date, days: int, tz) -> list[dict]:
+    def events(start: dt.date, days: int, tz, word: str = "") -> list[dict]:
         begin = dt.datetime.combine(start, dt.time(0), tz)
         finish = dt.datetime.combine(start + dt.timedelta(days=days), dt.time(0), tz)
         found = []
@@ -209,6 +209,9 @@ def setup(api):
             except Exception as exc:
                 raise api.ToolError(f"The calendar {name_of(cal)!r} couldn't be read ({type(exc).__name__}). "
                                     + where()) from None
+        if word:   # before the cap, so a busy year still finds every match
+            found = [(c, i) for c, i in found if word in " ".join(str(getattr(i, "icalendar_component", {}).get(k, "") or "")
+                                                                  for k in ("SUMMARY", "LOCATION")).lower()]
         out = []
         for cal_name, item in found[:1000]:
             comp = getattr(item, "icalendar_component", None)
@@ -250,19 +253,23 @@ def setup(api):
     api.on_test(test)
 
     @api.tool(api.READ)
-    def calendar_events(start_date: str = "", days: int = 7) -> str:
-        """The user's calendar events from start_date (YYYY-MM-DD, default today) for `days` days (1 to 31),
-        repeating events included. One line each, ending with the event's ID for edit_event and delete_event.
-        Changes nothing."""
+    def calendar_events(start_date: str = "", days: int = 7, search: str = "") -> str:
+        """The user's calendar events from start_date (YYYY-MM-DD, default today, past dates work too) for `days`
+        days (1 to 366), repeating events included. `search` keeps only events whose title or place contains
+        that text (any case), e.g. "birthday" with days=366 for a whole year in one call. One line each, ending
+        with the event's ID for edit_event and delete_event. Changes nothing."""
         tz = zone()
-        days = max(1, min(days, 31))
-        found = events(day_from(start_date, tz), days, tz)
+        days = max(1, min(days, 366))
+        word = search.strip().lower()
+        found = events(day_from(start_date, tz), days, tz, word)
         if not found:
-            return "No events." + zone_note(tz)
+            return ("No events matching " + repr(search.strip()) + "." if word else "No events.") + zone_note(tz)
         several = len({e["calendar"] for e in found}) > 1
         lines = [f"{when(e)} · {e['title']}" + (f" · {e['place']}" if e["place"] else "")
                  + (f" · [{e['calendar']}]" if several and e["calendar"] else "")
                  + (f" · id: {e['id']}" if e["id"] else "") for e in found[:100]]
+        if len(found) > 100:
+            lines.append(f"(first 100 of {len(found)} events: use fewer days or a search word to see the rest)")
         return "\n".join(lines) + zone_note(tz)
 
     @api.tool(api.READ)
