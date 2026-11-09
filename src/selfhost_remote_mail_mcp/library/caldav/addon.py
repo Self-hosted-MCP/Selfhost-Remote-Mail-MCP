@@ -21,6 +21,7 @@ SETTINGS = [
     {"key": "WORK_HOURS", "half": True, "label": N_("Hours to offer as free"), "help": N_("Like 09-18 or 09:30-17:30. Empty means 09-18.")},
 ]
 MAX_CHANGES_A_DAY = 20   # adds, changes and deletes together
+MAX_DAYS = 366           # the longest event, timed or all-day
 
 
 def setup(api):
@@ -176,9 +177,24 @@ def setup(api):
             raise api.ToolError("The event must be within the next year.")
         return begin
 
+    def day_from_start(start: str) -> dt.date:
+        """The first day of an all-day event: start as YYYY-MM-DD (a full ISO time counts by its date)."""
+        try:
+            day = dt.date.fromisoformat(start.strip()[:10])
+        except ValueError:
+            raise api.ToolError("start: for an all-day event use YYYY-MM-DD, e.g. 2026-10-20.") from None
+        today = dt.datetime.now(zone()).date()
+        if not today - dt.timedelta(days=1) <= day <= today + dt.timedelta(days=366):
+            raise api.ToolError("The event must be within the next year.")
+        return day
+
     def check_minutes(minutes: int) -> None:
-        if not 5 <= minutes <= 24 * 60:
-            raise api.ToolError("minutes must be between 5 and 1440.")
+        if not 5 <= minutes <= MAX_DAYS * 24 * 60:
+            raise api.ToolError(f"minutes must be between 5 and {MAX_DAYS * 24 * 60} (a year).")
+
+    def check_days(days: int) -> None:
+        if not 1 <= days <= MAX_DAYS:
+            raise api.ToolError(f"days must be between 1 and {MAX_DAYS}.")
 
     def clean_text(text: str, n: int) -> str:
         text = text.replace("\r\n", "\n").replace("\r", "\n")
@@ -303,13 +319,19 @@ def setup(api):
 
     @api.tool(api.WRITE)
     def add_event(title: str, start: str, minutes: int = 60, location: str = "", details: str = "",
-                  calendar: str = "") -> str:
+                  calendar: str = "", days: int = 0) -> str:
         """Add an event to the user's own calendar. Only when the user asked for it. start: ISO time with the
-        UTC offset, e.g. '2026-10-20T15:00:00+01:00'. calendar: its name; with several calendars and none given,
-        the answer lists them: ask the user which one. No one is invited: to invite people, attach an invite to an
-        email draft instead. Within the next year only."""
-        begin = begin_from(start)
-        check_minutes(minutes)
+        UTC offset, e.g. '2026-10-20T15:00:00+01:00'. minutes: 5 up to a year. days: for an all-day event (a trip,
+        a holiday, a festival), how many days (1 to 366), with start as YYYY-MM-DD; minutes is then not used.
+        calendar: its name; with several calendars and none given, the answer lists them: ask the user which one.
+        No one is invited: to invite people, attach an invite to an email draft instead. Starts within the next
+        year only."""
+        if days:
+            check_days(days)
+            first = day_from_start(start)
+        else:
+            begin = begin_from(start)
+            check_minutes(minutes)
         tz = zone()   # checked before anything is added, so a bad setting never half-adds an event
         target = adding(calendar)
         today = count_change()
@@ -320,10 +342,15 @@ def setup(api):
 
         stamp = lambda t: t.astimezone(dt.timezone.utc).strftime("%Y%m%dT%H%M%SZ")
         note = (details.strip() + "\n\n" if details.strip() else "") + "Added by your mail assistant."
+        if days:   # all-day: dates only, the end day not included (as calendar apps expect)
+            times = [f"DTSTART;VALUE=DATE:{first:%Y%m%d}", f"DTEND;VALUE=DATE:{first + dt.timedelta(days=days):%Y%m%d}"]
+            e = {"start": as_dt(first, tz), "end": as_dt(first + dt.timedelta(days=days), tz), "all_day": True}
+        else:
+            times = [f"DTSTART:{stamp(begin)}", f"DTEND:{stamp(begin + dt.timedelta(minutes=minutes))}"]
+            e = {"start": begin.astimezone(tz), "end": (begin + dt.timedelta(minutes=minutes)).astimezone(tz), "all_day": False}
         lines = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Selfhost Mail MCP//caldav//EN", "BEGIN:VEVENT",
-                 f"UID:{uuid.uuid4()}", f"DTSTAMP:{stamp(dt.datetime.now(dt.timezone.utc))}", f"DTSTART:{stamp(begin)}",
-                 f"DTEND:{stamp(begin + dt.timedelta(minutes=minutes))}", f"SUMMARY:{esc(title, 200)}",
-                 f"DESCRIPTION:{esc(note, 2000)}"]
+                 f"UID:{uuid.uuid4()}", f"DTSTAMP:{stamp(dt.datetime.now(dt.timezone.utc))}", *times,
+                 f"SUMMARY:{esc(title, 200)}", f"DESCRIPTION:{esc(note, 2000)}"]
         if location.strip():
             lines.append(f"LOCATION:{esc(location, 200)}")
         lines += ["END:VEVENT", "END:VCALENDAR"]
@@ -334,19 +361,23 @@ def setup(api):
         except Exception as exc:
             give_back(today)
             raise api.ToolError(f"The event couldn't be added ({type(exc).__name__}). " + where()) from None
-        e = {"start": begin.astimezone(tz), "end": (begin + dt.timedelta(minutes=minutes)).astimezone(tz), "all_day": False}
         return f"Added to {name_of(target)[:40] or 'your calendar'}: {when(e)} · {title.strip()[:80]}{zone_note(tz)}. No one was invited."
 
     @api.tool(api.WRITE)
     def edit_event(event_id: str, title: str = "", start: str = "", minutes: int = 0, location: str = "",
-                   details: str = "") -> str:
+                   details: str = "", days: int = 0) -> str:
         """Change an event in the user's calendar. Only when the user asked for it. event_id: from
         calendar_events. Only what you pass changes; empty or 0 leaves it as it is. start: ISO time with the UTC
-        offset, e.g. '2026-10-20T15:00:00+01:00'; without minutes the length stays the same. details replaces the
-        notes. Repeating events and events with guests are refused: the user changes those in their calendar app."""
-        if not (title.strip() or start.strip() or minutes or location.strip() or details.strip()):
-            raise api.ToolError("Nothing to change: pass title, start, minutes, location or details.")
-        new_begin = begin_from(start) if start.strip() else None
+        offset, e.g. '2026-10-20T15:00:00+01:00'; without minutes the length stays the same. minutes: 5 up to a
+        year. days: makes it an all-day event of that many days (1 to 366); an all-day event stays all-day when
+        moved (start as YYYY-MM-DD) unless minutes gives it a time. details replaces the notes. Repeating events
+        and events with guests are refused: the user changes those in their calendar app."""
+        if not (title.strip() or start.strip() or minutes or days or location.strip() or details.strip()):
+            raise api.ToolError("Nothing to change: pass title, start, minutes, days, location or details.")
+        if minutes and days:
+            raise api.ToolError("Pass minutes for an event with a time, or days for an all-day one, not both.")
+        if days:
+            check_days(days)
         if minutes:
             check_minutes(minutes)
         tz = zone()
@@ -357,10 +388,15 @@ def setup(api):
         if guests:
             raise api.ToolError("That event has guests, and changing it here could email them. Change it in your calendar app.")
         old = summary(main, tz)
-        if (new_begin is None and minutes) and old["all_day"]:
-            raise api.ToolError("That's an all-day event: pass start too, to give it a time.")
-        length = dt.timedelta(minutes=minutes) if minutes else (
-            dt.timedelta(hours=1) if old["all_day"] else old["end"] - old["start"])
+        whole_days = bool(days) or (old["all_day"] and not minutes)
+        if whole_days:   # dates only, the end day not included
+            first = day_from_start(start) if start.strip() else old["start"].date()
+            span = dt.timedelta(days=days) if days else max(dt.timedelta(days=1), old["end"].date() - old["start"].date())
+        else:
+            new_begin = begin_from(start) if start.strip() else None
+            if (new_begin is None and minutes) and old["all_day"]:
+                raise api.ToolError("That's an all-day event: pass start too, to give it a time.")
+            length = dt.timedelta(minutes=minutes) if minutes else old["end"] - old["start"]
         today = count_change()
         try:
             with obj.edit_icalendar_component() as comp:
@@ -373,12 +409,16 @@ def setup(api):
                 if details.strip():
                     comp.pop("DESCRIPTION", None)
                     comp.add("DESCRIPTION", clean_text(details, 2000))
-                if new_begin is not None or minutes:
-                    begin = new_begin or old["start"]
+                if start.strip() or minutes or days:
                     for key in ("DTSTART", "DTEND", "DURATION"):
                         comp.pop(key, None)
-                    comp.add("DTSTART", begin.astimezone(dt.timezone.utc))
-                    comp.add("DTEND", (begin + length).astimezone(dt.timezone.utc))
+                    if whole_days:
+                        comp.add("DTSTART", first)
+                        comp.add("DTEND", first + span)
+                    else:
+                        begin = new_begin or old["start"]
+                        comp.add("DTSTART", begin.astimezone(dt.timezone.utc))
+                        comp.add("DTEND", (begin + length).astimezone(dt.timezone.utc))
                 comp.pop("DTSTAMP", None)
                 comp.add("DTSTAMP", dt.datetime.now(dt.timezone.utc))
                 comp["SEQUENCE"] = int(comp.get("SEQUENCE", 0) or 0) + 1

@@ -80,8 +80,8 @@ These come with the server, all off until you turn them on in the settings page'
 |---|---|---|---|
 | `calendar_events` | [Calendar](../src/selfhost_remote_mail_mcp/library/caldav/README.md) | Your events for up to a year, with an optional search word, each with an ID | No |
 | `calendar_free` | Calendar | Free times in your working hours for up to 14 days | No |
-| `add_event` | Calendar | Adds an event; with several calendars, asks you which one | Your calendar |
-| `edit_event` | Calendar | Changes an event's title, time, length, place or notes | Your calendar |
+| `add_event` | Calendar | Adds an event, up to a year long or all-day over several days; with several calendars, asks you which one | Your calendar |
+| `edit_event` | Calendar | Changes an event's title, time, length, place or notes, or makes it all-day | Your calendar |
 | `delete_event` | Calendar | Shows you the event, asks, and deletes only after your yes | **Deletes** a calendar event |
 | `add_invite` | [Calendar invite](../src/selfhost_remote_mail_mcp/library/calendar_invite/README.md) | Attaches a meeting invite (`.ics`) to a draft | Only the draft |
 | `make_pdf` | [PDF maker](../src/selfhost_remote_mail_mcp/library/pdf_maker/README.md) | Turns text into a PDF and attaches it to a draft | Only the draft |

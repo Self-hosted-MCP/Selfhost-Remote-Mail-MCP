@@ -194,6 +194,41 @@ def test_edit_event(cal, monkeypatch):
         tool("edit_event", event_id="uid-lunch", title="x")
 
 
+def test_long_and_all_day_events(cal):
+    day, calendars = cal
+    start = f"{day.isoformat()}T10:00:00+00:00"
+    out = tool("add_event", title="Residency", start=start, minutes=3 * 24 * 60, calendar="Work")   # 3 days, timed
+    end = day + dt.timedelta(days=3)
+    assert f"to {end:%a %d %b} 10:00" in out and f"DTEND:{end:%Y%m%d}T100000Z" in calendars[0].added[-1]
+    with pytest.raises(server.ToolError, match="minutes must be between 5 and 527040"):
+        tool("add_event", title="x", start=start, minutes=367 * 24 * 60, calendar="Work")
+    out = tool("add_event", title="Trip", start=day.isoformat(), days=3, calendar="Home")   # all-day, 3 days
+    ical = calendars[1].added[-1]
+    assert f"DTSTART;VALUE=DATE:{day:%Y%m%d}" in ical and f"DTEND;VALUE=DATE:{end:%Y%m%d}" in ical
+    assert f"{day:%a %d %b} to {day + dt.timedelta(days=2):%a %d %b}, all day" in out
+    assert "VALUE=DATE" in calendars[1].added[-1] and tool(
+        "add_event", title="Year", start=day.isoformat(), days=366, calendar="Home").startswith("Added to Home:")
+    with pytest.raises(server.ToolError, match="days must be between 1 and 366"):
+        tool("add_event", title="x", start=day.isoformat(), days=400, calendar="Home")
+    with pytest.raises(server.ToolError, match="YYYY-MM-DD"):
+        tool("add_event", title="x", start="next friday", days=2, calendar="Home")
+    with pytest.raises(server.ToolError, match="within the next year"):
+        tool("add_event", title="x", start="2099-01-01", days=2, calendar="Home")
+    # editing: make a timed event all-day, move an all-day one and it stays all-day, or give it a time
+    out = tool("edit_event", event_id="uid-lunch", days=2)
+    lunch = calendars[0].items[1].icalendar_component
+    assert lunch["DTSTART"].dt == day and lunch["DTEND"].dt == day + dt.timedelta(days=2) and "all day" in out
+    later = day + dt.timedelta(days=7)
+    tool("edit_event", event_id="uid-lunch", start=later.isoformat())
+    assert lunch["DTSTART"].dt == later and lunch["DTEND"].dt == later + dt.timedelta(days=2)   # length kept
+    tool("edit_event", event_id="uid-lunch", start=f"{later.isoformat()}T12:00:00+00:00", minutes=60)
+    assert lunch["DTEND"].dt - lunch["DTSTART"].dt == dt.timedelta(hours=1)
+    tool("edit_event", event_id="uid-lunch", minutes=2 * 24 * 60)   # a timed event can be longer than a day now
+    assert lunch["DTEND"].dt - lunch["DTSTART"].dt == dt.timedelta(days=2)
+    with pytest.raises(server.ToolError, match="not both"):
+        tool("edit_event", event_id="uid-lunch", minutes=60, days=1)
+
+
 def test_delete_event_is_double_checked(cal):
     day, calendars = cal
     piano = calendars[1].items[0]

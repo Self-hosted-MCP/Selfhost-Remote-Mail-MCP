@@ -2,6 +2,10 @@
 
 All notable changes to this project. Versions follow [semantic versioning](https://semver.org).
 
+## 0.19.8 (2026-11-09)
+
+- Calendar add-on: events can now be longer than a day, up to a year (it was 24 hours at most). New: all-day events over one or more days, for a trip, a holiday or a festival (`days` in `add_event` and `edit_event`). An all-day event now stays all-day when you move it to another date.
+
 ## 0.19.7 (2026-11-01)
 
 - Security: pypdf, the library that reads and cleans the PDFs you attach, is updated to 6.21.4. It fixes 7 known problems with damaged or crafted PDF files (endless loops and very high memory use).

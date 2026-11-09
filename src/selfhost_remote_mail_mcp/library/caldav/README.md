@@ -69,8 +69,8 @@ On a computer, install the extra package once (see [the library page](../README.
 |---|---|
 | `calendar_events` | Your events for up to a year, past or future, repeating ones included. Add a search word (like "birthday") to see only matching events. Each line ends with the event's ID, which the other tools use |
 | `calendar_free` | Free times on weekdays inside your working hours, for up to 14 days. Every calendar you use counts as busy, except events marked "free" |
-| `add_event` | Adds an event, within the next year. With several calendars and none named, the AI asks you which one |
-| `edit_event` | Changes the title, time, length, place or notes. Only what you ask for changes; a new start time keeps the same length |
+| `add_event` | Adds an event starting within the next year, from 5 minutes up to a year long. All-day events too, over one or more days (a trip, a holiday, a festival). With several calendars and none named, the AI asks you which one |
+| `edit_event` | Changes the title, time, length, place or notes, or makes it an all-day event. Only what you ask for changes; a new start time keeps the same length, and an all-day event stays all-day when moved |
 | `delete_event` | Shows you the event first and asks. It deletes only after you say yes. A repeating event is deleted with all its dates |
 
 ## Settings
