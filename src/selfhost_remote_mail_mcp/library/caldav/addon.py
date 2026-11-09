@@ -254,11 +254,12 @@ def setup(api):
         return a, b
 
     def when(e: dict) -> str:
+        last = e["end"] - dt.timedelta(days=1) if e["all_day"] else e["end"]
+        day = "%a %d %b %Y" if last.year != e["start"].year else "%a %d %b"   # the year only when it changes
         if e["all_day"]:
-            last = e["end"] - dt.timedelta(days=1)
-            return f"{e['start']:%a %d %b}" + (f" to {last:%a %d %b}" if last.date() > e["start"].date() else "") + ", all day"
+            return f"{e['start']:{day}}" + (f" to {last:{day}}" if last.date() > e["start"].date() else "") + ", all day"
         same = e["end"].date() == e["start"].date()
-        return f"{e['start']:%a %d %b %H:%M}-{e['end']:%H:%M}" if same else f"{e['start']:%a %d %b %H:%M} to {e['end']:%a %d %b %H:%M}"
+        return f"{e['start']:%a %d %b %H:%M}-{e['end']:%H:%M}" if same else f"{e['start']:{day} %H:%M} to {e['end']:{day} %H:%M}"
 
     def test() -> str:
         tz = zone()

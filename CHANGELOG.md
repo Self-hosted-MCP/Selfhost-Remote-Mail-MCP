@@ -2,6 +2,10 @@
 
 All notable changes to this project. Versions follow [semantic versioning](https://semver.org).
 
+## 0.19.9 (2026-11-09)
+
+- Calendar add-on: an event that runs into another year now shows the year in the answer, like "Fri 20 Nov 2026 to Sat 20 Nov 2027, all day", so a year-long event can't read as one day.
+
 ## 0.19.8 (2026-11-09)
 
 - Calendar add-on: events can now be longer than a day, up to a year (it was 24 hours at most). New: all-day events over one or more days, for a trip, a holiday or a festival (`days` in `add_event` and `edit_event`). An all-day event now stays all-day when you move it to another date.

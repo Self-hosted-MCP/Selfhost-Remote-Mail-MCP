@@ -206,8 +206,9 @@ def test_long_and_all_day_events(cal):
     ical = calendars[1].added[-1]
     assert f"DTSTART;VALUE=DATE:{day:%Y%m%d}" in ical and f"DTEND;VALUE=DATE:{end:%Y%m%d}" in ical
     assert f"{day:%a %d %b} to {day + dt.timedelta(days=2):%a %d %b}, all day" in out
-    assert "VALUE=DATE" in calendars[1].added[-1] and tool(
-        "add_event", title="Year", start=day.isoformat(), days=366, calendar="Home").startswith("Added to Home:")
+    out = tool("add_event", title="Year", start=day.isoformat(), days=366, calendar="Home")
+    last = day + dt.timedelta(days=365)   # a year long: the year shows, so it can't read as one day
+    assert f"{day:%a %d %b %Y} to {last:%a %d %b %Y}, all day" in out
     with pytest.raises(server.ToolError, match="days must be between 1 and 366"):
         tool("add_event", title="x", start=day.isoformat(), days=400, calendar="Home")
     with pytest.raises(server.ToolError, match="YYYY-MM-DD"):

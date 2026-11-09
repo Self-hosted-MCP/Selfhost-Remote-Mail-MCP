@@ -1737,7 +1737,7 @@ wheels = [
 
 [[package]]
 name = "selfhost-remote-mail-mcp"
-version = "0.19.8"
+version = "0.19.9"
 source = { editable = "." }
 dependencies = [
     { name = "cryptography" },
