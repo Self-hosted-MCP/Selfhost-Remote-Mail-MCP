@@ -39,7 +39,7 @@ jobs:
           npx --yes @anthropic-ai/mcpb@2.1.2 validate manifest.json
       - name: Name a copy with a fixed name
         run: cp dist/*.mcpb dist/selfhost-remote-mail-mcp.mcpb   # a fixed name, so one link always gets the newest
-      - uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6   # v4.1.2, pinned
+      - uses: sigstore/cosign-installer@756fe2d284c7292c4e9b62c8a28f1e5629c59532   # v4.1.2, pinned
       # Keyless (Sigstore): no secret is stored. If signing fails the release still gets its file, unsigned, and the log says so.
       - name: Sign the files
         continue-on-error: true
